@@ -1,6 +1,6 @@
 <?php
 require_once 'auth.php';
-require_once '../config/database.php';
+require_once 'config/database.php';
 
 /**
  * Sanitiza los datos de entrada para prevenir inyecciones XSS
