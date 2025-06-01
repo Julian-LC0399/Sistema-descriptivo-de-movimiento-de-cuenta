@@ -1,6 +1,5 @@
 <?php
 require_once '../includes/header.php';
-redirectIfNotLoggedIn();
 
 $cuenta_id = isset($_GET['cuenta_id']) ? (int)$_GET['cuenta_id'] : 0;
 

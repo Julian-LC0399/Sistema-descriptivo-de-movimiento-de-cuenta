@@ -1,6 +1,5 @@
 <?php
 require_once '../includes/header.php';
-redirectIfNotLoggedIn();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = [
