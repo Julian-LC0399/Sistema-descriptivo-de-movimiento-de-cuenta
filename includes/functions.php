@@ -1,5 +1,5 @@
 <?php
-require_once 'includes/database.php';
+require_once __DIR__ . '/database.php';
 
 /**
  * Funciones de utilidad general
