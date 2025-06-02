@@ -12,13 +12,14 @@
             <li class="nav-item">
                 <a class="nav-link <?= ($currentPage ?? '') == 'consulta-rango' ? 'active' : '' ?>" href="consultas/por-rango.php">
                     <i class="fas fa-calendar-alt"></i>
-                    Consulto por rango
+                    Consulta por saldo
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link <?= ($currentPage ?? '') == 'consulta-mes' ? 'active' : '' ?>" href="consultas/por-mes.php">
+                <a class="nav-link <?= ($currentPage ?? '') == 'consulta-mes' ? 'active' : '' ?>" 
+                   href="transacciones/mes.php">
                     <i class="fas fa-calendar-week"></i>
-                    Consulto por mes
+                    Consulta por mes
                 </a>
             </li>
             <li class="nav-item">
@@ -30,6 +31,18 @@
             
             <!-- Separador -->
             <li class="sidebar-heading mt-4"></li>
+            
+            <!-- Opción de Cerrar Sesión - Versión mejorada -->
+            <li class="nav-item">
+                <a class="nav-link text-danger" href="<?= 
+                    (strpos($_SERVER['PHP_SELF'], 'transacciones') !== false) ? 
+                    '../logout.php' : 
+                    'logout.php' 
+                ?>">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Cerrar sesión
+                </a>
+            </li>
             
             <!-- Eslogan -->
             <li class="nav-item mt-4 px-3 text-center">

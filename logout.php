@@ -1,11 +1,11 @@
 <?php
 // logout.php
-require_once __DIR__ . '/includes/database.php';
+session_start();
 
 // Destruir completamente la sesión
 $_SESSION = array();
 
-// Si se desea destruir la cookie de sesión
+// Eliminar la cookie de sesión
 if (ini_get("session.use_cookies")) {
     $params = session_get_cookie_params();
     setcookie(
@@ -19,9 +19,10 @@ if (ini_get("session.use_cookies")) {
     );
 }
 
-// Finalmente, destruir la sesión
+// Destruir la sesión
 session_destroy();
 
-// Redirigir inmediatamente a login.php
+// Redirigir al login
 header("Location: login.php");
-exit(); // Asegura que no se ejecute código adicional
+exit();
+?>
