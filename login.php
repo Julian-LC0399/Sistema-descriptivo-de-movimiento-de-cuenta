@@ -33,8 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="assets/css/styles.css">
     <style>
         body {
-            background-color: #f8f9fa;
-            background-image: linear-gradient(to right, #f5f7fa, #e4e8f0);
+            background-color: #f0f2f5;  /* Gris claro neutro */
             height: 100vh;
             display: flex;
             align-items: center;
@@ -45,54 +44,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin: 0 auto;
             padding: 2rem;
             background: white;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
-        .bank-logo {
+        .bank-header {
+            background-color: #003366;  /* Azul oscuro como en la imagen */
+            color: white;
+            padding: 1rem;
+            margin: -2rem -2rem 2rem -2rem;
+            border-radius: 8px 8px 0 0;
             text-align: center;
-            margin-bottom: 1.5rem;
+        }
+        .bank-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
         }
         .bank-logo img {
-            height: 60px;
+            height: 50px;
+            margin-bottom: 10px;
         }
         .form-floating {
             margin-bottom: 1.5rem;
         }
-        .btn-primary {
-            background-color: #0056b3;
+        .btn-login {
+            background-color: #0056b3;  /* Azul claro para el botón */
             border: none;
             padding: 10px;
             font-weight: 500;
+            width: 100%;
         }
-        .btn-primary:hover {
-            background-color: #004494;
+        .btn-login:hover {
+            background-color: #004494;  /* Azul más oscuro al hover */
         }
         .error-message {
             color: #dc3545;
             margin-bottom: 1rem;
             text-align: center;
-            font-weight: 500;
         }
         .footer-links {
             margin-top: 1.5rem;
             text-align: center;
             font-size: 0.9rem;
+            color: #6c757d;
         }
         .footer-links a {
-            color: #6c757d;
+            color: #0056b3;  /* Azul claro para enlaces */
             text-decoration: none;
         }
         .footer-links a:hover {
-            color: #0056b3;
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="login-container">
-            <div class="bank-logo">
-                <img src="assets/images/logo-banco.png" alt="Logo del Banco">
-                <h2 class="mt-3">Sistema Bancario</h2>
+            <div class="bank-header">
+                <div class="bank-logo">
+                    <img src="assets/images/logo-banco.png" alt="Banco Caroní">
+                </div>
+                <h2>Sistema Estado de Cuenta</h2>
             </div>
 
             <?php if ($error): ?>
@@ -115,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="password">Contraseña</label>
                 </div>
 
-                <button class="w-100 btn btn-lg btn-primary" type="submit">Ingresar</button>
+                <button class="btn btn-login btn-lg" type="submit">Ingresar</button>
             </form>
 
             <div class="footer-links">
