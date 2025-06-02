@@ -12,13 +12,14 @@
             <li class="nav-item">
                 <a class="nav-link <?= ($currentPage ?? '') == 'consulta-rango' ? 'active' : '' ?>" href="consultas/por-rango.php">
                     <i class="fas fa-calendar-alt"></i>
-                    Consulto por rango
+                    Consulta por rango
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link <?= ($currentPage ?? '') == 'consulta-mes' ? 'active' : '' ?>" href="consultas/por-mes.php">
+                <a class="nav-link <?= ($currentPage ?? '') == 'consulta-mes' ? 'active' : '' ?>" 
+                   href="cuentas/transacciones/mes.php">
                     <i class="fas fa-calendar-week"></i>
-                    Consulto por mes
+                    Consulta por mes
                 </a>
             </li>
             <li class="nav-item">
