@@ -1,4 +1,17 @@
 <?php
+
+// Iniciar sesión SIEMPRE al principio
+session_start();
+
+// Verificar si el usuario está logueado
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../login.php");
+    exit();
+}
+
+// Incluir el header que contiene el sidebar
+include '../includes/header.php';
+
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/database.php';
 
@@ -18,8 +31,7 @@ $stmt = $pdo->prepare("
 $stmt->execute([$mes, $anio]);
 $transacciones = $stmt->fetchAll();
 
-// Incluir cabecera
-include '../includes/header.php';
+
 ?>
 
 <!DOCTYPE html>

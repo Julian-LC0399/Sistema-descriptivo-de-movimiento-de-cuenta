@@ -32,9 +32,13 @@
             <!-- Separador -->
             <li class="sidebar-heading mt-4"></li>
             
-            <!-- Opción de Cerrar Sesión -->
+            <!-- Opción de Cerrar Sesión - Versión mejorada -->
             <li class="nav-item">
-                <a class="nav-link text-danger" href="logout.php">
+                <a class="nav-link text-danger" href="<?= 
+                    (strpos($_SERVER['PHP_SELF'], 'transacciones') !== false) ? 
+                    '../logout.php' : 
+                    'logout.php' 
+                ?>">
                     <i class="fas fa-sign-out-alt"></i>
                     Cerrar sesión
                 </a>
