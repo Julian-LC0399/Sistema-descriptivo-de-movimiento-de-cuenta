@@ -31,6 +31,14 @@
             <!-- Separador -->
             <li class="sidebar-heading mt-4"></li>
             
+            <!-- Opción de Cerrar Sesión -->
+            <li class="nav-item">
+                <a class="nav-link text-danger" href="logout.php">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Cerrar sesión
+                </a>
+            </li>
+            
             <!-- Eslogan -->
             <li class="nav-item mt-4 px-3 text-center">
                 <small class="text-white-50">Un Banco tan sólido como sus raíces</small>
