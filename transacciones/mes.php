@@ -1,37 +1,23 @@
 <?php
-
-// Iniciar sesión SIEMPRE al principio
+// Lógica PHP pura al inicio
 session_start();
 
-// Verificar si el usuario está logueado
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
     exit();
 }
 
-// Incluir el header que contiene el sidebar
-include '../includes/header.php';
-
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/database.php';
 
-// Configuración de fechas
 $mes = isset($_GET['mes']) ? (int)$_GET['mes'] : date('n');
 $anio = isset($_GET['anio']) ? (int)$_GET['anio'] : date('Y');
 
-// Consulta para transacciones por mes
-$stmt = $pdo->prepare("
-    SELECT t.*, c.cusna1 as cliente 
-    FROM actrd t
-    JOIN acmst a ON t.trdacc = a.acmacc
-    JOIN cumst c ON a.acmcun = c.cuscun
-    WHERE MONTH(t.trddat) = ? AND YEAR(t.trddat) = ?
-    ORDER BY t.trddat DESC
-");
+$stmt = $pdo->prepare("SELECT t.*, c.cusna1 as cliente FROM actrd t JOIN acmst a ON t.trdacc = a.acmacc JOIN cumst c ON a.acmcun = c.cuscun WHERE MONTH(t.trddat) = ? AND YEAR(t.trddat) = ? ORDER BY t.trddat DESC");
 $stmt->execute([$mes, $anio]);
 $transacciones = $stmt->fetchAll();
 
-
+include '../includes/sidebar.php';
 ?>
 
 <!DOCTYPE html>
@@ -40,62 +26,22 @@ $transacciones = $stmt->fetchAll();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Transacciones del Mes</title>
+    <!-- Frameworks externos -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        .card {
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-        }
-        .table-container {
-            background-color: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .table th {
-            background-color: #f8f9fa;
-            border-top: none;
-        }
-        .table td, .table th {
-            vertical-align: middle;
-        }
-        .debit {
-            color: #dc3545;
-            font-weight: bold;
-        }
-        .credit {
-            color: #28a745;
-            font-weight: bold;
-        }
-        .filter-form {
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .page-header {
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-    </style>
+    
+    <!-- CSS personalizado - Ruta absoluta recomendada para producción -->
+    <link rel="stylesheet" href="/assets/css/transacciones.css">
+    
+    <!-- Alternativa para desarrollo local -->
+    <!-- <link rel="stylesheet" href="../assets/css/transacciones.css"> -->
 </head>
 <body>
     <div class="container-fluid py-4">
-        <!-- Page Header -->
         <div class="page-header">
             <h2><i class="bi bi-arrow-left-right me-2"></i>Transacciones del Mes</h2>
         </div>
         
-        <!-- Filter Form -->
         <div class="filter-form">
             <form method="get" class="row g-3 align-items-center">
                 <div class="col-md-4">
@@ -126,7 +72,6 @@ $transacciones = $stmt->fetchAll();
             </form>
         </div>
         
-        <!-- Results Table -->
         <div class="table-container">
             <div class="table-responsive">
                 <table class="table table-hover">
@@ -170,6 +115,7 @@ $transacciones = $stmt->fetchAll();
         </div>
     </div>
 
+    <!-- Scripts JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

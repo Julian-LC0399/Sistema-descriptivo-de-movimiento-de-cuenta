@@ -1,0 +1,49 @@
+/* Estilos generales */
+body {
+    background-color: #f8f9fa;
+}
+
+/* Componentes específicos */
+.page-header {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.filter-form {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.table-container {
+    background-color: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos de tabla */
+.table th {
+    background-color: #f8f9fa;
+    border-top: none;
+}
+
+.table td, .table th {
+    vertical-align: middle;
+}
+
+/* Clases utilitarias */
+.debit {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.credit {
+    color: #28a745;
+    font-weight: bold;
+}

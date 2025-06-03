@@ -1,0 +1,127 @@
+/* Variables para el sidebar */
+:root {
+    --sidebar-width: 250px;
+    --sidebar-bg-color: #2c3e50;
+    --sidebar-text-color: #ecf0f1;
+    --sidebar-active-color: #3498db;
+    --sidebar-hover-color: #34495e;
+    --sidebar-heading-color: #95a5a6;
+    --sidebar-transition: all 0.3s ease;
+}
+
+/* Estructura principal del sidebar */
+.sidebar {
+    width: var(--sidebar-width);
+    min-height: 100vh;
+    background-color: var(--sidebar-bg-color);
+    color: var(--sidebar-text-color);
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    transition: var(--sidebar-transition);
+    overflow-y: auto;
+}
+
+.sidebar-sticky {
+    position: relative;
+    height: 100%;
+    padding-top: 1rem;
+}
+
+/* Encabezado del sidebar */
+.sidebar .text-center {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+.sidebar h4 {
+    font-weight: 600;
+    color: white;
+}
+
+/* Navegación y elementos del menú */
+.sidebar .nav {
+    padding: 0 1rem;
+}
+
+.sidebar .nav-item {
+    margin-bottom: 0.3rem;
+}
+
+.sidebar .nav-link {
+    color: var(--sidebar-text-color);
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    transition: var(--sidebar-transition);
+}
+
+.sidebar .nav-link:hover {
+    background-color: var(--sidebar-hover-color);
+    color: white;
+    text-decoration: none;
+}
+
+.sidebar .nav-link.active {
+    background-color: var(--sidebar-active-color);
+    color: white;
+    font-weight: 500;
+}
+
+.sidebar .nav-link i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+/* Encabezados de sección */
+.sidebar-heading {
+    color: var(--sidebar-heading-color);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 0.5rem 1rem;
+    margin-top: 1rem;
+}
+
+/* Estilo para el botón de cerrar sesión */
+.sidebar .nav-link.text-danger {
+    color: #e74c3c !important;
+}
+
+.sidebar .nav-link.text-danger:hover {
+    background-color: rgba(231, 76, 60, 0.1);
+}
+
+/* Eslogan en el footer del sidebar */
+.sidebar small {
+    display: block;
+    font-size: 0.7rem;
+    opacity: 0.7;
+    line-height: 1.4;
+}
+
+/* Efectos y transiciones */
+.sidebar .nav-link i {
+    transition: var(--sidebar-transition);
+}
+
+.sidebar .nav-link:hover i {
+    transform: scale(1.1);
+}
+
+/* Responsive - Ocultar sidebar en móviles */
+@media (max-width: 992px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+    
+    .sidebar.show {
+        transform: translateX(0);
+    }
+}

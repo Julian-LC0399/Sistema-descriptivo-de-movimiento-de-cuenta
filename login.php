@@ -30,71 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acceso al Sistema Bancario</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/styles.css">
-    <style>
-        body {
-            background-color: #f0f2f5;  /* Gris claro neutro */
-            height: 100vh;
-            display: flex;
-            align-items: center;
-        }
-        .login-container {
-            max-width: 400px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 2rem;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        .bank-header {
-            background-color: #003366;  /* Azul oscuro como en la imagen */
-            color: white;
-            padding: 1rem;
-            margin: -2rem -2rem 2rem -2rem;
-            border-radius: 8px 8px 0 0;
-            text-align: center;
-        }
-        .bank-header h2 {
-            margin: 0;
-            font-size: 1.5rem;
-        }
-        .bank-logo img {
-            height: 50px;
-            margin-bottom: 10px;
-        }
-        .form-floating {
-            margin-bottom: 1.5rem;
-        }
-        .btn-login {
-            background-color: #0056b3;  /* Azul claro para el botón */
-            border: none;
-            padding: 10px;
-            font-weight: 500;
-            width: 100%;
-        }
-        .btn-login:hover {
-            background-color: #004494;  /* Azul más oscuro al hover */
-        }
-        .error-message {
-            color: #dc3545;
-            margin-bottom: 1rem;
-            text-align: center;
-        }
-        .footer-links {
-            margin-top: 1.5rem;
-            text-align: center;
-            font-size: 0.9rem;
-            color: #6c757d;
-        }
-        .footer-links a {
-            color: #0056b3;  /* Azul claro para enlaces */
-            text-decoration: none;
-        }
-        .footer-links a:hover {
-            text-decoration: underline;
-        }
-    </style>
+    <link rel="stylesheet" href="<?php echo htmlspecialchars('assets/css/login.css'); ?>">
 </head>
 <body>
     <div class="container">
