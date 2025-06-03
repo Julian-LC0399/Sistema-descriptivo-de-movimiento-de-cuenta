@@ -26,6 +26,22 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([$mes, $anio]);
 $transacciones = $stmt->fetchAll();
+
+// Definir nombres de meses en español
+$meses_espanol = [
+    1 => 'Enero',
+    2 => 'Febrero',
+    3 => 'Marzo',
+    4 => 'Abril',
+    5 => 'Mayo',
+    6 => 'Junio',
+    7 => 'Julio',
+    8 => 'Agosto',
+    9 => 'Septiembre',
+    10 => 'Octubre',
+    11 => 'Noviembre',
+    12 => 'Diciembre'
+];
 ?>
 
 <!DOCTYPE html>
@@ -53,11 +69,11 @@ $transacciones = $stmt->fetchAll();
                 <div class="form-group">
                     <label for="mes">Mes</label>
                     <select name="mes" id="mes" class="form-control">
-                        <?php for($m=1; $m<=12; $m++): ?>
-                            <option value="<?= $m ?>" <?= $m==$mes?'selected':'' ?>>
-                                <?= DateTime::createFromFormat('!m', $m)->format('F') ?>
+                        <?php foreach($meses_espanol as $numero => $nombre): ?>
+                            <option value="<?= $numero ?>" <?= $numero==$mes?'selected':'' ?>>
+                                <?= $nombre ?>
                             </option>
-                        <?php endfor; ?>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 
