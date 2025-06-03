@@ -1,5 +1,5 @@
 <?php
-require_once '../includes/header.php';
+require_once '../includes/sidebar.php';
 
 $cuenta_id = isset($_GET['cuenta_id']) ? (int)$_GET['cuenta_id'] : 0;
 
