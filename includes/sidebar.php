@@ -22,7 +22,7 @@
             
             <li class="nav-item">
                 <a class="nav-link <?= ($currentPage ?? '') == 'consulta-rango' ? 'active' : '' ?>" 
-                   href="consultas/por-rango.php">
+                   href="transacciones/rango.php">
                     <i class="fas fa-calendar-alt"></i>
                     <span>Consulta por rango</span>
                 </a>
