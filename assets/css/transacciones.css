@@ -1,49 +1,59 @@
-/* Estilos generales */
-body {
-    background-color: #f8f9fa;
+/* Contenedor principal */
+div.container {
+    margin-left: 280px; /* Igual al ancho del sidebar */
+    padding: 30px; /* Más espacio interno */
+    transition: margin-left 0.3s;
 }
 
-/* Componentes específicos */
-.page-header {
-    background-color: white;
-    padding: 20px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+/* Encabezado de página */
+div.page-header {
+    margin-bottom: 30px; /* Más espacio bajo el título */
+    padding-bottom: 15px;
+    border-bottom: 2px solid #131414;
 }
 
-.filter-form {
-    background-color: white;
-    padding: 20px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+/* Formulario de filtros */
+div.filter-form {
+    background: #fff;
+    padding: 25px; /* Más padding */
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 30px; /* Espacio bajo el formulario */
 }
 
-.table-container {
-    background-color: white;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+div.filter-form form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px; /* Más espacio entre campos */
+    align-items: flex-end;
 }
 
-/* Estilos de tabla */
-.table th {
-    background-color: #f8f9fa;
-    border-top: none;
+/* Tabla de resultados */
+div.results-table {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    margin-top: 20px; /* Espacio sobre la tabla */
+    overflow-x: auto;
 }
 
-.table td, .table th {
-    vertical-align: middle;
+table {
+    width: 100%;
+    border-collapse: collapse;
 }
 
-/* Clases utilitarias */
-.debit {
-    color: #dc3545;
-    font-weight: bold;
+table th, table td {
+    padding: 15px 20px; /* Más espacio en celdas */
+    text-align: left;
 }
 
-.credit {
-    color: #28a745;
-    font-weight: bold;
+/* Responsive */
+@media (max-width: 992px) {
+    div.container {
+        margin-left: 0;
+        padding: 20px;
+    }
+    div.filter-form form {
+        gap: 15px;
+    }
 }

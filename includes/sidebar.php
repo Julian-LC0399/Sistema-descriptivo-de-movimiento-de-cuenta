@@ -1,70 +1,71 @@
 <?php if (isset($_SESSION['user_id'])): ?>
-<!-- Incluir el CSS del sidebar -->
+<!-- CSS del sidebar universal -->
 <link rel="stylesheet" href="assets/css/sidebar.css">
-<!-- Incluir Font Awesome para los iconos -->
+<!-- Font Awesome -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
-<!-- Botón para mostrar/ocultar sidebar en móviles -->
-<button class="sidebar-toggle d-lg-none btn btn-primary position-fixed" 
-        style="z-index: 1050; top: 10px; left: 10px;">
+<!-- Botón para mostrar/ocultar sidebar en móviles (conservando funcionalidad) -->
+<button class="sidebar-toggle mobile-only" id="sidebarToggle">
     <i class="fas fa-bars"></i>
 </button>
 
-<div class="sidebar" id="sidebar">
-    <div class="sidebar-sticky">
-        <div class="text-center py-4">
-            <h4 class="text-white mb-0">Banco Caroni</h4>
+<!-- Sidebar Container (estructura universal) -->
+<div class="sidebar-universal" id="sidebar">
+    <d class="sidebar-content">
+        <div class="sidebar-header">
+            <h4>Banco Caroni</h4>
         </div>
         
-        <ul class="nav flex-column">
+        <ul class="sidebar-nav">
             <!-- Sección CONSULTAS -->
-            <li class="sidebar-heading">CONSULTAS</li>
+            <li class="menu-section">CONSULTAS</li>
+            
             <li class="nav-item">
-                <a class="nav-link <?= ($currentPage ?? '') == 'consulta-rango' ? 'active' : '' ?>" href="consultas/por-rango.php">
+                <a class="nav-link <?= ($currentPage ?? '') == 'consulta-rango' ? 'active' : '' ?>" 
+                   href="consultas/por-rango.php">
                     <i class="fas fa-calendar-alt"></i>
-                    Consulta por saldo
+                    <span>Consulta por rango</span>
                 </a>
             </li>
+            
             <li class="nav-item">
                 <a class="nav-link <?= ($currentPage ?? '') == 'consulta-mes' ? 'active' : '' ?>" 
                    href="transacciones/mes.php">
                     <i class="fas fa-calendar-week"></i>
-                    Consulta por mes
+                    <span>Consulta por mes</span>
                 </a>
             </li>
+            
             <li class="nav-item">
-                <a class="nav-link <?= ($currentPage ?? '') == 'simulador' ? 'active' : '' ?>" href="simulador/">
+                <a class="nav-link <?= ($currentPage ?? '') == 'simulador' ? 'active' : '' ?>" 
+                   href="simulador/">
                     <i class="fas fa-calculator"></i>
-                    Simulador
+                    <span>Simulador</span>
                 </a>
             </li>
             
-            <!-- Separador -->
-            <li class="sidebar-heading mt-4"></li>
-            
-            <!-- Opción de Cerrar Sesión -->
-            <li class="nav-item">
-                <a class="nav-link text-danger" href="<?= 
+            <!-- Cerrar Sesión -->
+            <li class="nav-item logout-item">
+                <a class="nav-link" href="<?= 
                     (strpos($_SERVER['PHP_SELF'], 'transacciones') !== false) ? 
                     '../logout.php' : 
                     'logout.php' 
                 ?>">
                     <i class="fas fa-sign-out-alt"></i>
-                    Cerrar sesión
+                    <span>Cerrar sesión</span>
                 </a>
             </li>
             
             <!-- Eslogan -->
-            <li class="nav-item mt-4 px-3 text-center">
-                <small class="text-white-50">Un Banco tan sólido como sus raíces</small>
+            <li class="sidebar-footer">
+                <small>Un Banco tan sólido como sus raíces</small>
             </li>
         </ul>
-    </div>
 </div>
 
-<!-- JavaScript para el toggle del sidebar -->
+<!-- JavaScript para el toggle del sidebar (conservando funcionalidad original) -->
 <script>
-document.querySelector('.sidebar-toggle').addEventListener('click', function() {
+document.getElementById('sidebarToggle').addEventListener('click', function() {
     document.getElementById('sidebar').classList.toggle('show');
 });
 </script>

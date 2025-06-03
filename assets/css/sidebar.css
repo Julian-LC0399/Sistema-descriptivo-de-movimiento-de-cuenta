@@ -1,127 +1,111 @@
-/* Variables para el sidebar */
-:root {
-    --sidebar-width: 250px;
-    --sidebar-bg-color: #2c3e50;
-    --sidebar-text-color: #ecf0f1;
-    --sidebar-active-color: #3498db;
-    --sidebar-hover-color: #34495e;
-    --sidebar-heading-color: #95a5a6;
-    --sidebar-transition: all 0.3s ease;
-}
-
-/* Estructura principal del sidebar */
-.sidebar {
-    width: var(--sidebar-width);
-    min-height: 100vh;
-    background-color: var(--sidebar-bg-color);
-    color: var(--sidebar-text-color);
+/* Estructura del sidebar para Banco Caroni */
+.sidebar-universal {
+    width: 280px;
+    height: 100vh;
     position: fixed;
-    top: 0;
     left: 0;
+    top: 0;
+    background: #ffffff;
+    color: #2c3e50;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
     z-index: 1000;
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-    transition: var(--sidebar-transition);
+    transition: all 0.3s;
     overflow-y: auto;
 }
 
-.sidebar-sticky {
-    position: relative;
+.sidebar-content {
+    padding: 20px 0;
+    display: flex;
+    flex-direction: column;
     height: 100%;
-    padding-top: 1rem;
 }
 
-/* Encabezado del sidebar */
-.sidebar .text-center {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding-bottom: 1rem;
-    margin-bottom: 1rem;
+.sidebar-header {
+    padding: 25px 20px; /* Más espacio interno */
+    text-align: center;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 10px; /* Espacio bajo el header */
 }
 
-.sidebar h4 {
+.sidebar-header h4 {
+    color: #2c3e50;
+    margin: 0;
+    font-size: 1.4rem;
     font-weight: 600;
-    color: white;
 }
 
-/* Navegación y elementos del menú */
-.sidebar .nav {
-    padding: 0 1rem;
+/* Menú de navegación */
+.sidebar-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
 }
 
-.sidebar .nav-item {
-    margin-bottom: 0.3rem;
+.menu-section {
+    color: #7f8c8d;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    padding: 15px 25px 5px; /* Más padding horizontal */
+    margin-top: 15px; /* Mayor separación entre secciones */
+    letter-spacing: 1px;
 }
 
-.sidebar .nav-link {
-    color: var(--sidebar-text-color);
-    border-radius: 4px;
-    padding: 0.75rem 1rem;
+.nav-item {
+    margin: 8px 0; /* Más espacio entre ítems */
+}
+
+.nav-link {
     display: flex;
     align-items: center;
-    transition: var(--sidebar-transition);
-}
-
-.sidebar .nav-link:hover {
-    background-color: var(--sidebar-hover-color);
-    color: white;
+    padding: 12px 25px; /* Padding horizontal aumentado */
+    color: #34495e;
     text-decoration: none;
-}
-
-.sidebar .nav-link.active {
-    background-color: var(--sidebar-active-color);
-    color: white;
+    transition: all 0.2s;
     font-weight: 500;
+    border-left: 3px solid transparent;
 }
 
-.sidebar .nav-link i {
-    margin-right: 10px;
-    width: 20px;
+.nav-link:hover {
+    background: #f8f9fa;
+    border-left: 3px solid #3498db;
+}
+
+.nav-link.active {
+    background: #f1f9fe;
+    border-left: 3px solid #3498db;
+    color: #3498db;
+}
+
+.nav-link i {
+    width: 24px;
     text-align: center;
+    margin-right: 12px; /* Más espacio entre ícono y texto */
+    font-size: 1rem;
+    color: #7f8c8d;
 }
 
-/* Encabezados de sección */
-.sidebar-heading {
-    color: var(--sidebar-heading-color);
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    padding: 0.5rem 1rem;
-    margin-top: 1rem;
+/* Logout y eslogan */
+.logout-item {
+    margin-top: 20px; /* Separación adicional */
+    border-top: 1px solid #e0e0e0;
+    padding-top: 15px;
 }
 
-/* Estilo para el botón de cerrar sesión */
-.sidebar .nav-link.text-danger {
-    color: #e74c3c !important;
+.bank-slogan {
+    padding: 20px;
+    margin-top: 20px; /* Espacio sobre el eslogan */
+    font-style: italic;
+    color: #7f8c8d;
+    border-top: 1px solid #e0e0e0;
 }
 
-.sidebar .nav-link.text-danger:hover {
-    background-color: rgba(231, 76, 60, 0.1);
-}
-
-/* Eslogan en el footer del sidebar */
-.sidebar small {
-    display: block;
-    font-size: 0.7rem;
-    opacity: 0.7;
-    line-height: 1.4;
-}
-
-/* Efectos y transiciones */
-.sidebar .nav-link i {
-    transition: var(--sidebar-transition);
-}
-
-.sidebar .nav-link:hover i {
-    transform: scale(1.1);
-}
-
-/* Responsive - Ocultar sidebar en móviles */
+/* Responsive */
 @media (max-width: 992px) {
-    .sidebar {
+    .sidebar-universal {
         transform: translateX(-100%);
     }
-    
-    .sidebar.show {
+    .sidebar-universal.show {
         transform: translateX(0);
     }
 }
