@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../includes/config.php'; 
+
 // Iniciar sesión SIEMPRE al principio
 session_start();
 
