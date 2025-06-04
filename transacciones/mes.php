@@ -135,5 +135,8 @@ $meses_espanol = [
     </div>
 
     <?php include '../includes/footer.php'; ?>
+
+    <!-- Font Awesome para íconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </body>
 </html>
