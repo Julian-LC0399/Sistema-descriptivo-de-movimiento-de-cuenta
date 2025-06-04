@@ -1,0 +1,274 @@
+/* mes.css - Estilos principales para el reporte de transacciones */
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+.container {
+    margin-left: 250px; /* Para dejar espacio a la sidebar */
+    padding: 20px;
+}
+
+.header {
+    background-color: #0056b3;
+    color: white;
+    padding: 20px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.header h2 {
+    margin: 5px 0 0 0;
+    font-size: 18px;
+    font-weight: normal;
+}
+
+.filter-form {
+    background-color: white;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: flex-end;
+}
+
+.form-group {
+    flex: 1;
+    min-width: 150px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.btn-submit {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.btn-submit:hover {
+    background-color: #218838;
+}
+
+.account-info {
+    background-color: #f8f9fa;
+    padding: 10px 15px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    border-left: 4px solid #0056b3;
+}
+
+.saldo-inicial {
+    background-color: #e9f7ef;
+    padding: 8px 15px;
+    border-radius: 4px;
+    margin: 10px 0;
+    display: inline-block;
+    font-weight: bold;
+}
+
+.saldo-final-box {
+    background-color: #e3f2fd;
+}
+
+.table-container {
+    overflow-x: auto;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.transactions-table th {
+    background-color: #0056b3;
+    color: white;
+    padding: 12px 15px;
+    text-align: left;
+}
+
+.transactions-table td {
+    padding: 10px 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+.transactions-table tr:hover {
+    background-color: #f5f5f5;
+}
+
+.debit {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.credit {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.no-results {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+}
+
+.totals-container {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.total-box {
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-align: center;
+    min-width: 150px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.total-label {
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.total-value {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.total-debits {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.total-credits {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+/* saldo.css - Estilos específicos para la visualización de saldos */
+
+.saldo-inicial {
+    background-color: #e9f7ef;
+    padding: 8px 15px;
+    border-radius: 4px;
+    margin: 10px 0;
+    display: inline-block;
+    font-weight: bold;
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.saldo-final-box {
+    background-color: #e3f2fd;
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+.saldo-evolution {
+    margin: 20px 0;
+    padding: 15px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.saldo-evolution h3 {
+    margin-top: 0;
+    color: #0056b3;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.saldo-change {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.saldo-change-item {
+    text-align: center;
+    padding: 10px;
+    flex: 1;
+}
+
+.saldo-change-item .label {
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.saldo-change-item .value {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.positive-change {
+    color: #28a745;
+}
+
+.negative-change {
+    color: #dc3545;
+}
+
+/* Gráfico de evolución (opcional) */
+.saldo-chart {
+    height: 200px;
+    margin-top: 15px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    padding: 10px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        margin-left: 0;
+        padding: 10px;
+    }
+    
+    .form-row {
+        flex-direction: column;
+    }
+    
+    .totals-container {
+        flex-direction: column;
+        align-items: flex-end;
+    }
+}
