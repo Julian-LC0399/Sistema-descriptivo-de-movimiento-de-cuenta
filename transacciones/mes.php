@@ -139,8 +139,10 @@ $meses_espanol = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Banco Caroni - Transacciones Mensuales</title>
-    <link rel="stylesheet" href="../assets/css/mes.css">
     <link rel="stylesheet" href="../assets/css/sidebar.css">
+    <link rel="stylesheet" href="../assets/css/mes.css">
+    <!-- Font Awesome para íconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
     <?php include '../includes/sidebar.php'; ?>
@@ -151,55 +153,60 @@ $meses_espanol = [
             <h2>TRANSACCIONES MENSUALES</h2>
         </div>
 
-        <div class="filter-form">
-            <form method="get" class="form-inline">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="mes">Mes:</label>
-                        <select id="mes" name="mes" class="form-control" required>
-                            <?php foreach($meses_espanol as $num => $nombre): ?>
-                                <option value="<?= $num ?>" <?= $num==$mes?'selected':'' ?>>
-                                    <?= $nombre ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="anio">Año:</label>
-                        <select id="anio" name="anio" class="form-control" required>
-                            <?php for($y=date('Y'); $y>=date('Y')-5; $y--): ?>
-                                <option value="<?= $y ?>" <?= $y==$anio?'selected':'' ?>>
-                                    <?= $y ?>
-                                </option>
-                            <?php endfor; ?>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="cuenta">Cuenta:</label>
-                        <input type="text" id="cuenta" name="cuenta" 
-                               value="<?= htmlspecialchars($cuenta) ?>" 
-                               placeholder="Número de cuenta"
-                               class="form-control">
-                    </div>
+        <div class="filter-container">
+            <div class="filter-header">
+                <h3><i class="fas fa-filter"></i> Filtros de Búsqueda</h3>
+            </div>
+            <form method="get" class="filter-grid">
+                <div class="filter-group">
+                    <label for="mes" class="filter-label"><i class="far fa-calendar-alt"></i> Mes:</label>
+                    <select id="mes" name="mes" class="filter-input" required>
+                        <?php foreach($meses_espanol as $num => $nombre): ?>
+                            <option value="<?= $num ?>" <?= $num==$mes?'selected':'' ?>>
+                                <?= $nombre ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
                 
-                <button type="submit" class="btn-submit">Consultar</button>
+                <div class="filter-group">
+                    <label for="anio" class="filter-label"><i class="far fa-calendar"></i> Año:</label>
+                    <select id="anio" name="anio" class="filter-input" required>
+                        <?php for($y=date('Y'); $y>=date('Y')-5; $y--): ?>
+                            <option value="<?= $y ?>" <?= $y==$anio?'selected':'' ?>>
+                                <?= $y ?>
+                            </option>
+                        <?php endfor; ?>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="cuenta" class="filter-label"><i class="fas fa-wallet"></i> Cuenta:</label>
+                    <input type="text" id="cuenta" name="cuenta" 
+                           value="<?= htmlspecialchars($cuenta) ?>" 
+                           placeholder="Número de cuenta"
+                           class="filter-input">
+                </div>
+                
+                <button type="submit" class="btn-filter">
+                    <i class="fas fa-search"></i> Consultar
+                </button>
             </form>
         </div>
 
         <div class="account-info">
+            <h4><i class="fas fa-info-circle"></i> Información del Reporte</h4>
             <p>
-                <strong>Período:</strong> <?= $meses_espanol[$mes] ?> <?= $anio ?>
+                <i class="far fa-calendar"></i> <strong>Período:</strong> <?= $meses_espanol[$mes] ?> <?= $anio ?>
                 <?php if (!empty($cuenta)): ?>
-                    | <strong>Cuenta:</strong> <?= htmlspecialchars($cuenta) ?>
+                    | <i class="fas fa-wallet"></i> <strong>Cuenta:</strong> <?= htmlspecialchars($cuenta) ?>
                 <?php endif; ?>
             </p>
             
             <?php if (!empty($cuenta)): ?>
-                <div class="saldo-inicial">
-                    Saldo Inicial: <?= number_format($saldo_inicial, 2) ?> <?= !empty($transacciones[0]['moneda']) ? $transacciones[0]['moneda'] : '' ?>
+                <div class="saldo-box">
+                    <span class="saldo-label"><i class="fas fa-coins"></i> Saldo Inicial:</span>
+                    <span class="saldo-value"><?= number_format($saldo_inicial, 2) ?> <?= !empty($transacciones[0]['moneda']) ? $transacciones[0]['moneda'] : '' ?></span>
                 </div>
             <?php endif; ?>
         </div>
@@ -208,16 +215,16 @@ $meses_espanol = [
             <table class="transactions-table">
                 <thead>
                     <tr>
-                        <th>Fecha</th>
-                        <th>Cliente</th>
-                        <th>Cuenta</th>
-                        <th>Tipo</th>
-                        <th>Monto</th>
-                        <th>Saldo <?= !empty($cuenta) ? 'Acumulado' : '' ?></th>
-                        <th>Descripción</th>
-                        <th>Referencia</th>
-                        <th>Usuario</th>
-                        <th>Moneda</th>
+                        <th><i class="far fa-calendar"></i> Fecha</th>
+                        <th><i class="fas fa-user"></i> Cliente</th>
+                        <th><i class="fas fa-wallet"></i> Cuenta</th>
+                        <th><i class="fas fa-exchange-alt"></i> Tipo</th>
+                        <th><i class="fas fa-money-bill-wave"></i> Monto</th>
+                        <th><i class="fas fa-piggy-bank"></i> Saldo <?= !empty($cuenta) ? 'Acumulado' : '' ?></th>
+                        <th><i class="fas fa-align-left"></i> Descripción</th>
+                        <th><i class="fas fa-hashtag"></i> Referencia</th>
+                        <th><i class="fas fa-user-cog"></i> Usuario</th>
+                        <th><i class="fas fa-coins"></i> Moneda</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -228,6 +235,7 @@ $meses_espanol = [
                                 <td><?= htmlspecialchars($trans['cliente']) ?></td>
                                 <td><?= htmlspecialchars($trans['cuenta']) ?></td>
                                 <td class="<?= $trans['tipo'] == 'D' ? 'debit' : 'credit' ?>">
+                                    <i class="<?= $trans['tipo'] == 'D' ? 'fas fa-arrow-down' : 'fas fa-arrow-up' ?>"></i>
                                     <?= $trans['tipo'] == 'D' ? 'Débito' : 'Crédito' ?>
                                 </td>
                                 <td><?= number_format($trans['monto'], 2) ?></td>
@@ -256,17 +264,17 @@ $meses_espanol = [
         <div class="totals-container">
             <?php if (!empty($cuenta)): ?>
                 <div class="total-box saldo-final-box">
-                    <div class="total-label">Saldo Final</div>
+                    <div class="total-label"><i class="fas fa-coins"></i> Saldo Final</div>
                     <div class="total-value"><?= number_format($saldo_final, 2) ?></div>
                 </div>
             <?php endif; ?>
             
             <div class="total-box total-debits">
-                <div class="total-label">Total Débitos</div>
+                <div class="total-label"><i class="fas fa-arrow-down"></i> Total Débitos</div>
                 <div class="total-value"><?= number_format($total_debitos, 2) ?></div>
             </div>
             <div class="total-box total-credits">
-                <div class="total-label">Total Créditos</div>
+                <div class="total-label"><i class="fas fa-arrow-up"></i> Total Créditos</div>
                 <div class="total-value"><?= number_format($total_creditos, 2) ?></div>
             </div>
         </div>
@@ -274,8 +282,5 @@ $meses_espanol = [
     </div>
 
     <?php include '../includes/footer.php'; ?>
-    
-    <!-- Font Awesome para íconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </body>
 </html>
