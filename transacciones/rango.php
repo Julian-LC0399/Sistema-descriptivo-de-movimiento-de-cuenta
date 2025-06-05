@@ -30,6 +30,41 @@ if (!empty($cuenta) && !preg_match('/^[0-9]{10,20}$/', $cuenta)) {
     die("Número de cuenta inválido. Debe contener solo dígitos (10-20 caracteres).");
 }
 
+// Consulta para obtener el saldo inicial
+$saldo_inicial = 0;
+if (!empty($cuenta)) {
+    try {
+        // Primero intentamos obtener el último saldo antes de la fecha de inicio
+        $sql_saldo_inicial = "SELECT t.trdbal AS saldo_inicial
+                            FROM actrd t
+                            WHERE t.trdacc = :cuenta
+                            AND t.trddat < :fecha_inicio
+                            ORDER BY t.trddat DESC, t.trdseq DESC
+                            LIMIT 1";
+        
+        $stmt_saldo = $pdo->prepare($sql_saldo_inicial);
+        $stmt_saldo->execute([':cuenta' => $cuenta, ':fecha_inicio' => $fecha_inicio]);
+        $resultado_saldo = $stmt_saldo->fetch(PDO::FETCH_ASSOC);
+        
+        if ($resultado_saldo) {
+            $saldo_inicial = $resultado_saldo['saldo_inicial'];
+        } else {
+            // Si no hay movimientos previos, obtener saldo de la tabla de cuentas
+            $sql_saldo_cuenta = "SELECT acmbal FROM acmst WHERE acmacc = :cuenta";
+            $stmt_saldo_cuenta = $pdo->prepare($sql_saldo_cuenta);
+            $stmt_saldo_cuenta->execute([':cuenta' => $cuenta]);
+            $resultado_saldo_cuenta = $stmt_saldo_cuenta->fetch(PDO::FETCH_ASSOC);
+            
+            if ($resultado_saldo_cuenta) {
+                $saldo_inicial = $resultado_saldo_cuenta['acmbal'];
+            }
+        }
+    } catch(PDOException $e) {
+        error_log("Error al obtener saldo inicial: " . $e->getMessage());
+        $saldo_inicial = 0;
+    }
+}
+
 // Consulta SQL con parámetros seguros
 $sql = "SELECT 
             t.trddat AS fecha,
@@ -75,6 +110,9 @@ try {
             $total_creditos += $t['monto'];
         }
     }
+    
+    // Calcular saldo final
+    $saldo_final = $saldo_inicial + $total_creditos - $total_debitos;
 } catch(PDOException $e) {
     error_log("Error en consulta de estado de cuenta: " . $e->getMessage());
     die("Ocurrió un error al procesar su solicitud. Por favor intente más tarde.");
@@ -93,11 +131,11 @@ function validateDate($date, $format = 'Y-m-d') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Banco Caroni - Estado de Cuenta por Rango</title>
-    <link rel="stylesheet" href="../assets/css/rango.css">
     <link rel="stylesheet" href="../assets/css/sidebar.css">
+    <link rel="stylesheet" href="../assets/css/rango.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
-    <!-- Solo incluir el sidebar sin estilos adicionales -->
     <?php include '../includes/sidebar.php'; ?>
     
     <div class="container">
@@ -106,36 +144,57 @@ function validateDate($date, $format = 'Y-m-d') {
             <h2>ESTADO DE CUENTA POR RANGO</h2>
         </div>
 
-        <div class="filter-form">
-            <form method="get" class="form-inline">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="fecha_inicio">Desde:</label>
-                        <input type="date" id="fecha_inicio" name="fecha_inicio" 
-                               value="<?= htmlspecialchars($fecha_inicio) ?>" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="fecha_fin">Hasta:</label>
-                        <input type="date" id="fecha_fin" name="fecha_fin" 
-                               value="<?= htmlspecialchars($fecha_fin) ?>" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="cuenta">Cuenta:</label>
-                        <input type="text" id="cuenta" name="cuenta" 
-                               value="<?= htmlspecialchars($cuenta) ?>" placeholder="Número de cuenta">
-                    </div>
+        <div class="filter-container">
+            <form method="get" class="filter-form">
+                <div class="filter-header">
+                    <h3><i class="fas fa-filter"></i> Filtros de Consulta</h3>
+                    <button type="submit" class="btn-filter">
+                        <i class="fas fa-search"></i> Buscar Transacciones
+                    </button>
                 </div>
                 
-                <button type="submit" class="btn-submit">Consultar</button>
+                <div class="filter-grid">
+                    <div class="filter-group">
+                        <label for="fecha_inicio" class="filter-label">
+                            <i class="far fa-calendar-alt"></i> Fecha Inicial
+                        </label>
+                        <input type="date" id="fecha_inicio" name="fecha_inicio" 
+                               value="<?= htmlspecialchars($fecha_inicio) ?>" 
+                               class="filter-input" required>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="fecha_fin" class="filter-label">
+                            <i class="far fa-calendar-alt"></i> Fecha Final
+                        </label>
+                        <input type="date" id="fecha_fin" name="fecha_fin" 
+                               value="<?= htmlspecialchars($fecha_fin) ?>" 
+                               class="filter-input" required>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="cuenta" class="filter-label">
+                            <i class="fas fa-wallet"></i> Número de Cuenta
+                        </label>
+                        <input type="text" id="cuenta" name="cuenta" 
+                               value="<?= htmlspecialchars($cuenta) ?>" 
+                               placeholder="Ej: 1234567890"
+                               class="filter-input">
+                    </div>
+                </div>
             </form>
         </div>
 
         <?php if (!empty($cuenta)): ?>
         <div class="account-info">
-            <p><strong>Número de Cuenta:</strong> <?= htmlspecialchars($cuenta) ?></p>
-            <p><strong>Período:</strong> <?= date('d/m/Y', strtotime($fecha_inicio)) ?> al <?= date('d/m/Y', strtotime($fecha_fin)) ?></p>
+            <h4><i class="fas fa-info-circle"></i> Información de la Cuenta</h4>
+            <p><strong><i class="fas fa-credit-card"></i> Número de Cuenta:</strong> <?= htmlspecialchars($cuenta) ?></p>
+            <p><strong><i class="far fa-calendar"></i> Período:</strong> <?= date('d/m/Y', strtotime($fecha_inicio)) ?> al <?= date('d/m/Y', strtotime($fecha_fin)) ?></p>
+            
+            <div class="saldo-box">
+                <span class="saldo-label"><i class="fas fa-coins"></i> Saldo Inicial:</span>
+                <span class="saldo-value"><?= number_format($saldo_inicial, 2) ?></span>
+            </div>
         </div>
         <?php endif; ?>
 
@@ -143,15 +202,15 @@ function validateDate($date, $format = 'Y-m-d') {
             <table class="transactions-table">
                 <thead>
                     <tr>
-                        <th>Fecha</th>
-                        <th>Secuencia</th>
-                        <th>Tipo</th>
-                        <th>Monto</th>
-                        <th>Saldo</th>
-                        <th>Descripción</th>
-                        <th>Referencia</th>
-                        <th>Usuario</th>
-                        <th>Moneda</th>
+                        <th><i class="far fa-calendar"></i> Fecha</th>
+                        <th><i class="fas fa-hashtag"></i> Secuencia</th>
+                        <th><i class="fas fa-exchange-alt"></i> Tipo</th>
+                        <th><i class="fas fa-money-bill-wave"></i> Monto</th>
+                        <th><i class="fas fa-piggy-bank"></i> Saldo</th>
+                        <th><i class="fas fa-align-left"></i> Descripción</th>
+                        <th><i class="fas fa-barcode"></i> Referencia</th>
+                        <th><i class="fas fa-user"></i> Usuario</th>
+                        <th><i class="fas fa-dollar-sign"></i> Moneda</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -186,12 +245,16 @@ function validateDate($date, $format = 'Y-m-d') {
         <?php if (!empty($transacciones)): ?>
         <div class="totals-container">
             <div class="total-box total-debits">
-                <div class="total-label">Total Débitos</div>
+                <div class="total-label"><i class="fas fa-arrow-down"></i> Total Débitos</div>
                 <div class="total-value"><?= number_format($total_debitos, 2) ?></div>
             </div>
             <div class="total-box total-credits">
-                <div class="total-label">Total Créditos</div>
+                <div class="total-label"><i class="fas fa-arrow-up"></i> Total Créditos</div>
                 <div class="total-value"><?= number_format($total_creditos, 2) ?></div>
+            </div>
+            <div class="total-box" style="border-top: 3px solid #3182ce;">
+                <div class="total-label"><i class="fas fa-coins"></i> Saldo Final</div>
+                <div class="total-value"><?= number_format($saldo_final, 2) ?></div>
             </div>
         </div>
         <?php endif; ?>
@@ -199,12 +262,9 @@ function validateDate($date, $format = 'Y-m-d') {
 
     <?php include '../includes/footer.php'; ?>
     
-    <!-- Font Awesome para íconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    
     <script>
-        // Validación del lado del cliente
         document.addEventListener('DOMContentLoaded', function() {
+            // Validación de fechas
             document.querySelector('form').addEventListener('submit', function(e) {
                 const inicio = document.getElementById('fecha_inicio').value;
                 const fin = document.getElementById('fecha_fin').value;
@@ -213,6 +273,20 @@ function validateDate($date, $format = 'Y-m-d') {
                     alert('La fecha de inicio no puede ser mayor a la fecha final');
                     e.preventDefault();
                 }
+            });
+
+            // Mejorar experiencia de usuario para campos de fecha
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('fecha_inicio').max = today;
+            document.getElementById('fecha_fin').max = today;
+            
+            // Sincronizar fechas para mejor UX
+            document.getElementById('fecha_inicio').addEventListener('change', function() {
+                const fechaFin = document.getElementById('fecha_fin');
+                if (this.value > fechaFin.value) {
+                    fechaFin.value = this.value;
+                }
+                fechaFin.min = this.value;
             });
         });
     </script>
