@@ -118,6 +118,104 @@ try {
     die("Ocurrió un error al procesar su solicitud. Por favor intente más tarde.");
 }
 
+// Verificar si se solicitó PDF
+if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
+    require_once __DIR__ . '/../includes/library/tcpdf.php';
+    
+    $pdf = new TCPDF('L', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+    $pdf->SetCreator('Banco Caroni');
+    $pdf->SetAuthor('Sistema Bancario');
+    $pdf->SetTitle('Estado de Cuenta '.$fecha_inicio.' al '.$fecha_fin);
+    $pdf->SetSubject('Estado de Cuenta por Rango');
+    $pdf->setPrintHeader(false);
+    $pdf->setPrintFooter(false);
+    $pdf->AddPage();
+    
+    // Contenido HTML del PDF
+    $html = '
+    <style>
+        h1 { text-align: center; font-size: 16px; }
+        h2 { text-align: center; font-size: 14px; margin-bottom: 10px; }
+        .info { font-size: 10px; margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 8px; }
+        th { background-color: #f2f2f2; font-weight: bold; }
+        td, th { border: 1px solid #ddd; padding: 4px; }
+        .debit { color: #FF0000; }
+        .credit { color: #00AA00; }
+        .totals { margin-top: 10px; font-size: 10px; }
+        .total-label { font-weight: bold; }
+    </style>
+    
+    <h1>BANCO CARONI</h1>
+    <h2>ESTADO DE CUENTA POR RANGO</h2>
+    
+    <div class="info">
+        <strong>Período:</strong> '.date('d/m/Y', strtotime($fecha_inicio)).' al '.date('d/m/Y', strtotime($fecha_fin)).' | 
+        '.(!empty($cuenta) ? '<strong>Cuenta:</strong> '.htmlspecialchars($cuenta).' | ' : '').'
+        <strong>Generado:</strong> '.date('d/m/Y H:i:s').'
+    </div>';
+    
+    if (!empty($cuenta)) {
+        $html .= '<div class="info"><strong>Saldo Inicial:</strong> '.number_format($saldo_inicial, 2).' '.(!empty($transacciones[0]['moneda']) ? $transacciones[0]['moneda'] : '').'</div>';
+    }
+    
+    $html .= '
+    <table>
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Secuencia</th>
+                <th>Tipo</th>
+                <th>Monto</th>
+                <th>Saldo</th>
+                <th>Descripción</th>
+                <th>Referencia</th>
+                <th>Usuario</th>
+                <th>Moneda</th>
+            </tr>
+        </thead>
+        <tbody>';
+    
+    if (!empty($transacciones)) {
+        foreach ($transacciones as $trans) {
+            $html .= '
+            <tr>
+                <td>'.date('d/m/Y', strtotime($trans['fecha'])).'</td>
+                <td>'.htmlspecialchars($trans['secuencia']).'</td>
+                <td class="'.($trans['tipo'] == 'D' ? 'debit' : 'credit').'">'.($trans['tipo'] == 'D' ? 'Débito' : 'Crédito').'</td>
+                <td>'.number_format($trans['monto'], 2).'</td>
+                <td>'.number_format($trans['saldo'], 2).'</td>
+                <td>'.htmlspecialchars($trans['descripcion']).'</td>
+                <td>'.htmlspecialchars($trans['referencia']).'</td>
+                <td>'.htmlspecialchars($trans['usuario']).'</td>
+                <td>'.htmlspecialchars($trans['moneda']).'</td>
+            </tr>';
+        }
+    } else {
+        $html .= '<tr><td colspan="9">No se encontraron transacciones en el período seleccionado</td></tr>';
+    }
+    
+    $html .= '
+        </tbody>
+    </table>';
+    
+    if (!empty($transacciones)) {
+        $html .= '
+        <div class="totals">
+            <div><span class="total-label">Total Débitos:</span> '.number_format($total_debitos, 2).'</div>
+            <div><span class="total-label">Total Créditos:</span> '.number_format($total_creditos, 2).'</div>
+            '.(!empty($cuenta) ? '<div><span class="total-label">Saldo Final:</span> '.number_format($saldo_final, 2).'</div>' : '').'
+        </div>';
+    }
+    
+    // Escribir HTML en el PDF
+    $pdf->writeHTML($html, true, false, true, false, '');
+    
+    // Generar y descargar PDF
+    $pdf->Output('estado_cuenta_'.$fecha_inicio.'_'.$fecha_fin.'.pdf', 'D');
+    exit();
+}
+
 // Función auxiliar para validar fechas
 function validateDate($date, $format = 'Y-m-d') {
     $d = DateTime::createFromFormat($format, $date);
@@ -133,6 +231,7 @@ function validateDate($date, $format = 'Y-m-d') {
     <title>Banco Caroni - Estado de Cuenta por Rango</title>
     <link rel="stylesheet" href="../assets/css/sidebar.css">
     <link rel="stylesheet" href="../assets/css/rango.css">
+    <link rel="stylesheet" href="../assets/css/pdf-export.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
@@ -183,6 +282,13 @@ function validateDate($date, $format = 'Y-m-d') {
                     </div>
                 </div>
             </form>
+
+            <div class="export-buttons">
+                <a href="?fecha_inicio=<?= urlencode($fecha_inicio) ?>&fecha_fin=<?= urlencode($fecha_fin) ?>&cuenta=<?= urlencode($cuenta) ?>&export=pdf" 
+                   class="btn-export pdf" target="_blank">
+                   <i class="fas fa-file-pdf"></i> Exportar a PDF
+                </a>
+            </div>
         </div>
 
         <?php if (!empty($cuenta)): ?>
