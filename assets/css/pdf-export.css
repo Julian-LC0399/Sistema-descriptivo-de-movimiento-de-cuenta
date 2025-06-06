@@ -1,0 +1,30 @@
+/* Estilos específicos para la exportación PDF */
+.export-buttons {
+    margin: 15px 0;
+    text-align: right;
+}
+
+.btn-export {
+    padding: 8px 15px;
+    border-radius: 4px;
+    text-decoration: none;
+    color: white;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.3s;
+    background-color: #e74c3c;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-export:hover {
+    background-color: #c0392b;
+    color: white;
+}
+
+.btn-export i {
+    font-size: 14px;
+}

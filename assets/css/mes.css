@@ -38,7 +38,7 @@ body {
     font-size: 1.5rem;
 }
 
-/* Estilos para el filtro - con botón en esquina superior derecha */
+/* Estilos para el filtro */
 .filter-container {
     background: #ffffff;
     border-radius: 10px;
@@ -68,7 +68,6 @@ body {
     gap: 10px;
 }
 
-/* Botón en posición absoluta en esquina superior derecha */
 .btn-filter {
     background-color: #3498db;
     color: white;
@@ -83,10 +82,6 @@ body {
     align-items: center;
     gap: 8px;
     box-shadow: 0 2px 5px rgba(52, 152, 219, 0.2);
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 1;
 }
 
 .btn-filter:hover {
@@ -99,12 +94,11 @@ body {
     transform: translateY(0);
 }
 
-/* Ajustamos el grid para que no se solape con el botón */
 .filter-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 20px;
-    margin-top: 40px; /* Espacio para el botón */
+    margin-top: 40px;
 }
 
 .filter-group {
@@ -138,10 +132,6 @@ body {
     outline: none;
     box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
     background-color: #fff;
-}
-
-input[type="date"].filter-input {
-    padding: 11px 15px;
 }
 
 /* Estilos para la información de la cuenta */
@@ -264,6 +254,11 @@ input[type="date"].filter-input {
     border: 1px solid #eee;
 }
 
+.saldo-final-box {
+    background-color: #f0f7ff;
+    border-top: 3px solid #3182ce;
+}
+
 .total-debits {
     border-top: 3px solid #e53e3e;
 }
@@ -290,7 +285,7 @@ input[type="date"].filter-input {
 @media (max-width: 1024px) {
     .container {
         margin-left: 0;
-        padding-top: 70px; /* Espacio para sidebar móvil */
+        padding-top: 70px;
     }
 }
 
@@ -365,31 +360,4 @@ input[type="date"].filter-input {
 
 .transactions-table tr {
     transition: background-color 0.2s ease;
-}
-
-/* Efecto de carga para el botón */
-.btn-filter.loading {
-    position: relative;
-    pointer-events: none;
-}
-
-.btn-filter.loading::after {
-    content: "";
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    margin: auto;
-    border: 3px solid transparent;
-    border-top-color: #ffffff;
-    border-radius: 50%;
-    animation: button-loading-spinner 1s ease infinite;
-}
-
-@keyframes button-loading-spinner {
-    from { transform: rotate(0turn); }
-    to { transform: rotate(1turn); }
 }
