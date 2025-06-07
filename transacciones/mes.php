@@ -141,16 +141,57 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     $pdf->SetAuthor('Sistema Bancario');
     $pdf->SetTitle('Reporte de Transacciones '.$meses_espanol[$mes].' '.$anio);
     $pdf->SetSubject('Reporte de Transacciones Mensuales');
+    
+    // Configurar para eliminar líneas automáticas
     $pdf->setPrintHeader(false);
     $pdf->setPrintFooter(false);
+    
+    // Configurar márgenes
+    $pdf->SetMargins(15, 20, 15);
+    $pdf->SetHeaderMargin(0);
+    $pdf->SetFooterMargin(0);
+    $pdf->SetAutoPageBreak(TRUE, 15);
+    
+    // Agregar página
     $pdf->AddPage();
+    
+    // Ruta al logo
+    $logo_path = realpath(__DIR__ . '/../assets/images/logo-banco.jpg');
+    
+    // Insertar logo SIN bordes
+    if (file_exists($logo_path)) {
+        $pdf->Image(
+            $logo_path,       // Ruta del archivo
+            15,              // Posición X (15mm desde la izquierda)
+            15,              // Posición Y (15mm desde arriba)
+            30,              // Ancho (30mm)
+            0,               // Alto (automático)
+            'JPG',           // Tipo de imagen
+            '',              // Enlace (vacío)
+            'T',             // Alineación (T = top)
+            false,           // Resize
+            300,             // DPI
+            '',              // Alineación (vacío)
+            false,           // Máscara
+            false,           // Imagen máscara
+            0,               // BORDE (0 = sin borde) - CLAVE PARA ELIMINAR LÍNEA
+            false,           // Fitbox
+            false,           // Hidden
+            false            // Fit on page
+        );
+        $pdf->SetY(25); // Ajustar posición después del logo
+    } else {
+        error_log("Logo no encontrado: " . $logo_path);
+        $pdf->SetY(20); // Posición sin logo
+    }
     
     // Contenido HTML del PDF
     $html = '
     <style>
-        h1 { text-align: center; font-size: 16px; }
-        h2 { text-align: center; font-size: 14px; margin-bottom: 10px; }
-        .info { font-size: 10px; margin-bottom: 10px; }
+        .header { margin-bottom: 10px; }
+        h1 { text-align: center; font-size: 16px; margin: 0; }
+        h2 { text-align: center; font-size: 14px; margin: 5px 0 10px 0; }
+        .info { font-size: 10px; margin-bottom: 10px; text-align: center; }
         table { width: 100%; border-collapse: collapse; font-size: 8px; }
         th { background-color: #f2f2f2; font-weight: bold; }
         td, th { border: 1px solid #ddd; padding: 4px; }
@@ -160,13 +201,16 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         .total-label { font-weight: bold; }
     </style>
     
-    <h1>BANCO CARONI</h1>
-    <h2>REPORTE DE TRANSACCIONES MENSUALES</h2>
-    
-    <div class="info">
-        <strong>Período:</strong> '.$meses_espanol[$mes].' '.$anio.' | 
-        '.(!empty($cuenta) ? '<strong>Cuenta:</strong> '.htmlspecialchars($cuenta).' | ' : '').'
-        <strong>Generado:</strong> '.date('d/m/Y H:i:s').'
+    <div class="header">
+        <div>
+            <h1>BANCO CARONI</h1>
+            <h2>REPORTE DE TRANSACCIONES MENSUALES</h2>
+        </div>
+        <div class="info">
+            <strong>Período:</strong> '.$meses_espanol[$mes].' '.$anio.' | 
+            '.(!empty($cuenta) ? '<strong>Cuenta:</strong> '.htmlspecialchars($cuenta).' | ' : '').'
+            <strong>Generado:</strong> '.date('d/m/Y H:i:s').'
+        </div>
     </div>';
     
     if (!empty($cuenta)) {
