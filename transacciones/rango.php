@@ -127,9 +127,49 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     $pdf->SetAuthor('Sistema Bancario');
     $pdf->SetTitle('Estado de Cuenta '.$fecha_inicio.' al '.$fecha_fin);
     $pdf->SetSubject('Estado de Cuenta por Rango');
+    
+    // Configurar para eliminar líneas automáticas
     $pdf->setPrintHeader(false);
     $pdf->setPrintFooter(false);
+    
+    // Configurar márgenes
+    $pdf->SetMargins(15, 20, 15);
+    $pdf->SetHeaderMargin(0);
+    $pdf->SetFooterMargin(0);
+    $pdf->SetAutoPageBreak(TRUE, 15);
+    
+    // Agregar página
     $pdf->AddPage();
+    
+    // Ruta al logo
+    $logo_path = realpath(__DIR__ . '/../assets/images/logo-banco.jpg');
+    
+    // Insertar logo SIN bordes
+    if (file_exists($logo_path)) {
+        $pdf->Image(
+            $logo_path,       // Ruta del archivo
+            15,              // Posición X (15mm desde la izquierda)
+            15,              // Posición Y (15mm desde arriba)
+            30,              // Ancho (30mm)
+            0,               // Alto (automático)
+            'JPG',           // Tipo de imagen
+            '',              // Enlace (vacío)
+            'T',             // Alineación (T = top)
+            false,           // Resize
+            300,             // DPI
+            '',              // Alineación (vacío)
+            false,           // Máscara
+            false,           // Imagen máscara
+            0,               // BORDE (0 = sin borde) - CLAVE PARA ELIMINAR LÍNEA
+            false,           // Fitbox
+            false,           // Hidden
+            false            // Fit on page
+        );
+        $pdf->SetY(25); // Ajustar posición después del logo
+    } else {
+        error_log("Logo no encontrado: " . $logo_path);
+        $pdf->SetY(20); // Posición sin logo
+    }
     
     // Contenido HTML del PDF
     $html = '
