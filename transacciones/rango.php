@@ -25,9 +25,9 @@ if (strtotime($fecha_inicio) > strtotime($fecha_fin)) {
     die("La fecha de inicio no puede ser mayor a la fecha final.");
 }
 
-// Validar cuenta si se especifica
-if (!empty($cuenta) && !preg_match('/^[0-9]{10,20}$/', $cuenta)) {
-    die("Número de cuenta inválido. Debe contener solo dígitos (10-20 caracteres).");
+// Validar cuenta si se especifica (MODIFICADO PARA ACEPTAR DESDE 9 DÍGITOS)
+if (!empty($cuenta) && !preg_match('/^[0-9]{9,20}$/', $cuenta)) {
+    die("Número de cuenta inválido. Debe contener solo dígitos (9-20 caracteres).");
 }
 
 // Consulta para obtener el saldo inicial
@@ -317,7 +317,7 @@ function validateDate($date, $format = 'Y-m-d') {
                         </label>
                         <input type="text" id="cuenta" name="cuenta" 
                                value="<?= htmlspecialchars($cuenta) ?>" 
-                               placeholder="Ej: 1234567890"
+                               placeholder="Ej: 123456789"
                                class="filter-input">
                     </div>
                 </div>

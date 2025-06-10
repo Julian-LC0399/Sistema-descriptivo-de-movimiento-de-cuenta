@@ -19,8 +19,8 @@ $cuenta = isset($_GET['cuenta']) ? trim($_GET['cuenta']) : null;
 // Validación de parámetros
 if ($mes < 1 || $mes > 12) $mes = date('n');
 if ($anio < 2000 || $anio > date('Y')) $anio = date('Y');
-if (!empty($cuenta) && !preg_match('/^[0-9]{10,20}$/', $cuenta)) {
-    die("Número de cuenta inválido. Debe contener solo dígitos (10-20 caracteres).");
+if (!empty($cuenta) && !preg_match('/^[0-9]{9,20}$/', $cuenta)) {
+    die("Número de cuenta inválido. Debe contener solo dígitos (9-20 caracteres).");
 }
 
 // Inicializar variables para saldos
