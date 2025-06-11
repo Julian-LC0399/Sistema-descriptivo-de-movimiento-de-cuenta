@@ -62,6 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
     </div>
 
+    <!-- Cambiamos la posición del script para asegurar que el DOM esté cargado -->
     <script src="assets/js/login.js"></script>
 </body>
 </html>
