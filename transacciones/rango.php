@@ -100,19 +100,36 @@ try {
     $stmt->execute($params);
     $transacciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Calcular totales
-    $total_debitos = 0;
-    $total_creditos = 0;
-    foreach ($transacciones as $t) {
-        if ($t['tipo'] == 'D') {
-            $total_debitos += $t['monto'];
-        } else {
-            $total_creditos += $t['monto'];
-        }
+    // Agrupar transacciones por mes-año
+    $transacciones_por_mes = [];
+    foreach ($transacciones as $trans) {
+        $mes_ano = date('m-Y', strtotime($trans['fecha']));
+        $transacciones_por_mes[$mes_ano][] = $trans;
     }
     
-    // Calcular saldo final
-    $saldo_final = $saldo_inicial + $total_creditos - $total_debitos;
+    // Calcular saldos por mes
+    $saldos_por_mes = [];
+    $saldo_acumulado = $saldo_inicial;
+    foreach ($transacciones_por_mes as $mes_ano => $trans_mes) {
+        $saldos_por_mes[$mes_ano]['saldo_inicial'] = $saldo_acumulado;
+        
+        $total_debitos = 0;
+        $total_creditos = 0;
+        
+        foreach ($trans_mes as $trans) {
+            if ($trans['tipo'] == 'D') {
+                $total_debitos += $trans['monto'];
+            } else {
+                $total_creditos += $trans['monto'];
+            }
+            $saldo_acumulado = $trans['saldo']; // Usamos el saldo de la última transacción del mes
+        }
+        
+        $saldos_por_mes[$mes_ano]['total_debitos'] = $total_debitos;
+        $saldos_por_mes[$mes_ano]['total_creditos'] = $total_creditos;
+        $saldos_por_mes[$mes_ano]['saldo_final'] = $saldo_acumulado;
+    }
+    
 } catch(PDOException $e) {
     error_log("Error en consulta de estado de cuenta: " . $e->getMessage());
     die("Ocurrió un error al procesar su solicitud. Por favor intente más tarde.");
@@ -159,7 +176,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             300,             // DPI
             '',              // Alineación (vacío)
             false,           // Máscara
-            false,           // Imagen máscara
+            false,           // Imagen máskara
             0,               // BORDE (0 = sin borde) - CLAVE PARA ELIMINAR LÍNEA
             false,           // Fitbox
             false,           // Hidden
@@ -184,6 +201,8 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         .credit { color: #00AA00; }
         .totals { margin-top: 10px; font-size: 10px; }
         .total-label { font-weight: bold; }
+        .month-section { margin-bottom: 20px; }
+        .month-title { background-color: #f2f2f2; padding: 5px; text-align: center; }
     </style>
     
     <h1>BANCO CARONI</h1>
@@ -195,57 +214,59 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         <strong>Generado:</strong> '.date('d/m/Y H:i:s').'
     </div>';
     
-    if (!empty($cuenta)) {
-        $html .= '<div class="info"><strong>Saldo Inicial:</strong> '.number_format($saldo_inicial, 2).' '.(!empty($transacciones[0]['moneda']) ? $transacciones[0]['moneda'] : '').'</div>';
-    }
-    
-    $html .= '
-    <table>
-        <thead>
-            <tr>
-                <th>Fecha</th>
-                <th>Secuencia</th>
-                <th>Tipo</th>
-                <th>Monto</th>
-                <th>Saldo</th>
-                <th>Descripción</th>
-                <th>Referencia</th>
-                <th>Usuario</th>
-                <th>Moneda</th>
-            </tr>
-        </thead>
-        <tbody>';
-    
-    if (!empty($transacciones)) {
-        foreach ($transacciones as $trans) {
+    if (!empty($transacciones_por_mes)) {
+        foreach ($transacciones_por_mes as $mes_ano => $trans_mes) {
+            $mes_nombre = date('F Y', strtotime('01-'.$mes_ano));
+            $saldo_mes = $saldos_por_mes[$mes_ano];
+            
             $html .= '
-            <tr>
-                <td>'.date('d/m/Y', strtotime($trans['fecha'])).'</td>
-                <td>'.htmlspecialchars($trans['secuencia']).'</td>
-                <td class="'.($trans['tipo'] == 'D' ? 'debit' : 'credit').'">'.($trans['tipo'] == 'D' ? 'Débito' : 'Crédito').'</td>
-                <td>'.number_format($trans['monto'], 2).'</td>
-                <td>'.number_format($trans['saldo'], 2).'</td>
-                <td>'.htmlspecialchars($trans['descripcion']).'</td>
-                <td>'.htmlspecialchars($trans['referencia']).'</td>
-                <td>'.htmlspecialchars($trans['usuario']).'</td>
-                <td>'.htmlspecialchars($trans['moneda']).'</td>
-            </tr>';
+            <div class="month-section">
+                <h3 class="month-title">'.strtoupper($mes_nombre).'</h3>
+                
+                <div class="info">
+                    <strong>Cliente:</strong> '.htmlspecialchars($cuenta).' | 
+                    <strong>Saldo Inicial:</strong> '.number_format($saldo_mes['saldo_inicial'], 2).'
+                </div>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Referencia</th>
+                            <th>Descripción</th>
+                            <th>Débito</th>
+                            <th>Crédito</th>
+                            <th>Saldo</th>
+                        </tr>
+                    </thead>
+                    <tbody>';
+            
+            foreach ($trans_mes as $trans) {
+                $html .= '
+                        <tr>
+                            <td>'.date('d/m/Y', strtotime($trans['fecha'])).'</td>
+                            <td>'.htmlspecialchars($trans['referencia']).'</td>
+                            <td>'.htmlspecialchars($trans['descripcion']).'</td>
+                            <td class="debit">'.($trans['tipo'] == 'D' ? number_format($trans['monto'], 2) : '').'</td>
+                            <td class="credit">'.($trans['tipo'] == 'C' ? number_format($trans['monto'], 2) : '').'</td>
+                            <td>'.number_format($trans['saldo'], 2).'</td>
+                        </tr>';
+            }
+            
+            $html .= '
+                    </tbody>
+                </table>
+                
+                <div class="totals">
+                    <div><span class="total-label">Total Débitos:</span> '.number_format($saldo_mes['total_debitos'], 2).'</div>
+                    <div><span class="total-label">Total Créditos:</span> '.number_format($saldo_mes['total_creditos'], 2).'</div>
+                    <div><span class="total-label">Saldo Final:</span> '.number_format($saldo_mes['saldo_final'], 2).'</div>
+                </div>
+                <br><br>
+            </div>';
         }
     } else {
-        $html .= '<tr><td colspan="9">No se encontraron transacciones en el período seleccionado</td></tr>';
-    }
-    
-    $html .= '
-        </tbody>
-    </table>';
-    
-    if (!empty($transacciones)) {
-        $html .= '
-        <div class="totals">
-            <div><span class="total-label">Total Débitos:</span> '.number_format($total_debitos, 2).'</div>
-            <div><span class="total-label">Total Créditos:</span> '.number_format($total_creditos, 2).'</div>
-            '.(!empty($cuenta) ? '<div><span class="total-label">Saldo Final:</span> '.number_format($saldo_final, 2).'</div>' : '').'
-        </div>';
+        $html .= '<p>No se encontraron transacciones en el período seleccionado</p>';
     }
     
     // Escribir HTML en el PDF
@@ -273,6 +294,33 @@ function validateDate($date, $format = 'Y-m-d') {
     <link rel="stylesheet" href="../assets/css/rango.css">
     <link rel="stylesheet" href="../assets/css/pdf-export.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        .month-section {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            background-color: #f9f9f9;
+        }
+        .month-title {
+            background-color: #2c3e50;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            margin: -15px -15px 15px -15px;
+            border-radius: 5px 5px 0 0;
+        }
+        .month-totals {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 2px solid #2c3e50;
+        }
+        .month-totals .total-box {
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
     <?php include '../includes/sidebar.php'; ?>
@@ -331,78 +379,69 @@ function validateDate($date, $format = 'Y-m-d') {
             </div>
         </div>
 
-        <?php if (!empty($cuenta)): ?>
-        <div class="account-info">
-            <h4><i class="fas fa-info-circle"></i> Información de la Cuenta</h4>
-            <p><strong><i class="fas fa-credit-card"></i> Número de Cuenta:</strong> <?= htmlspecialchars($cuenta) ?></p>
-            <p><strong><i class="far fa-calendar"></i> Período:</strong> <?= date('d/m/Y', strtotime($fecha_inicio)) ?> al <?= date('d/m/Y', strtotime($fecha_fin)) ?></p>
-            
-            <div class="saldo-box">
-                <span class="saldo-label"><i class="fas fa-coins"></i> Saldo Inicial:</span>
-                <span class="saldo-value"><?= number_format($saldo_inicial, 2) ?></span>
+        <?php if (!empty($transacciones_por_mes)): ?>
+            <?php foreach ($transacciones_por_mes as $mes_ano => $trans_mes): ?>
+                <?php 
+                $mes_nombre = date('F Y', strtotime('01-'.$mes_ano));
+                $saldo_mes = $saldos_por_mes[$mes_ano];
+                ?>
+                
+                <div class="month-section">
+                    <h3 class="month-title"><?= strtoupper($mes_nombre) ?></h3>
+                    
+                    <div class="account-info">
+                        <p><strong><i class="fas fa-user"></i> Cliente:</strong> <?= htmlspecialchars($cuenta) ?></p>
+                        <p><strong><i class="fas fa-coins"></i> Saldo Inicial:</strong> <?= number_format($saldo_mes['saldo_inicial'], 2) ?></p>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table class="transactions-table">
+                            <thead>
+                                <tr>
+                                    <th><i class="far fa-calendar"></i> Fecha</th>
+                                    <th><i class="fas fa-barcode"></i> Referencia</th>
+                                    <th><i class="fas fa-align-left"></i> Descripción</th>
+                                    <th><i class="fas fa-arrow-down"></i> Débito</th>
+                                    <th><i class="fas fa-arrow-up"></i> Crédito</th>
+                                    <th><i class="fas fa-piggy-bank"></i> Saldo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($trans_mes as $trans): ?>
+                                    <tr>
+                                        <td><?= date('d/m/Y', strtotime($trans['fecha'])) ?></td>
+                                        <td><?= htmlspecialchars($trans['referencia']) ?></td>
+                                        <td><?= htmlspecialchars($trans['descripcion']) ?></td>
+                                        <td class="debit"><?= $trans['tipo'] == 'D' ? number_format($trans['monto'], 2) : '' ?></td>
+                                        <td class="credit"><?= $trans['tipo'] == 'C' ? number_format($trans['monto'], 2) : '' ?></td>
+                                        <td><?= number_format($trans['saldo'], 2) ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="month-totals">
+                        <div class="total-box">
+                            <div class="total-label"><i class="fas fa-arrow-down"></i> Total Débitos</div>
+                            <div class="total-value"><?= number_format($saldo_mes['total_debitos'], 2) ?></div>
+                        </div>
+                        <div class="total-box">
+                            <div class="total-label"><i class="fas fa-arrow-up"></i> Total Créditos</div>
+                            <div class="total-value"><?= number_format($saldo_mes['total_creditos'], 2) ?></div>
+                        </div>
+                        <div class="total-box">
+                            <div class="total-label"><i class="fas fa-coins"></i> Saldo Final</div>
+                            <div class="total-value"><?= number_format($saldo_mes['saldo_final'], 2) ?></div>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <div class="no-results">
+                <i class="fas fa-info-circle"></i>
+                No se encontraron transacciones en el período seleccionado
             </div>
-        </div>
-        <?php endif; ?>
-
-        <div class="table-container">
-            <table class="transactions-table">
-                <thead>
-                    <tr>
-                        <th><i class="far fa-calendar"></i> Fecha</th>
-                        <th><i class="fas fa-hashtag"></i> Secuencia</th>
-                        <th><i class="fas fa-exchange-alt"></i> Tipo</th>
-                        <th><i class="fas fa-money-bill-wave"></i> Monto</th>
-                        <th><i class="fas fa-piggy-bank"></i> Saldo</th>
-                        <th><i class="fas fa-align-left"></i> Descripción</th>
-                        <th><i class="fas fa-barcode"></i> Referencia</th>
-                        <th><i class="fas fa-user"></i> Usuario</th>
-                        <th><i class="fas fa-dollar-sign"></i> Moneda</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (!empty($transacciones)): ?>
-                        <?php foreach ($transacciones as $trans): ?>
-                            <tr>
-                                <td><?= date('d/m/Y', strtotime($trans['fecha'])) ?></td>
-                                <td><?= htmlspecialchars($trans['secuencia']) ?></td>
-                                <td class="<?= $trans['tipo'] == 'D' ? 'debit' : 'credit' ?>">
-                                    <?= $trans['tipo'] == 'D' ? 'Débito' : 'Crédito' ?>
-                                </td>
-                                <td><?= number_format($trans['monto'], 2) ?></td>
-                                <td><?= number_format($trans['saldo'], 2) ?></td>
-                                <td><?= htmlspecialchars($trans['descripcion']) ?></td>
-                                <td><?= htmlspecialchars($trans['referencia']) ?></td>
-                                <td><?= htmlspecialchars($trans['usuario']) ?></td>
-                                <td><?= htmlspecialchars($trans['moneda']) ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="9" class="no-results">
-                                <i class="fas fa-info-circle"></i>
-                                No se encontraron transacciones en el período seleccionado
-                            </td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-
-        <?php if (!empty($transacciones)): ?>
-        <div class="totals-container">
-            <div class="total-box total-debits">
-                <div class="total-label"><i class="fas fa-arrow-down"></i> Total Débitos</div>
-                <div class="total-value"><?= number_format($total_debitos, 2) ?></div>
-            </div>
-            <div class="total-box total-credits">
-                <div class="total-label"><i class="fas fa-arrow-up"></i> Total Créditos</div>
-                <div class="total-value"><?= number_format($total_creditos, 2) ?></div>
-            </div>
-            <div class="total-box" style="border-top: 3px solid #3182ce;">
-                <div class="total-label"><i class="fas fa-coins"></i> Saldo Final</div>
-                <div class="total-value"><?= number_format($saldo_final, 2) ?></div>
-            </div>
-        </div>
         <?php endif; ?>
     </div>
 

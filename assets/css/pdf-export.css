@@ -1,30 +1,68 @@
-/* Estilos específicos para la exportación PDF */
-.export-buttons {
-    margin: 15px 0;
-    text-align: right;
-}
-
+/* Estilos específicos para exportación a PDF */
 .btn-export {
-    padding: 8px 15px;
-    border-radius: 4px;
-    text-decoration: none;
-    color: white;
-    font-weight: bold;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    transition: all 0.3s;
-    background-color: #e74c3c;
-    border: none;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-weight: bold;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-size: 13px;
     cursor: pointer;
-    font-size: 14px;
+    border: none;
+    outline: none;
+    margin: 5px 0 0 auto; /* Mueve el botón a la derecha */
+    width: auto; /* Ancho según contenido */
 }
 
-.btn-export:hover {
-    background-color: #c0392b;
+/* Variante específica para PDF */
+.btn-export.pdf {
+    background-color: #e74c3c;
     color: white;
+    border: 1px solid #c0392b;
 }
 
+.btn-export.pdf:hover {
+    background-color: #c0392b;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.btn-export.pdf:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* Iconos dentro de botones exportar */
 .btn-export i {
     font-size: 14px;
+}
+
+/* Contenedor de botones de exportación */
+.export-buttons {
+    display: flex;
+    justify-content: flex-end; /* Alinea a la derecha */
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+}
+
+/* Estilos para pantallas pequeñas */
+@media (max-width: 768px) {
+    .btn-export {
+        padding: 6px 10px;
+        font-size: 12px;
+        gap: 5px;
+    }
+    
+    .btn-export i {
+        font-size: 13px;
+    }
+    
+    .export-buttons {
+        margin-top: 8px;
+        padding-top: 8px;
+    }
 }
