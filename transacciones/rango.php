@@ -365,12 +365,14 @@ function validateDate($date, $format = 'Y-m-d') {
                 </div>
             </form>
 
-            <div class="export-buttons">
-                <a href="?fecha_inicio=<?= urlencode($fecha_inicio) ?>&fecha_fin=<?= urlencode($fecha_fin) ?>&cuenta=<?= urlencode($cuenta) ?>&export=pdf" 
-                   class="btn-export pdf" target="_blank">
-                   <i class="fas fa-file-pdf"></i> Exportar Todo a PDF
-                </a>
-            </div>
+            <?php if (!empty($transacciones_por_mes)): ?>
+                <div class="export-buttons">
+                    <a href="?fecha_inicio=<?= urlencode($fecha_inicio) ?>&fecha_fin=<?= urlencode($fecha_fin) ?>&cuenta=<?= urlencode($cuenta) ?>&export=pdf" 
+                       class="btn-export pdf" target="_blank">
+                       <i class="fas fa-file-pdf"></i> Exportar Todo a PDF
+                    </a>
+                </div>
+            <?php endif; ?>
         </div>
 
         <?php if (!empty($transacciones_por_mes)): ?>
@@ -385,13 +387,14 @@ function validateDate($date, $format = 'Y-m-d') {
                 <div class="month-section">
                     <h3 class="month-title"><?= strtoupper($mes_nombre) ?></h3>
                     
-                    <!-- Botón para exportar SOLO este mes (NUEVO) -->
-                    <div class="export-month-buttons">
-                        <a href="?fecha_inicio=<?= $primer_dia_mes ?>&fecha_fin=<?= $ultimo_dia_mes ?>&cuenta=<?= urlencode($cuenta) ?>&export=pdf" 
-                           class="btn-export pdf" target="_blank">
-                           <i class="fas fa-file-pdf"></i> Exportar Este Mes
-                        </a>
-                    </div>
+                    <?php if (!empty($trans_mes)): ?>
+                        <div class="export-month-buttons">
+                            <a href="?fecha_inicio=<?= $primer_dia_mes ?>&fecha_fin=<?= $ultimo_dia_mes ?>&cuenta=<?= urlencode($cuenta) ?>&export=pdf" 
+                               class="btn-export pdf" target="_blank">
+                               <i class="fas fa-file-pdf"></i> Exportar Este Mes
+                            </a>
+                        </div>
+                    <?php endif; ?>
                     
                     <div class="account-info">
                         <p><strong><i class="fas fa-user"></i> Cliente:</strong> <?= htmlspecialchars($nombre_cliente_web) ?></p>

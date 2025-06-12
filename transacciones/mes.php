@@ -327,12 +327,14 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
                 </div>
             </form>
 
-            <div class="export-buttons">
-                <a href="?mes=<?= $mes ?>&anio=<?= $anio ?>&cuenta=<?= urlencode($cuenta) ?>&export=pdf" 
-                   class="btn-export pdf" target="_blank">
-                   <i class="fas fa-file-pdf"></i> Exportar a PDF
-                </a>
-            </div>
+            <?php if (!empty($transacciones)): ?>
+                <div class="export-buttons">
+                    <a href="?mes=<?= $mes ?>&anio=<?= $anio ?>&cuenta=<?= urlencode($cuenta) ?>&export=pdf" 
+                       class="btn-export pdf" target="_blank">
+                       <i class="fas fa-file-pdf"></i> Exportar a PDF
+                    </a>
+                </div>
+            <?php endif; ?>
         </div>
 
         <?php if (!empty($transacciones)): ?>
