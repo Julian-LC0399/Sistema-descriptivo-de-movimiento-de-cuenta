@@ -98,6 +98,18 @@ try {
         $saldos_por_mes[$mes_ano]['total_creditos'] = $total_creditos;
         $saldos_por_mes[$mes_ano]['saldo_final'] = $saldo_acumulado;
     }
+
+    // Obtener información del cliente para la vista web
+    if (!empty($cuenta)) {
+        $stmt_cliente_web = $pdo->prepare("SELECT c.cusna1 AS nombre_completo 
+                                          FROM cumst c JOIN acmst a ON c.cuscun = a.acmcun
+                                          WHERE a.acmacc = :cuenta");
+        $stmt_cliente_web->execute([':cuenta' => $cuenta]);
+        $cliente_info_web = $stmt_cliente_web->fetch(PDO::FETCH_ASSOC) ?? [];
+        $nombre_cliente_web = $cliente_info_web['nombre_completo'] ?? 'CLIENTE NO ENCONTRADO';
+    } else {
+        $nombre_cliente_web = '';
+    }
 } catch(PDOException $e) {
     die("Ocurrió un error al procesar su solicitud. Por favor intente más tarde.");
 }
@@ -371,7 +383,8 @@ function validateDate($date, $format = 'Y-m-d') {
                     <h3 class="month-title"><?= strtoupper($mes_nombre) ?></h3>
                     
                     <div class="account-info">
-                        <p><strong><i class="fas fa-user"></i> Cliente:</strong> <?= htmlspecialchars($cuenta) ?></p>
+                        <p><strong><i class="fas fa-user"></i> Cliente:</strong> <?= htmlspecialchars($nombre_cliente_web) ?></p>
+                        <p><strong><i class="fas fa-wallet"></i> Número de Cuenta:</strong> <?= htmlspecialchars($cuenta) ?></p>
                         <p><strong><i class="fas fa-coins"></i> Saldo Inicial:</strong> <?= number_format($saldo_mes['saldo_inicial'], 2, ',', '.') ?></p>
                     </div>
                     
