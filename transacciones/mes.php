@@ -136,142 +136,124 @@ $meses_espanol = [
 if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     require_once __DIR__ . '/../includes/library/tcpdf.php';
     
-    $pdf = new TCPDF('L', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+    $pdf = new TCPDF('P', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
     $pdf->SetCreator('Banco Caroni');
     $pdf->SetAuthor('Sistema Bancario');
     $pdf->SetTitle('Reporte de Transacciones '.$meses_espanol[$mes].' '.$anio);
-    $pdf->SetSubject('Reporte de Transacciones Mensuales');
     
-    // Configurar para eliminar líneas automáticas
     $pdf->setPrintHeader(false);
     $pdf->setPrintFooter(false);
-    
-    // Configurar márgenes
-    $pdf->SetMargins(15, 20, 15);
-    $pdf->SetHeaderMargin(0);
-    $pdf->SetFooterMargin(0);
-    $pdf->SetAutoPageBreak(TRUE, 15);
-    
-    // Agregar página
+    $pdf->SetMargins(10, 10, 10);
+    $pdf->SetAutoPageBreak(TRUE, 10);
     $pdf->AddPage();
-    
-    // Ruta al logo
+
+    // Logo (sin bordes)
     $logo_path = realpath(__DIR__ . '/../assets/images/logo-banco.jpg');
-    
-    // Insertar logo SIN bordes
     if (file_exists($logo_path)) {
-        $pdf->Image(
-            $logo_path,       // Ruta del archivo
-            15,              // Posición X (15mm desde la izquierda)
-            15,              // Posición Y (15mm desde arriba)
-            30,              // Ancho (30mm)
-            0,               // Alto (automático)
-            'JPG',           // Tipo de imagen
-            '',              // Enlace (vacío)
-            'T',             // Alineación (T = top)
-            false,           // Resize
-            300,             // DPI
-            '',              // Alineación (vacío)
-            false,           // Máscara
-            false,           // Imagen máscara
-            0,               // BORDE (0 = sin borde) - CLAVE PARA ELIMINAR LÍNEA
-            false,           // Fitbox
-            false,           // Hidden
-            false            // Fit on page
-        );
-        $pdf->SetY(25); // Ajustar posición después del logo
-    } else {
-        error_log("Logo no encontrado: " . $logo_path);
-        $pdf->SetY(20); // Posición sin logo
+        $pdf->Image($logo_path, 15, 15, 30, 0, 'JPG', '', 'T', false, 300, '', false, false, 0, false, false, false);
+        $pdf->SetY(25);
     }
-    
-    // Contenido HTML del PDF
+
+    // Obtener datos del cliente si hay cuenta
+    $nombre_cliente = $moneda = '';
+    if (!empty($cuenta)) {
+        try {
+            $stmt_cliente = $pdo->prepare("SELECT c.cusna1 AS nombre_completo, a.acmccy AS moneda 
+                                          FROM cumst c JOIN acmst a ON c.cuscun = a.acmcun 
+                                          WHERE a.acmacc = ?");
+            $stmt_cliente->execute([$cuenta]);
+            $cliente_info = $stmt_cliente->fetch(PDO::FETCH_ASSOC);
+            $nombre_cliente = $cliente_info['nombre_completo'] ?? 'CLIENTE NO ENCONTRADO';
+            $moneda = $cliente_info['moneda'] ?? 'VES';
+        } catch(PDOException $e) {
+            error_log("Error al obtener info cliente: " . $e->getMessage());
+        }
+    }
+
+    // HTML del PDF
     $html = '
     <style>
-        .header { margin-bottom: 10px; }
-        h1 { text-align: center; font-size: 16px; margin: 0; }
-        h2 { text-align: center; font-size: 14px; margin: 5px 0 10px 0; }
-        .info { font-size: 10px; margin-bottom: 10px; text-align: center; }
-        table { width: 100%; border-collapse: collapse; font-size: 8px; }
-        th { background-color: #f2f2f2; font-weight: bold; }
-        td, th { border: 1px solid #ddd; padding: 4px; }
-        .debit { color: #FF0000; }
-        .credit { color: #00AA00; }
-        .totals { margin-top: 10px; font-size: 10px; }
-        .total-label { font-weight: bold; }
+        .header { text-align:center; margin-bottom:2px; }
+        .client-info { margin-bottom:4px; line-height:1.1; font-size:9px; text-align:center; }
+        .client-name { font-size:11px; font-weight:bold; margin-bottom:0; }
+        .account-info { margin:2px 0; font-weight:bold; }
+        .title { text-align:center; font-weight:bold; font-size:10px; margin:5px 0 3px 0;
+                border-top:1px solid #000; border-bottom:1px solid #000; padding:1px 0; 
+                text-transform:uppercase; }
+        table { width:100%; border-collapse:collapse; font-size:7px; margin-bottom:5px; }
+        th { border:1px solid #000; background-color:#f0f0f0; padding:2px; 
+             text-align:center; font-weight:bold; height:18px; }
+        td { border:1px solid #000; padding:2px; height:16px; line-height:1.2; }
+        .debit, .credit, .saldo { text-align:right; }
+        .totals { margin-top:5px; font-size:8px; border-top:1px solid #000; 
+                 padding-top:2px; width:60%; margin-left:auto; margin-right:auto; }
+        .total-row { display:flex; justify-content:space-between; margin:1px 0; }
     </style>
     
     <div class="header">
-        <div>
-            <h1>BANCO CARONI</h1>
-            <h2>REPORTE DE TRANSACCIONES MENSUALES</h2>
-        </div>
-        <div class="info">
-            <strong>Período:</strong> '.$meses_espanol[$mes].' '.$anio.' | 
-            '.(!empty($cuenta) ? '<strong>Cuenta:</strong> '.htmlspecialchars($cuenta).' | ' : '').'
-            <strong>Generado:</strong> '.date('d/m/Y H:i:s').'
-        </div>
-    </div>';
+        <div class="client-name">'.(!empty($nombre_cliente) ? $nombre_cliente : 'REPORTE GENERAL').'</div>
+    </div>
+    <div class="client-info">
+        '.(!empty($cuenta) ? '<div>Cuenta: '.$cuenta.'</div>' : '').'
+        <div>Moneda: '.$moneda.'</div>
+        <div>Período: '.$meses_espanol[$mes].' '.$anio.'</div>
+        <div>Fecha Emisión: '.date('d/m/Y H:i A').'</div>
+    </div>
     
-    if (!empty($cuenta)) {
-        $html .= '<div class="info"><strong>Saldo Inicial:</strong> '.number_format($saldo_inicial, 2).' '.(!empty($transacciones[0]['moneda']) ? $transacciones[0]['moneda'] : '').'</div>';
-    }
-    
-    $html .= '
+    <div class="title">DETALLE DE TRANSACCIONES</div>
     <table>
         <thead>
             <tr>
-                <th>Fecha</th>
-                <th>Cliente</th>
-                <th>Cuenta</th>
-                <th>Tipo</th>
-                <th>Monto</th>
-                <th>Saldo '.($cuenta ? 'Acumulado' : '').'</th>
-                <th>Descripción</th>
-                <th>Referencia</th>
-                <th>Usuario</th>
-                <th>Moneda</th>
+                <th width="15%">Fecha</th>
+                <th width="15%">Referencia</th>
+                <th width="40%">Descripción</th>
+                <th width="15%">Débito</th>
+                <th width="15%">Crédito</th>
             </tr>
         </thead>
         <tbody>';
-    
+
     if (!empty($transacciones)) {
         foreach ($transacciones as $trans) {
             $html .= '
             <tr>
                 <td>'.date('d/m/Y', strtotime($trans['fecha'])).'</td>
-                <td>'.htmlspecialchars($trans['cliente']).'</td>
-                <td>'.htmlspecialchars($trans['cuenta']).'</td>
-                <td class="'.($trans['tipo'] == 'D' ? 'debit' : 'credit').'">'.($trans['tipo'] == 'D' ? 'Débito' : 'Crédito').'</td>
-                <td>'.number_format($trans['monto'], 2).'</td>
-                <td>'.number_format(!empty($cuenta) ? ($trans['saldo_acumulado'] ?? $trans['saldo']) : $trans['saldo'], 2).'</td>
-                <td>'.htmlspecialchars($trans['descripcion']).'</td>
                 <td>'.htmlspecialchars($trans['referencia']).'</td>
-                <td>'.htmlspecialchars($trans['usuario']).'</td>
-                <td>'.htmlspecialchars($trans['moneda']).'</td>
+                <td>'.htmlspecialchars($trans['descripcion']).'</td>
+                <td class="debit">'.($trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '').'</td>
+                <td class="credit">'.($trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '').'</td>
             </tr>';
         }
     } else {
-        $html .= '<tr><td colspan="10">No se encontraron transacciones</td></tr>';
+        $html .= '<tr><td colspan="5">No se encontraron transacciones</td></tr>';
     }
-    
+
     $html .= '
         </tbody>
-    </table>';
+    </table>
     
-    if (!empty($transacciones)) {
-        $html .= '
-        <div class="totals">
-            '.($cuenta ? '<div><span class="total-label">Saldo Final:</span> '.number_format($saldo_final, 2).'</div>' : '').'
-            <div><span class="total-label">Total Débitos:</span> '.number_format($total_debitos, 2).'</div>
-            <div><span class="total-label">Total Créditos:</span> '.number_format($total_creditos, 2).'</div>
-        </div>';
-    }
-    
-    // Escribir HTML en el PDF
+    <div class="totals">
+        '.(!empty($cuenta) ? '
+        <div class="total-row">
+            <span>Saldo Inicial:</span>
+            <span>'.number_format($saldo_inicial, 2, ',', '.').' '.$moneda.'</span>
+        </div>' : '').'
+        <div class="total-row">
+            <span>Total Débitos:</span>
+            <span>'.number_format($total_debitos, 2, ',', '.').' '.$moneda.'</span>
+        </div>
+        <div class="total-row">
+            <span>Total Créditos:</span>
+            <span>'.number_format($total_creditos, 2, ',', '.').' '.$moneda.'</span>
+        </div>
+        '.(!empty($cuenta) ? '
+        <div class="total-row">
+            <span>Saldo Final:</span>
+            <span>'.number_format($saldo_final, 2, ',', '.').' '.$moneda.'</span>
+        </div>' : '').'
+    </div>';
+
     $pdf->writeHTML($html, true, false, true, false, '');
-    
-    // Generar y descargar PDF
     $pdf->Output('transacciones_'.$mes.'_'.$anio.'.pdf', 'D');
     exit();
 }
@@ -298,45 +280,53 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         </div>
 
         <div class="filter-container">
-            <div class="filter-header">
-                <h3><i class="fas fa-filter"></i> Filtros de Búsqueda</h3>
-            </div>
-            <form method="get" class="filter-grid">
-                <div class="filter-group">
-                    <label for="mes" class="filter-label"><i class="far fa-calendar-alt"></i> Mes:</label>
-                    <select id="mes" name="mes" class="filter-input" required>
-                        <?php foreach($meses_espanol as $num => $nombre): ?>
-                            <option value="<?= $num ?>" <?= $num==$mes?'selected':'' ?>>
-                                <?= $nombre ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+            <form method="get" class="filter-form">
+                <div class="filter-header">
+                    <h3><i class="fas fa-filter"></i> Filtros de Consulta</h3>
+                    <button type="submit" class="btn-filter">
+                        <i class="fas fa-search"></i> Buscar Transacciones
+                    </button>
                 </div>
                 
-                <div class="filter-group">
-                    <label for="anio" class="filter-label"><i class="far fa-calendar"></i> Año:</label>
-                    <select id="anio" name="anio" class="filter-input" required>
-                        <?php for($y=date('Y'); $y>=date('Y')-5; $y--): ?>
-                            <option value="<?= $y ?>" <?= $y==$anio?'selected':'' ?>>
-                                <?= $y ?>
-                            </option>
-                        <?php endfor; ?>
-                    </select>
+                <div class="filter-grid">
+                    <div class="filter-group">
+                        <label for="mes" class="filter-label">
+                            <i class="far fa-calendar-alt"></i> Mes
+                        </label>
+                        <select id="mes" name="mes" class="filter-input" required>
+                            <?php foreach($meses_espanol as $num => $nombre): ?>
+                                <option value="<?= $num ?>" <?= $num==$mes?'selected':'' ?>>
+                                    <?= $nombre ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="anio" class="filter-label">
+                            <i class="far fa-calendar"></i> Año
+                        </label>
+                        <select id="anio" name="anio" class="filter-input" required>
+                            <?php for($y=date('Y'); $y>=date('Y')-5; $y--): ?>
+                                <option value="<?= $y ?>" <?= $y==$anio?'selected':'' ?>>
+                                    <?= $y ?>
+                                </option>
+                            <?php endfor; ?>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="cuenta" class="filter-label">
+                            <i class="fas fa-wallet"></i> Número de Cuenta
+                        </label>
+                        <input type="text" id="cuenta" name="cuenta" 
+                               value="<?= htmlspecialchars($cuenta) ?>" 
+                               placeholder="Ej: 123456789"
+                               class="filter-input">
+                    </div>
                 </div>
-                
-                <div class="filter-group">
-                    <label for="cuenta" class="filter-label"><i class="fas fa-wallet"></i> Cuenta:</label>
-                    <input type="text" id="cuenta" name="cuenta" 
-                           value="<?= htmlspecialchars($cuenta) ?>" 
-                           placeholder="Número de cuenta"
-                           class="filter-input">
-                </div>
-                
-                <button type="submit" class="btn-filter">
-                    <i class="fas fa-search"></i> Consultar
-                </button>
             </form>
-            
+
             <div class="export-buttons">
                 <a href="?mes=<?= $mes ?>&anio=<?= $anio ?>&cuenta=<?= urlencode($cuenta) ?>&export=pdf" 
                    class="btn-export pdf" target="_blank">
@@ -345,90 +335,65 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             </div>
         </div>
 
-        <div class="account-info">
-            <h4><i class="fas fa-info-circle"></i> Información del Reporte</h4>
-            <p>
-                <i class="far fa-calendar"></i> <strong>Período:</strong> <?= $meses_espanol[$mes] ?> <?= $anio ?>
-                <?php if (!empty($cuenta)): ?>
-                    | <i class="fas fa-wallet"></i> <strong>Cuenta:</strong> <?= htmlspecialchars($cuenta) ?>
-                <?php endif; ?>
-            </p>
-            
-            <?php if (!empty($cuenta)): ?>
-                <div class="saldo-box">
-                    <span class="saldo-label"><i class="fas fa-coins"></i> Saldo Inicial:</span>
-                    <span class="saldo-value"><?= number_format($saldo_inicial, 2) ?> <?= !empty($transacciones[0]['moneda']) ? $transacciones[0]['moneda'] : '' ?></span>
-                </div>
-            <?php endif; ?>
-        </div>
-
-        <div class="table-container">
-            <table class="transactions-table">
-                <thead>
-                    <tr>
-                        <th><i class="far fa-calendar"></i> Fecha</th>
-                        <th><i class="fas fa-user"></i> Cliente</th>
-                        <th><i class="fas fa-wallet"></i> Cuenta</th>
-                        <th><i class="fas fa-exchange-alt"></i> Tipo</th>
-                        <th><i class="fas fa-money-bill-wave"></i> Monto</th>
-                        <th><i class="fas fa-piggy-bank"></i> Saldo <?= !empty($cuenta) ? 'Acumulado' : '' ?></th>
-                        <th><i class="fas fa-align-left"></i> Descripción</th>
-                        <th><i class="fas fa-hashtag"></i> Referencia</th>
-                        <th><i class="fas fa-user-cog"></i> Usuario</th>
-                        <th><i class="fas fa-coins"></i> Moneda</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (!empty($transacciones)): ?>
-                        <?php foreach ($transacciones as $trans): ?>
-                            <tr>
-                                <td><?= date('d/m/Y', strtotime($trans['fecha'])) ?></td>
-                                <td><?= htmlspecialchars($trans['cliente']) ?></td>
-                                <td><?= htmlspecialchars($trans['cuenta']) ?></td>
-                                <td class="<?= $trans['tipo'] == 'D' ? 'debit' : 'credit' ?>">
-                                    <i class="<?= $trans['tipo'] == 'D' ? 'fas fa-arrow-down' : 'fas fa-arrow-up' ?>"></i>
-                                    <?= $trans['tipo'] == 'D' ? 'Débito' : 'Crédito' ?>
-                                </td>
-                                <td><?= number_format($trans['monto'], 2) ?></td>
-                                <td>
-                                    <?= !empty($cuenta) ? number_format($trans['saldo_acumulado'] ?? $trans['saldo'], 2) : number_format($trans['saldo'], 2) ?>
-                                </td>
-                                <td><?= htmlspecialchars($trans['descripcion']) ?></td>
-                                <td><?= htmlspecialchars($trans['referencia']) ?></td>
-                                <td><?= htmlspecialchars($trans['usuario']) ?></td>
-                                <td><?= htmlspecialchars($trans['moneda']) ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="10" class="no-results">
-                                <i class="fas fa-info-circle"></i>
-                                No se encontraron transacciones en el período seleccionado
-                            </td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-
         <?php if (!empty($transacciones)): ?>
-        <div class="totals-container">
-            <?php if (!empty($cuenta)): ?>
-                <div class="total-box saldo-final-box">
-                    <div class="total-label"><i class="fas fa-coins"></i> Saldo Final</div>
-                    <div class="total-value"><?= number_format($saldo_final, 2) ?></div>
+            <div class="month-section">
+                <h3 class="month-title"><?= strtoupper($meses_espanol[$mes] . ' ' . $anio) ?></h3>
+                
+                <div class="account-info">
+                    <?php if (!empty($cuenta)): ?>
+                        <p><strong><i class="fas fa-user"></i> Cliente:</strong> <?= htmlspecialchars($transacciones[0]['cliente'] ?? '') ?></p>
+                        <p><strong><i class="fas fa-wallet"></i> Número de Cuenta:</strong> <?= htmlspecialchars($cuenta) ?></p>
+                        <p><strong><i class="fas fa-coins"></i> Saldo Inicial:</strong> <?= number_format($saldo_inicial, 2, ',', '.') ?></p>
+                    <?php endif; ?>
                 </div>
-            <?php endif; ?>
-            
-            <div class="total-box total-debits">
-                <div class="total-label"><i class="fas fa-arrow-down"></i> Total Débitos</div>
-                <div class="total-value"><?= number_format($total_debitos, 2) ?></div>
+                
+                <div class="table-container">
+                    <table class="transactions-table">
+                        <thead>
+                            <tr>
+                                <th><i class="far fa-calendar"></i> Fecha</th>
+                                <th><i class="fas fa-barcode"></i> Referencia</th>
+                                <th><i class="fas fa-align-left"></i> Descripción</th>
+                                <th><i class="fas fa-arrow-down"></i> Débito</th>
+                                <th><i class="fas fa-arrow-up"></i> Crédito</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($transacciones as $trans): ?>
+                                <tr>
+                                    <td><?= date('d/m/Y', strtotime($trans['fecha'])) ?></td>
+                                    <td><?= htmlspecialchars($trans['referencia']) ?></td>
+                                    <td><?= htmlspecialchars($trans['descripcion']) ?></td>
+                                    <td class="debit"><?= $trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '' ?></td>
+                                    <td class="credit"><?= $trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '' ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="month-totals">
+                    <div class="total-box">
+                        <div class="total-label"><i class="fas fa-arrow-down"></i> Total Débitos</div>
+                        <div class="total-value"><?= number_format($total_debitos, 2, ',', '.') ?></div>
+                    </div>
+                    <div class="total-box">
+                        <div class="total-label"><i class="fas fa-arrow-up"></i> Total Créditos</div>
+                        <div class="total-value"><?= number_format($total_creditos, 2, ',', '.') ?></div>
+                    </div>
+                    <?php if (!empty($cuenta)): ?>
+                        <div class="total-box">
+                            <div class="total-label"><i class="fas fa-coins"></i> Saldo Final</div>
+                            <div class="total-value"><?= number_format($saldo_final, 2, ',', '.') ?></div>
+                        </div>
+                    <?php endif; ?>
+                </div>
             </div>
-            <div class="total-box total-credits">
-                <div class="total-label"><i class="fas fa-arrow-up"></i> Total Créditos</div>
-                <div class="total-value"><?= number_format($total_creditos, 2) ?></div>
+        <?php else: ?>
+            <div class="no-results">
+                <i class="fas fa-info-circle"></i>
+                No se encontraron transacciones en el período seleccionado
             </div>
-        </div>
         <?php endif; ?>
     </div>
 

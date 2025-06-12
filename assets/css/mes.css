@@ -14,6 +14,7 @@ body {
     padding: 20px;
     margin-left: 250px; /* Ajuste para sidebar */
     transition: margin-left 0.3s;
+    animation: fadeIn 0.3s ease-out;
 }
 
 .header {
@@ -36,6 +37,36 @@ body {
     font-weight: 500;
     margin-top: 0;
     font-size: 1.5rem;
+}
+
+/* Estilos para secciones mensuales */
+.month-section {
+    margin-bottom: 30px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+    background-color: #f9f9f9;
+}
+
+.month-title {
+    background-color: #f9f9f9;
+    color: black;
+    padding: 10px;
+    text-align: center;
+    margin: -15px -15px 15px -15px;
+    border-radius: 5px 5px 0 0;
+}
+
+.month-totals {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 2px solid #2c3e50;
+}
+
+.month-totals .total-box {
+    text-align: center;
 }
 
 /* Estilos para el filtro */
@@ -286,6 +317,16 @@ body {
     font-weight: 600;
 }
 
+/* Animaciones */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.transactions-table tr {
+    transition: background-color 0.2s ease;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
     .container {
@@ -342,6 +383,11 @@ body {
     .header h2 {
         font-size: 1.2rem;
     }
+
+    .month-totals {
+        flex-direction: column;
+        gap: 10px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -352,18 +398,4 @@ body {
     .btn-filter {
         padding: 8px 12px;
     }
-}
-
-/* Animaciones */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.container {
-    animation: fadeIn 0.3s ease-out;
-}
-
-.transactions-table tr {
-    transition: background-color 0.2s ease;
 }
