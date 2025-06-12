@@ -205,7 +205,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         <div>'.$direccion1.'</div>
         <div>'.$direccion2.'</div>
         <div>'.$ciudad.'</div>
-        <div class="account-info">NÚMERO DE CUENTA: '.htmlspecialchars($cuenta).'</div>
+        <div>Cuenta: '.$cuenta.'</div>
         <div>Moneda: '.$moneda.'</div>
         <div>Período: '.date('d/m/Y', strtotime($fecha_inicio)).' al '.date('d/m/Y', strtotime($fecha_fin)).'</div>
         <div>Fecha Emisión: '.date('d/m/Y H:i A').'</div>
@@ -313,6 +313,7 @@ function validateDate($date, $format = 'Y-m-d') {
     <link rel="stylesheet" href="../assets/css/sidebar.css">
     <link rel="stylesheet" href="../assets/css/rango.css">
     <link rel="stylesheet" href="../assets/css/pdf-export.css">
+   link rel="stylesheet" href="../assets/css/pdf-export-individual,css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
@@ -367,7 +368,7 @@ function validateDate($date, $format = 'Y-m-d') {
             <div class="export-buttons">
                 <a href="?fecha_inicio=<?= urlencode($fecha_inicio) ?>&fecha_fin=<?= urlencode($fecha_fin) ?>&cuenta=<?= urlencode($cuenta) ?>&export=pdf" 
                    class="btn-export pdf" target="_blank">
-                   <i class="fas fa-file-pdf"></i> Exportar a PDF
+                   <i class="fas fa-file-pdf"></i> Exportar Todo a PDF
                 </a>
             </div>
         </div>
@@ -377,10 +378,20 @@ function validateDate($date, $format = 'Y-m-d') {
                 <?php 
                 $mes_nombre = getMesEspanol('01-'.$mes_ano) . ' ' . date('Y', strtotime('01-'.$mes_ano));
                 $saldo_mes = $saldos_por_mes[$mes_ano];
+                $primer_dia_mes = date('Y-m-01', strtotime('01-'.$mes_ano));
+                $ultimo_dia_mes = date('Y-m-t', strtotime('01-'.$mes_ano));
                 ?>
                 
                 <div class="month-section">
                     <h3 class="month-title"><?= strtoupper($mes_nombre) ?></h3>
+                    
+                    <!-- Botón para exportar SOLO este mes (NUEVO) -->
+                    <div class="export-month-buttons">
+                        <a href="?fecha_inicio=<?= $primer_dia_mes ?>&fecha_fin=<?= $ultimo_dia_mes ?>&cuenta=<?= urlencode($cuenta) ?>&export=pdf" 
+                           class="btn-export pdf" target="_blank">
+                           <i class="fas fa-file-pdf"></i> Exportar Este Mes
+                        </a>
+                    </div>
                     
                     <div class="account-info">
                         <p><strong><i class="fas fa-user"></i> Cliente:</strong> <?= htmlspecialchars($nombre_cliente_web) ?></p>
