@@ -2,12 +2,10 @@
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/database.php';
 
-// Redirigir si ya está logueado
 if (isLoggedIn()) {
     redirectAfterLogin();
 }
 
-// Manejar el formulario de login
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
@@ -27,12 +25,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Estado de Cuenta</title>
+    <title>Banco Caroní - SEC</title>
     <link rel="stylesheet" href="assets/css/login.css">
 </head>
 <body>
-    <div class="login-wrapper">
-        <h1 class="login-title">Sistema Estado de Cuenta</h1>
+    <!-- Barra superior con fecha animada -->
+    <div class="date-ticker">
+        <div class="ticker-content">
+            <span id="current-date"></span> | Bienvenido al Sistema Estado de Cuenta del Banco Caroní
+        </div>
+    </div>
+
+    <div class="login-container">
+        <h1 class="bank-header">Banco Caroní</h1>
+        <div class="sec-title">SEC - Sistema Estado de Cuenta</div>
 
         <?php if ($error): ?>
             <div class="error-message">
@@ -43,8 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form class="login-form" method="POST" action="login.php">
             <div class="form-group">
                 <label for="username">Usuario</label>
-                <input type="text" id="username" name="username" 
-                       required autofocus value="<?php echo htmlspecialchars($_POST['username'] ?? ''); ?>">
+                <input type="text" id="username" name="username" required autofocus 
+                       value="<?php echo htmlspecialchars($_POST['username'] ?? ''); ?>">
             </div>
             
             <div class="form-group">
@@ -55,5 +61,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit" class="btn-login">Ingresar</button>
         </form>
     </div>
+
+    <!-- Cambiamos la posición del script para asegurar que el DOM esté cargado -->
+    <script src="assets/js/login.js"></script>
 </body>
 </html>

@@ -1,0 +1,17 @@
+.export-month-buttons {
+    margin: 10px 0;
+    text-align: right;
+}
+
+.export-month-buttons .btn-export {
+    padding: 5px 10px;
+    font-size: 12px;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 4px;
+    text-decoration: none;
+}
+
+.export-month-buttons .btn-export:hover {
+    background-color: #45a049;
+}
