@@ -85,7 +85,7 @@ try {
         $params[] = $cuenta;
     }
     
-    $sql .= " ORDER BY t.trddat ASC, t.trdseq ASC"; // Orden ascendente para cálculo correcto
+    $sql .= " ORDER BY t.trddat ASC, t.trdseq ASC";
     
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
@@ -104,14 +104,12 @@ try {
                 $total_creditos += $t['monto'];
                 $saldo_acumulado += $t['monto'];
             }
-            // Agregar saldo acumulado a cada transacción para mostrar en la tabla
             $t['saldo_acumulado'] = $saldo_acumulado;
         }
-        unset($t); // Romper la referencia
+        unset($t);
         
         $saldo_final = $saldo_acumulado;
     } else {
-        // Si no hay cuenta específica, solo calcular totales
         foreach ($transacciones as $t) {
             if ($t['tipo'] == 'D') {
                 $total_debitos += $t['monto'];
@@ -330,8 +328,8 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             <?php if (!empty($transacciones)): ?>
                 <div class="export-buttons">
                     <a href="?mes=<?= $mes ?>&anio=<?= $anio ?>&cuenta=<?= urlencode($cuenta) ?>&export=pdf" 
-                       class="btn-export pdf" target="_blank">
-                       <i class="fas fa-file-pdf"></i> Exportar a PDF
+                       class="btn-export pdf" target="_blank" title="Exportar a PDF">
+                       <i class="fas fa-print"></i> Exportar PDF
                     </a>
                 </div>
             <?php endif; ?>

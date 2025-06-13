@@ -1,68 +1,165 @@
-/* Estilos específicos para exportación a PDF */
-.btn-export {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 8px 12px;
-    border-radius: 4px;
-    font-weight: bold;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    font-size: 13px;
-    cursor: pointer;
-    border: none;
-    outline: none;
-    margin: 5px 0 0 auto; /* Mueve el botón a la derecha */
-    width: auto; /* Ancho según contenido */
-}
-
-/* Variante específica para PDF */
+/* Estilos base para botón PDF */
 .btn-export.pdf {
-    background-color: #e74c3c;
-    color: white;
-    border: 1px solid #c0392b;
+  background-color: #e74c3c;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: none;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 100px;
+  height: 36px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-family: 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
 }
 
 .btn-export.pdf:hover {
-    background-color: #c0392b;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  background-color: #c0392b;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .btn-export.pdf:active {
-    transform: translateY(0);
-    box-shadow: none;
+  transform: translateY(0);
 }
 
-/* Iconos dentro de botones exportar */
-.btn-export i {
-    font-size: 14px;
+.btn-export.pdf i {
+  margin-right: 6px;
+  font-size: 13px;
 }
 
-/* Contenedor de botones de exportación */
+/* Versión solo icono */
+.btn-export.pdf.icon-only {
+  padding: 8px;
+  min-width: 36px;
+}
+
+/* Estilos para alinear botones a la derecha */
+.filter-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
 .export-buttons {
-    display: flex;
-    justify-content: flex-end; /* Alinea a la derecha */
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid #eee;
+  margin-left: auto;
+  order: 2;
 }
 
-/* Estilos para pantallas pequeñas */
+.filter-form {
+  order: 1;
+  flex-grow: 1;
+  width: 100%;
+}
+
+.month-section {
+  position: relative;
+  margin-bottom: 30px;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.month-title {
+  padding-right: 120px; /* Espacio para el botón */
+  color: #2c3e50;
+  margin-bottom: 15px;
+}
+
+.export-month-buttons {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+/* Ajustes para móviles */
 @media (max-width: 768px) {
-    .btn-export {
-        padding: 6px 10px;
-        font-size: 12px;
-        gap: 5px;
-    }
-    
-    .btn-export i {
-        font-size: 13px;
-    }
-    
-    .export-buttons {
-        margin-top: 8px;
-        padding-top: 8px;
-    }
+  .filter-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+  }
+  
+  .export-buttons {
+    margin-left: 0;
+    order: 3;
+    align-self: flex-end;
+    margin-top: 10px;
+  }
+  
+  .export-month-buttons {
+    position: static;
+    margin: 10px 0 15px 0;
+    text-align: right;
+  }
+  
+  .month-title {
+    padding-right: 0;
+  }
+  
+  .btn-export.pdf {
+    padding: 6px 10px;
+    height: 32px;
+    font-size: 12px;
+    min-width: 90px;
+  }
+  
+  .btn-export.pdf i {
+    font-size: 12px;
+    margin-right: 5px;
+  }
+}
+
+/* Estilos adicionales para mejor integración */
+.filter-header {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  width: 100%;
+}
+
+.account-info {
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.table-container {
+  margin-top: 40px; /* Espacio para el botón flotante */
+}
+
+/* Versión compacta para pantallas pequeñas */
+@media (max-width: 480px) {
+  .btn-export.pdf {
+    padding: 6px 8px;
+    min-width: auto;
+  }
+  
+  .btn-export.pdf span {
+    display: none;
+  }
+  
+  .btn-export.pdf i {
+    margin-right: 0;
+  }
 }

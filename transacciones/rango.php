@@ -99,7 +99,6 @@ try {
         $saldos_por_mes[$mes_ano]['saldo_final'] = $saldo_acumulado;
     }
 
-    // Obtener información del cliente para la vista web
     if (!empty($cuenta)) {
         $stmt_cliente_web = $pdo->prepare("SELECT c.cusna1 AS nombre_completo 
                                           FROM cumst c JOIN acmst a ON c.cuscun = a.acmcun
@@ -128,34 +127,32 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     $pdf->SetAutoPageBreak(TRUE, 10);
     $pdf->AddPage();
 
-    // Ruta al logo
     $logo_path = realpath(__DIR__ . '/../assets/images/logo-banco.jpg');
     
-    // Insertar logo SIN bordes
     if (file_exists($logo_path)) {
         $pdf->Image(
-            $logo_path,       // Ruta del archivo
-            15,              // Posición X (15mm desde la izquierda)
-            15,              // Posición Y (15mm desde arriba)
-            30,              // Ancho (30mm)
-            0,               // Alto (automático)
-            'JPG',           // Tipo de imagen
-            '',              // Enlace (vacío)
-            'T',             // Alineación (T = top)
-            false,           // Resize
-            300,             // DPI
-            '',              // Alineación (vacío)
-            false,           // Máscara
-            false,           // Imagen máscara
-            0,               // BORDE (0 = sin borde) - CLAVE PARA ELIMINAR LÍNEA
-            false,           // Fitbox
-            false,           // Hidden
-            false            // Fit on page
+            $logo_path,
+            15,
+            15,
+            30,
+            0,
+            'JPG',
+            '',
+            'T',
+            false,
+            300,
+            '',
+            false,
+            false,
+            0,
+            false,
+            false,
+            false
         );
-        $pdf->SetY(25); // Ajustar posición después del logo
+        $pdf->SetY(25);
     } else {
         error_log("Logo no encontrado: " . $logo_path);
-        $pdf->SetY(20); // Posición sin logo
+        $pdf->SetY(20);
     }
     
     try {
@@ -368,8 +365,8 @@ function validateDate($date, $format = 'Y-m-d') {
             <?php if (!empty($transacciones_por_mes)): ?>
                 <div class="export-buttons">
                     <a href="?fecha_inicio=<?= urlencode($fecha_inicio) ?>&fecha_fin=<?= urlencode($fecha_fin) ?>&cuenta=<?= urlencode($cuenta) ?>&export=pdf" 
-                       class="btn-export pdf" target="_blank">
-                       <i class="fas fa-file-pdf"></i> Exportar Todo a PDF
+                       class="btn-export pdf" target="_blank" title="Exportar Todo a PDF">
+                       <i class="fas fa-print"></i> Exportar PDF
                     </a>
                 </div>
             <?php endif; ?>
@@ -390,8 +387,8 @@ function validateDate($date, $format = 'Y-m-d') {
                     <?php if (!empty($trans_mes)): ?>
                         <div class="export-month-buttons">
                             <a href="?fecha_inicio=<?= $primer_dia_mes ?>&fecha_fin=<?= $ultimo_dia_mes ?>&cuenta=<?= urlencode($cuenta) ?>&export=pdf" 
-                               class="btn-export pdf" target="_blank">
-                               <i class="fas fa-file-pdf"></i> Exportar Este Mes
+                               class="btn-export pdf" target="_blank" title="Exportar Este Mes a PDF">
+                               <i class="fas fa-print"></i> Exportar Mes
                             </a>
                         </div>
                     <?php endif; ?>
