@@ -366,7 +366,7 @@ function validateDate($date, $format = 'Y-m-d') {
                 <div class="export-buttons">
                     <a href="?fecha_inicio=<?= urlencode($fecha_inicio) ?>&fecha_fin=<?= urlencode($fecha_fin) ?>&cuenta=<?= urlencode($cuenta) ?>&export=pdf" 
                        class="btn-export pdf" target="_blank" title="Exportar Todo a PDF">
-                       <i class="fas fa-print"></i> Exportar PDF
+                       <i class="fas fa-print"></i> Exportar todo
                     </a>
                 </div>
             <?php endif; ?>
