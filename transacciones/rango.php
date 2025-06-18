@@ -188,7 +188,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         th { border:1px solid #000; background-color:#f0f0f0; padding:2px; 
              text-align:center; font-weight:bold; height:18px; }
         td { border:1px solid #000; padding:2px; height:16px; line-height:1.2; }
-        .debit, .credit, .saldo { text-align:right; }
+        .debit, .credit, .saldo, .balance { text-align:right; }
         .totals { margin-top:5px; font-size:8px; border-top:1px solid #000; 
                  padding-top:2px; width:60%; margin-left:auto; margin-right:auto; }
         .total-row { display:flex; justify-content:space-between; margin:1px 0; }
@@ -224,11 +224,12 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             <table>
                 <thead>
                     <tr>
-                        <th width="15%">Fecha</th>
-                        <th width="15%">Referencia</th>
-                        <th width="40%">Descripción</th>
-                        <th width="15%">Débito</th>
-                        <th width="15%">Crédito</th>
+                        <th width="12%">Fecha</th>
+                        <th width="13%">Referencia</th>
+                        <th width="35%">Descripción</th>
+                        <th width="12%">Débito</th>
+                        <th width="12%">Crédito</th>
+                        <th width="16%">Saldo</th>
                     </tr>
                 </thead>
                 <tbody>';
@@ -241,6 +242,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
                     <td>'.htmlspecialchars($trans['descripcion']).'</td>
                     <td class="debit">'.($trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '').'</td>
                     <td class="credit">'.($trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '').'</td>
+                    <td class="balance">'.number_format($trans['saldo'], 2, ',', '.').'</td>
                 </tr>';
             $saldo_final = $trans['saldo'];
         }
@@ -408,6 +410,7 @@ function validateDate($date, $format = 'Y-m-d') {
                                     <th><i class="fas fa-align-left"></i> Descripción</th>
                                     <th><i class="fas fa-arrow-down"></i> Débito</th>
                                     <th><i class="fas fa-arrow-up"></i> Crédito</th>
+                                    <th><i class="fas fa-wallet"></i> Saldo</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -418,6 +421,7 @@ function validateDate($date, $format = 'Y-m-d') {
                                         <td><?= htmlspecialchars($trans['descripcion']) ?></td>
                                         <td class="debit"><?= $trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '' ?></td>
                                         <td class="credit"><?= $trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '' ?></td>
+                                        <td class="balance"><?= number_format($trans['saldo'], 2, ',', '.') ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>

@@ -252,6 +252,13 @@ body {
     border-bottom: 1px solid #e2e8f0;
 }
 
+/* ESTILO AGREGADO PARA EL SALDO */
+.transactions-table td.balance {
+    text-align: right;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
 .transactions-table tr:hover {
     background-color: #f8fafc;
 }
