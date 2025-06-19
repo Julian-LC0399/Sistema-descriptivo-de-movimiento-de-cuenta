@@ -128,33 +128,14 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     $pdf->AddPage();
 
     $logo_path = realpath(__DIR__ . '/../assets/images/logo-banco.jpg');
+    $logo_html = '';
     
     if (file_exists($logo_path)) {
-        $pdf->Image(
-            $logo_path,
-            15,
-            15,
-            30,
-            0,
-            'JPG',
-            '',
-            'T',
-            false,
-            300,
-            '',
-            false,
-            false,
-            0,
-            false,
-            false,
-            false
-        );
-        $pdf->SetY(25);
+        $logo_html = '<img src="'.$logo_path.'" width="80">';
     } else {
         error_log("Logo no encontrado: " . $logo_path);
-        $pdf->SetY(20);
     }
-    
+
     try {
         $stmt_cliente = $pdo->prepare("SELECT c.cusna1 AS nombre_completo, c.cusna2 AS direccion1, 
                                       c.cusna3 AS direccion2, c.cuscty AS ciudad, a.acmccy AS moneda
@@ -178,8 +159,9 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     $html = '
     <style>
         .header { text-align:center; margin-bottom:2px; }
-        .client-info { margin-bottom:4px; line-height:1.1; font-size:9px; text-align:center; }
-        .client-name { font-size:11px; font-weight:bold; margin-bottom:0; }
+        .client-container { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .client-name { font-size:14px; font-weight:bold; margin-bottom:5px; text-transform:uppercase; text-align: right; }
+        .client-info { line-height:1.1; font-size:9px; text-align: right; }
         .account-info { margin:2px 0; font-weight:bold; }
         .title { text-align:center; font-weight:bold; font-size:10px; margin:5px 0 3px 0;
                 border-top:1px solid #000; border-bottom:1px solid #000; padding:1px 0; 
@@ -193,19 +175,25 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
                  padding-top:2px; width:60%; margin-left:auto; margin-right:auto; }
         .total-row { display:flex; justify-content:space-between; margin:1px 0; }
         .page-number { text-align:center; font-size:6px; margin-top:2px; }
+        .address-line { margin-bottom:2px; }
+        .logo-container { width: 30%; }
+        .client-data-container { width: 65%; }
     </style>
     
-    <div class="header">
-        <div class="client-name">'.$nombre_cliente.'</div>
-    </div>
-    <div class="client-info">
-        <div>'.$direccion1.'</div>
-        <div>'.$direccion2.'</div>
-        <div>'.$ciudad.'</div>
-        <div>Cuenta: '.$cuenta.'</div>
-        <div>Moneda: '.$moneda.'</div>
-        <div>Período: '.date('d/m/Y', strtotime($fecha_inicio)).' al '.date('d/m/Y', strtotime($fecha_fin)).'</div>
-        <div>Fecha Emisión: '.date('d/m/Y H:i A').'</div>
+    <div class="client-container">
+        <div class="logo-container">
+            '.$logo_html.'
+        </div>
+        <div class="client-data-container">
+            <div class="client-name">'.strtoupper($nombre_cliente).'</div>
+            <div class="client-info">
+                <div class="address-line"><strong>'.strtoupper($direccion1).'</strong></div>
+                <div class="address-line"><strong>'.strtoupper($direccion2).'</strong></div>
+                <div class="address-line"><strong>'.strtoupper($ciudad).'</strong></div>
+                <div><strong>NÚMERO DE CUENTA: '.$cuenta.'</strong></div>
+                <div><strong>Fecha Emisión: '.date('d/m/Y H:i A').'</strong></div>
+            </div>
+        </div>
     </div>';
     
     $total_general_debitos = $total_general_creditos = 0;
@@ -217,7 +205,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         
         $html .= '
         <div>
-            <div class="title">'.strtoupper($mes_nombre).'</div>
+            <div class="title">ESTADO DE CUENTA '.strtoupper($mes_nombre).'</div>
             <div style="text-align:center; font-size:8px; margin-bottom:3px;">
                 <strong>Saldo Inicial:</strong> '.number_format($saldo_mes['saldo_inicial'], 2, ',', '.').' '.$moneda.'
             </div>
@@ -225,7 +213,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
                 <thead>
                     <tr>
                         <th width="12%">Fecha</th>
-                        <th width="13%">Referencia</th>
+                        <th width="13%">Serial</th>
                         <th width="35%">Descripción</th>
                         <th width="12%">Débito</th>
                         <th width="12%">Crédito</th>
@@ -406,7 +394,7 @@ function validateDate($date, $format = 'Y-m-d') {
                             <thead>
                                 <tr>
                                     <th><i class="far fa-calendar"></i> Fecha</th>
-                                    <th><i class="fas fa-barcode"></i> Referencia</th>
+                                    <th><i class="fas fa-barcode"></i> Serial</th>
                                     <th><i class="fas fa-align-left"></i> Descripción</th>
                                     <th><i class="fas fa-arrow-down"></i> Débito</th>
                                     <th><i class="fas fa-arrow-up"></i> Crédito</th>
