@@ -141,72 +141,137 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     
     $pdf->setPrintHeader(false);
     $pdf->setPrintFooter(false);
-    $pdf->SetMargins(10, 10, 10);
-    $pdf->SetAutoPageBreak(TRUE, 10);
+    $pdf->SetMargins(8, 8, 8);
+    $pdf->SetAutoPageBreak(TRUE, 8);
     $pdf->AddPage();
+    $pdf->SetFont('helvetica', '', 7.5);
 
-    // Logo (sin bordes)
     $logo_path = realpath(__DIR__ . '/../assets/images/logo-banco.jpg');
+    $logo_html = '';
+    
     if (file_exists($logo_path)) {
-        $pdf->Image($logo_path, 15, 15, 30, 0, 'JPG', '', 'T', false, 300, '', false, false, 0, false, false, false);
-        $pdf->SetY(25);
+        $logo_html = '<img src="'.$logo_path.'" width="80">';
+    } else {
+        error_log("Logo no encontrado: " . $logo_path);
     }
 
     // Obtener datos del cliente si hay cuenta
-    $nombre_cliente = $moneda = '';
+    $nombre_cliente = $direccion1 = $direccion2 = $ciudad = $moneda = '';
     if (!empty($cuenta)) {
         try {
-            $stmt_cliente = $pdo->prepare("SELECT c.cusna1 AS nombre_completo, a.acmccy AS moneda 
-                                          FROM cumst c JOIN acmst a ON c.cuscun = a.acmcun 
+            $stmt_cliente = $pdo->prepare("SELECT c.cusna1 AS nombre_completo, c.cusna2 AS direccion1, 
+                                          c.cusna3 AS direccion2, c.cuscty AS ciudad, a.acmccy AS moneda
+                                          FROM cumst c JOIN acmst a ON c.cuscun = a.acmcun
                                           WHERE a.acmacc = ?");
             $stmt_cliente->execute([$cuenta]);
             $cliente_info = $stmt_cliente->fetch(PDO::FETCH_ASSOC);
+            
             $nombre_cliente = $cliente_info['nombre_completo'] ?? 'CLIENTE NO ENCONTRADO';
+            $direccion1 = $cliente_info['direccion1'] ?? '';
+            $direccion2 = $cliente_info['direccion2'] ?? '';
+            $ciudad = $cliente_info['ciudad'] ?? '';
             $moneda = $cliente_info['moneda'] ?? 'VES';
         } catch(PDOException $e) {
             error_log("Error al obtener info cliente: " . $e->getMessage());
+            $nombre_cliente = 'CLIENTE NO ENCONTRADO';
+            $direccion1 = $direccion2 = $ciudad = '';
+            $moneda = 'VES';
         }
+    } else {
+        $moneda = 'VES';
     }
-
-    // HTML del PDF
+    
     $html = '
     <style>
         .header { text-align:center; margin-bottom:2px; }
-        .client-info { margin-bottom:4px; line-height:1.1; font-size:9px; text-align:center; }
-        .client-name { font-size:11px; font-weight:bold; margin-bottom:0; }
+        .client-container { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .client-name { font-size:14px; font-weight:bold; margin-bottom:5px; text-transform:uppercase; text-align: right; }
+        .client-info { line-height:1.1; font-size:9px; text-align: right; }
         .account-info { margin:2px 0; font-weight:bold; }
-        .title { text-align:center; font-weight:bold; font-size:10px; margin:5px 0 3px 0;
-                border-top:1px solid #000; border-bottom:1px solid #000; padding:1px 0; 
-                text-transform:uppercase; }
-        table { width:100%; border-collapse:collapse; font-size:7px; margin-bottom:5px; }
-        th { border:1px solid #000; background-color:#f0f0f0; padding:2px; 
-             text-align:center; font-weight:bold; height:18px; }
-        td { border:1px solid #000; padding:2px; height:16px; line-height:1.2; }
-        .debit, .credit, .saldo { text-align:right; }
-        .totals { margin-top:5px; font-size:8px; border-top:1px solid #000; 
-                 padding-top:2px; width:60%; margin-left:auto; margin-right:auto; }
+        .title { 
+            text-align:center; 
+            font-weight:bold; 
+            font-size:10px; 
+            margin:5px 0 3px 0;
+            border-top:1px solid #000; 
+            border-bottom:1px solid #000; 
+            padding:1px 0; 
+            text-transform:uppercase; 
+        }
+        .transaction-table {
+            table-layout: fixed;
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 7pt;
+        }
+        .transaction-table th {
+            background-color: #f5f5f5;
+            color: #333;
+            font-weight: bold;
+            padding: 3px 2px;
+            border: 0.5px solid #ddd;
+            text-align: center;
+            height: 18px;
+            font-size: 7.5pt;
+        }
+        .transaction-table td {
+            padding: 3px 2px;
+            border: 0.5px solid #ddd;
+            height: 16px;
+            line-height: 1.2;
+            font-size: 7pt;
+            overflow: hidden;
+            word-wrap: break-word;
+        }
+        .transaction-table .date-col { width: 12%; text-align: center; }
+        .transaction-table .ref-col { width: 15%; text-align: center; }
+        .transaction-table .desc-col { width: 33%; }
+        .transaction-table .amount-col { width: 12%; text-align: right; }
+        .transaction-table .balance-col { width: 15%; text-align: right; }
+        .transaction-table tr:nth-child(even) { background-color: #f9f9f9; }
+        .totals { 
+            margin-top:5px; 
+            font-size:8px; 
+            border-top:1px solid #000; 
+            padding-top:2px; 
+            width:60%; 
+            margin-left:auto; 
+            margin-right:auto; 
+        }
         .total-row { display:flex; justify-content:space-between; margin:1px 0; }
+        .page-number { text-align:center; font-size:6px; margin-top:2px; }
+        .address-line { margin-bottom:2px; }
+        .logo-container { width: 30%; }
+        .client-data-container { width: 65%; }
     </style>
     
-    <div class="header">
-        <div class="client-name">'.(!empty($nombre_cliente) ? $nombre_cliente : 'REPORTE GENERAL').'</div>
-    </div>
-    <div class="client-info">
-        '.(!empty($cuenta) ? '<div>Cuenta: '.$cuenta.'</div>' : '').'
-        <div>Moneda: '.$moneda.'</div>
-        <div>Período: '.$meses_espanol[$mes].' '.$anio.'</div>
-        <div>Fecha Emisión: '.date('d/m/Y H:i A').'</div>
+    <div class="client-container">
+        <div class="logo-container">
+            '.$logo_html.'
+        </div>
+        <div class="client-data-container">
+            <div class="client-name">'.strtoupper($nombre_cliente).'</div>
+            <div class="client-info">
+                '.($direccion1 ? '<div class="address-line"><strong>'.strtoupper($direccion1).'</strong></div>' : '').'
+                '.($direccion2 ? '<div class="address-line"><strong>'.strtoupper($direccion2).'</strong></div>' : '').'
+                '.($ciudad ? '<div class="address-line"><strong>'.strtoupper($ciudad).'</strong></div>' : '').'
+                '.($cuenta ? '<div><strong>NÚMERO DE CUENTA: '.$cuenta.'</strong></div>' : '').'
+                <div><strong>Fecha Emisión: '.date('d/m/Y H:i A').'</strong></div>
+            </div>
+        </div>
     </div>
     
-    <div class="title">DETALLE DE TRANSACCIONES</div>
-    <table>
+    <div class="title">DETALLE DE TRANSACCIONES '.strtoupper($meses_espanol[$mes].' '.$anio).'</div>
+    
+    <table class="transaction-table">
         <thead>
             <tr>
-                <th width="15%">Fecha</th>
-                <th width="15%">Referencia</th>
-                <th width="40%">Descripción</th>
-                <th width="15%">Débito</th>
-                <th width="15%">Crédito</th>
+                <th class="date-col">Fecha</th>
+                <th class="ref-col">Serial</th>
+                <th class="desc-col">Descripción</th>
+                <th class="amount-col">Débito</th>
+                <th class="amount-col">Crédito</th>
+                '.(!empty($cuenta) ? '<th class="balance-col">Saldo</th>' : '').'
             </tr>
         </thead>
         <tbody>';
@@ -215,15 +280,16 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         foreach ($transacciones as $trans) {
             $html .= '
             <tr>
-                <td>'.date('d/m/Y', strtotime($trans['fecha'])).'</td>
-                <td>'.htmlspecialchars($trans['referencia']).'</td>
-                <td>'.htmlspecialchars($trans['descripcion']).'</td>
-                <td class="debit">'.($trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '').'</td>
-                <td class="credit">'.($trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '').'</td>
+                <td class="date-col">'.date('d/m/Y', strtotime($trans['fecha'])).'</td>
+                <td class="ref-col">'.htmlspecialchars($trans['referencia']).'</td>
+                <td class="desc-col">'.htmlspecialchars($trans['descripcion']).'</td>
+                <td class="amount-col">'.($trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '').'</td>
+                <td class="amount-col">'.($trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '').'</td>
+                '.(!empty($cuenta) ? '<td class="balance-col">'.number_format($trans['saldo_acumulado'] ?? $trans['saldo'], 2, ',', '.').'</td>' : '').'
             </tr>';
         }
     } else {
-        $html .= '<tr><td colspan="5">No se encontraron transacciones</td></tr>';
+        $html .= '<tr><td colspan="'.(!empty($cuenta) ? '6' : '5').'" style="text-align:center;">No se encontraron transacciones</td></tr>';
     }
 
     $html .= '
@@ -249,7 +315,8 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             <span>Saldo Final:</span>
             <span>'.number_format($saldo_final, 2, ',', '.').' '.$moneda.'</span>
         </div>' : '').'
-    </div>';
+    </div>
+    <div class="page-number">Página '.$pdf->getAliasNumPage().' / '.$pdf->getAliasNbPages().'</div>';
 
     $pdf->writeHTML($html, true, false, true, false, '');
     $pdf->Output('transacciones_'.$mes.'_'.$anio.'.pdf', 'D');
@@ -352,7 +419,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
                         <thead>
                             <tr>
                                 <th><i class="far fa-calendar"></i> Fecha</th>
-                                <th><i class="fas fa-barcode"></i> Referencia</th>
+                                <th><i class="fas fa-barcode"></i> serial</th>
                                 <th><i class="fas fa-align-left"></i> Descripción</th>
                                 <th><i class="fas fa-arrow-down"></i> Débito</th>
                                 <th><i class="fas fa-arrow-up"></i> Crédito</th>
