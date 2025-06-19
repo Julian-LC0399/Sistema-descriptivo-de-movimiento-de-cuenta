@@ -1,39 +1,54 @@
+/* Estilos para el contenedor del botón de exportación mensual */
 .export-month-buttons {
     position: absolute;
-    top: 5px;  /* Ajustado para subir el botón */
-    right: 15px;
-    z-index: 1;
+    top: 5px;          /* Posición más arriba */
+    right: 5px;        /* Posición más a la derecha */
+    z-index: 1;        /* Asegura que esté sobre otros elementos */
+    margin: 0;
+    padding: 0;
 }
 
+/* Estilos base del botón verde */
 .export-month-buttons .btn-export {
     padding: 8px 15px;
     font-size: 13px;
-    background-color: #4CAF50;
+    background-color: #4CAF50; /* Verde principal */
     color: white;
+    border: none;
     border-radius: 4px;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     transition: all 0.2s ease;
+    cursor: pointer;
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    font-weight: 500;
+    min-width: 110px; /* Ancho mínimo para consistencia */
 }
 
+/* Efecto hover */
 .export-month-buttons .btn-export:hover {
-    background-color: #3e8e41;
+    background-color: #3e8e41; /* Verde más oscuro */
     transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
 }
 
+/* Efecto al hacer clic */
 .export-month-buttons .btn-export:active {
     transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
+/* Estilo para el icono */
 .export-month-buttons .btn-export i {
     font-size: 13px;
+    margin-right: 3px;
 }
 
-/* Ajustes para móviles */
+/* Versión compacta para pantallas pequeñas */
 @media (max-width: 768px) {
     .export-month-buttons {
         position: static;
@@ -44,5 +59,23 @@
     .export-month-buttons .btn-export {
         padding: 6px 12px;
         font-size: 12px;
+        min-width: 100px;
+    }
+}
+
+/* Versión solo icono para móviles muy pequeños */
+@media (max-width: 480px) {
+    .export-month-buttons .btn-export {
+        padding: 6px 8px;
+        min-width: auto;
+    }
+    
+    .export-month-buttons .btn-export span {
+        display: none;
+    }
+    
+    .export-month-buttons .btn-export i {
+        margin-right: 0;
+        font-size: 14px;
     }
 }
