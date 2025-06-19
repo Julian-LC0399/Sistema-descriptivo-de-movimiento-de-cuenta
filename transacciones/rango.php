@@ -123,9 +123,10 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     
     $pdf->setPrintHeader(false);
     $pdf->setPrintFooter(false);
-    $pdf->SetMargins(10, 10, 10);
-    $pdf->SetAutoPageBreak(TRUE, 10);
+    $pdf->SetMargins(8, 8, 8);
+    $pdf->SetAutoPageBreak(TRUE, 8);
     $pdf->AddPage();
+    $pdf->SetFont('helvetica', '', 7.5);
 
     $logo_path = realpath(__DIR__ . '/../assets/images/logo-banco.jpg');
     $logo_html = '';
@@ -174,31 +175,35 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             text-transform:uppercase; 
         }
         .transaction-table {
+            table-layout: fixed;
             width: 100%;
             border-collapse: collapse;
-            font-size: 8px;
-            margin-bottom: 5px;
+            font-size: 7pt;
         }
         .transaction-table th {
             background-color: #f5f5f5;
             color: #333;
             font-weight: bold;
-            padding: 4px 3px;
+            padding: 3px 2px;
             border: 0.5px solid #ddd;
             text-align: center;
-            height: 20px;
+            height: 18px;
+            font-size: 7.5pt;
         }
         .transaction-table td {
-            padding: 4px 3px;
+            padding: 3px 2px;
             border: 0.5px solid #ddd;
-            height: 18px;
-            line-height: 1.3;
+            height: 16px;
+            line-height: 1.2;
+            font-size: 7pt;
+            overflow: hidden;
+            word-wrap: break-word;
         }
-        .transaction-table .date-col { width: 10%; text-align: center; }
-        .transaction-table .ref-col { width: 12%; text-align: center; }
-        .transaction-table .desc-col { width: 38%; }
+        .transaction-table .date-col { width: 12%; text-align: center; }
+        .transaction-table .ref-col { width: 15%; text-align: center; }
+        .transaction-table .desc-col { width: 33%; }
         .transaction-table .amount-col { width: 12%; text-align: right; }
-        .transaction-table .balance-col { width: 16%; text-align: right; }
+        .transaction-table .balance-col { width: 15%; text-align: right; }
         .transaction-table tr:nth-child(even) { background-color: #f9f9f9; }
         .totals { 
             margin-top:5px; 
