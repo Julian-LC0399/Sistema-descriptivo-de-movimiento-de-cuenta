@@ -139,7 +139,8 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
 
     try {
         $stmt_cliente = $pdo->prepare("SELECT c.cusna1 AS nombre_completo, c.cusna2 AS direccion1, 
-                                      c.cusna3 AS direccion2, c.cuscty AS ciudad, a.acmccy AS moneda
+                                      c.cusna3 AS direccion2, c.cuscty AS ciudad, a.acmccy AS moneda,
+                                      a.acmbrn AS sucursal
                                       FROM cumst c JOIN acmst a ON c.cuscun = a.acmcun
                                       WHERE a.acmacc = :cuenta");
         $stmt_cliente->execute([':cuenta' => $cuenta]);
@@ -150,11 +151,13 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         $direccion2 = $cliente_info['direccion2'] ?? '';
         $ciudad = $cliente_info['ciudad'] ?? '';
         $moneda = $cliente_info['moneda'] ?? 'VES';
+        $sucursal = $cliente_info['sucursal'] ?? 'ND';
     } catch(PDOException $e) {
         error_log("Error al obtener info cliente: " . $e->getMessage());
         $nombre_cliente = 'CLIENTE NO ENCONTRADO';
         $direccion1 = $direccion2 = $ciudad = '';
         $moneda = 'VES';
+        $sucursal = 'ND';
     }
     
     $html = '
@@ -232,6 +235,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
                 <div class="address-line"><strong>'.strtoupper($direccion2).'</strong></div>
                 <div class="address-line"><strong>'.strtoupper($ciudad).'</strong></div>
                 <div><strong>NÚMERO DE CUENTA: '.$cuenta.'</strong></div>
+                <div><strong>SUCURSAL: '.$sucursal.'</strong></div>
                 <div><strong>Fecha Emisión: '.date('d/m/Y H:i A').'</strong></div>
             </div>
         </div>
