@@ -163,16 +163,52 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         .client-name { font-size:14px; font-weight:bold; margin-bottom:5px; text-transform:uppercase; text-align: right; }
         .client-info { line-height:1.1; font-size:9px; text-align: right; }
         .account-info { margin:2px 0; font-weight:bold; }
-        .title { text-align:center; font-weight:bold; font-size:10px; margin:5px 0 3px 0;
-                border-top:1px solid #000; border-bottom:1px solid #000; padding:1px 0; 
-                text-transform:uppercase; }
-        table { width:100%; border-collapse:collapse; font-size:7px; margin-bottom:5px; }
-        th { border:1px solid #000; background-color:#f0f0f0; padding:2px; 
-             text-align:center; font-weight:bold; height:18px; }
-        td { border:1px solid #000; padding:2px; height:16px; line-height:1.2; }
-        .debit, .credit, .saldo, .balance { text-align:right; }
-        .totals { margin-top:5px; font-size:8px; border-top:1px solid #000; 
-                 padding-top:2px; width:60%; margin-left:auto; margin-right:auto; }
+        .title { 
+            text-align:center; 
+            font-weight:bold; 
+            font-size:10px; 
+            margin:5px 0 3px 0;
+            border-top:1px solid #000; 
+            border-bottom:1px solid #000; 
+            padding:1px 0; 
+            text-transform:uppercase; 
+        }
+        .transaction-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8px;
+            margin-bottom: 5px;
+        }
+        .transaction-table th {
+            background-color: #f5f5f5;
+            color: #333;
+            font-weight: bold;
+            padding: 4px 3px;
+            border: 0.5px solid #ddd;
+            text-align: center;
+            height: 20px;
+        }
+        .transaction-table td {
+            padding: 4px 3px;
+            border: 0.5px solid #ddd;
+            height: 18px;
+            line-height: 1.3;
+        }
+        .transaction-table .date-col { width: 10%; text-align: center; }
+        .transaction-table .ref-col { width: 12%; text-align: center; }
+        .transaction-table .desc-col { width: 38%; }
+        .transaction-table .amount-col { width: 12%; text-align: right; }
+        .transaction-table .balance-col { width: 16%; text-align: right; font-weight: bold; }
+        .transaction-table tr:nth-child(even) { background-color: #f9f9f9; }
+        .totals { 
+            margin-top:5px; 
+            font-size:8px; 
+            border-top:1px solid #000; 
+            padding-top:2px; 
+            width:60%; 
+            margin-left:auto; 
+            margin-right:auto; 
+        }
         .total-row { display:flex; justify-content:space-between; margin:1px 0; }
         .page-number { text-align:center; font-size:6px; margin-top:2px; }
         .address-line { margin-bottom:2px; }
@@ -209,15 +245,15 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             <div style="text-align:center; font-size:8px; margin-bottom:3px;">
                 <strong>Saldo Inicial:</strong> '.number_format($saldo_mes['saldo_inicial'], 2, ',', '.').' '.$moneda.'
             </div>
-            <table>
+            <table class="transaction-table">
                 <thead>
                     <tr>
-                        <th width="12%">Fecha</th>
-                        <th width="13%">Serial</th>
-                        <th width="35%">Descripción</th>
-                        <th width="12%">Débito</th>
-                        <th width="12%">Crédito</th>
-                        <th width="16%">Saldo</th>
+                        <th class="date-col">Fecha</th>
+                        <th class="ref-col">Referencia</th>
+                        <th class="desc-col">Descripción</th>
+                        <th class="amount-col">Débito</th>
+                        <th class="amount-col">Crédito</th>
+                        <th class="balance-col">Saldo</th>
                     </tr>
                 </thead>
                 <tbody>';
@@ -225,12 +261,12 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         foreach ($trans_mes as $trans) {
             $html .= '
                 <tr>
-                    <td>'.date('d/m/Y', strtotime($trans['fecha'])).'</td>
-                    <td>'.htmlspecialchars($trans['referencia']).'</td>
-                    <td>'.htmlspecialchars($trans['descripcion']).'</td>
-                    <td class="debit">'.($trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '').'</td>
-                    <td class="credit">'.($trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '').'</td>
-                    <td class="balance">'.number_format($trans['saldo'], 2, ',', '.').'</td>
+                    <td class="date-col">'.date('d/m/Y', strtotime($trans['fecha'])).'</td>
+                    <td class="ref-col">'.htmlspecialchars($trans['referencia']).'</td>
+                    <td class="desc-col">'.htmlspecialchars($trans['descripcion']).'</td>
+                    <td class="amount-col">'.($trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '').'</td>
+                    <td class="amount-col">'.($trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '').'</td>
+                    <td class="balance-col">'.number_format($trans['saldo'], 2, ',', '.').'</td>
                 </tr>';
             $saldo_final = $trans['saldo'];
         }
