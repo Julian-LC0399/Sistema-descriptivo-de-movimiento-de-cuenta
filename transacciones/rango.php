@@ -254,7 +254,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
                 <thead>
                     <tr>
                         <th class="date-col">Fecha</th>
-                        <th class="ref-col">Referencia</th>
+                        <th class="ref-col">Serial</th>
                         <th class="desc-col">Descripción</th>
                         <th class="amount-col">Débito</th>
                         <th class="amount-col">Crédito</th>
