@@ -123,7 +123,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     
     $pdf->setPrintHeader(false);
     $pdf->setPrintFooter(false);
-    $pdf->SetMargins(8, 8, 8);
+    $pdf->SetMargins(8, 5, 8);
     $pdf->SetAutoPageBreak(TRUE, 8);
     $pdf->AddPage();
     $pdf->SetFont('helvetica', '', 7.5);
@@ -132,7 +132,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     $logo_html = '';
     
     if (file_exists($logo_path)) {
-        $logo_html = '<img src="'.$logo_path.'" width="80">';
+        $logo_html = '<img src="'.$logo_path.'" width="150" style="margin-bottom: 2px;">'; // Cambio principal aquí
     } else {
         error_log("Logo no encontrado: " . $logo_path);
     }
@@ -162,16 +162,16 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     
     $html = '
     <style>
-        .header { text-align:center; margin-bottom:2px; }
-        .client-container { display: flex; justify-content: space-between; margin-bottom: 10px; }
-        .client-name { font-size:14px; font-weight:bold; margin-bottom:5px; text-transform:uppercase; text-align: right; }
+        .header { text-align:center; margin-bottom:2px; padding-top: 2px; }
+        .client-container { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .client-name { font-size:16px; font-weight:bold; margin-bottom:2px; text-transform:uppercase; text-align: right; }
         .client-info { line-height:1.1; font-size:9px; text-align: right; }
         .account-info { margin:2px 0; font-weight:bold; }
         .title { 
             text-align:center; 
             font-weight:bold; 
             font-size:10px; 
-            margin:5px 0 3px 0;
+            margin:3px 0 2px 0;
             border-top:1px solid #000; 
             border-bottom:1px solid #000; 
             padding:1px 0; 
@@ -181,24 +181,24 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             table-layout: fixed;
             width: 100%;
             border-collapse: collapse;
-            font-size: 7pt;
+            font-size: 6.5pt;
         }
         .transaction-table th {
             background-color: #f5f5f5;
             color: #333;
             font-weight: bold;
-            padding: 3px 2px;
+            padding: 2px 1px;
             border: 0.5px solid #ddd;
             text-align: center;
-            height: 18px;
-            font-size: 7.5pt;
+            height: 14px;
+            font-size: 7pt;
         }
         .transaction-table td {
-            padding: 3px 2px;
+            padding: 2px 1px;
             border: 0.5px solid #ddd;
-            height: 16px;
+            height: 14px;
             line-height: 1.2;
-            font-size: 7pt;
+            font-size: 6.5pt;
             overflow: hidden;
             word-wrap: break-word;
         }
@@ -209,7 +209,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         .transaction-table .balance-col { width: 15%; text-align: right; }
         .transaction-table tr:nth-child(even) { background-color: #f9f9f9; }
         .totals { 
-            margin-top:5px; 
+            margin-top:3px; 
             font-size:8px; 
             border-top:1px solid #000; 
             padding-top:2px; 
@@ -219,9 +219,9 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         }
         .total-row { display:flex; justify-content:space-between; margin:1px 0; }
         .page-number { text-align:center; font-size:6px; margin-top:2px; }
-        .address-line { margin-bottom:2px; }
+        .address-line { margin-bottom:1px; }
         .logo-container { width: 30%; }
-        .client-data-container { width: 65%; }
+        .client-data-container { width: 68%; }
     </style>
     
     <div class="client-container">
