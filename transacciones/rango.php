@@ -198,7 +198,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         .transaction-table .ref-col { width: 12%; text-align: center; }
         .transaction-table .desc-col { width: 38%; }
         .transaction-table .amount-col { width: 12%; text-align: right; }
-        .transaction-table .balance-col { width: 16%; text-align: right; font-weight: bold; }
+        .transaction-table .balance-col { width: 16%; text-align: right; }
         .transaction-table tr:nth-child(even) { background-color: #f9f9f9; }
         .totals { 
             margin-top:5px; 
