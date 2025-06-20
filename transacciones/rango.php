@@ -183,11 +183,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             border-bottom: 1px solid #003366;
             padding-bottom: 5px;
         }
-        .bank-title {
-            font-size: 14pt;
-            font-weight: bold;
-            color: #003366;
-        }
+            
         .client-info {
             font-size: 9pt;
             line-height: 1.3;
