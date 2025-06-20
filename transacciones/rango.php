@@ -132,7 +132,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     $logo_html = '';
     
     if (file_exists($logo_path)) {
-        $logo_html = '<img src="'.$logo_path.'" width="150" style="margin-bottom: 2px;">'; // Cambio principal aquí
+        $logo_html = '<img src="'.$logo_path.'" width="150" style="margin-bottom: 2px;">';
     } else {
         error_log("Logo no encontrado: " . $logo_path);
     }
@@ -164,8 +164,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     <style>
         .header { text-align:center; margin-bottom:2px; padding-top: 2px; }
         .client-container { display: flex; justify-content: space-between; margin-bottom: 5px; }
-        .client-name { font-size:16px; font-weight:bold; margin-bottom:2px; text-transform:uppercase; text-align: right; }
-        .client-info { line-height:1.1; font-size:9px; text-align: right; }
+        .client-info { line-height:1.1; font-size:9px; }
         .account-info { margin:2px 0; font-weight:bold; }
         .title { 
             text-align:center; 
@@ -222,6 +221,24 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         .address-line { margin-bottom:1px; }
         .logo-container { width: 30%; }
         .client-data-container { width: 68%; }
+        .emission-date {
+            font-size: 9px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: left;
+        }
+        .client-data-right {
+            text-align: right;
+            width: 100%;
+        }
+        .client-name-header {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-align: right;
+            text-transform: uppercase;
+            width: 100%;
+        }
     </style>
     
     <div class="client-container">
@@ -229,17 +246,18 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             '.$logo_html.'
         </div>
         <div class="client-data-container">
-            <div class="client-name">'.strtoupper($nombre_cliente).'</div>
-            <div class="client-info">
+            <div class="client-name-header">'.strtoupper($nombre_cliente).'</div>
+            <div class="client-info client-data-right">
                 <div class="address-line"><strong>'.strtoupper($direccion1).'</strong></div>
                 <div class="address-line"><strong>'.strtoupper($direccion2).'</strong></div>
                 <div class="address-line"><strong>'.strtoupper($ciudad).'</strong></div>
                 <div><strong>NÚMERO DE CUENTA: '.$cuenta.'</strong></div>
                 <div><strong>SUCURSAL: '.$sucursal.'</strong></div>
-                <div><strong>Fecha Emisión: '.date('d/m/Y H:i A').'</strong></div>
             </div>
         </div>
-    </div>';
+    </div>
+    
+    <div class="emission-date">Fecha Emisión: '.date('d-m-Y H:i A').'</div>';
     
     $total_general_debitos = $total_general_creditos = 0;
     $saldo_final = $saldo_inicial;
