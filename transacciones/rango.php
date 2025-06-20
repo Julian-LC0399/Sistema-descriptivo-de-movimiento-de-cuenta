@@ -102,7 +102,6 @@ try {
         $saldos_por_mes[$mes_ano]['saldo_final'] = $saldo_acumulado;
     }
 
-    // Inicializar y calcular totales generales
     $total_general_debitos = 0;
     $total_general_creditos = 0;
     $saldo_final = $saldo_inicial;
@@ -128,7 +127,6 @@ try {
 }
 
 if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
-    // Limpiar buffer de salida antes de generar PDF
     ob_end_clean();
     
     require_once __DIR__ . '/../includes/library/tcpdf.php';
@@ -149,7 +147,8 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     $logo_html = '';
     
     if (file_exists($logo_path)) {
-        $logo_html = '<img src="'.$logo_path.'" width="100">';
+        // Cambio realizado: Imagen más grande (150px) y alineada a la izquierda
+        $logo_html = '<div style="text-align: left;"><img src="'.$logo_path.'" width="150"></div>';
     }
 
     try {
@@ -178,10 +177,17 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     $html = '
     <style>
         .header { 
-            text-align: center; 
             margin-bottom: 5px; 
             border-bottom: 1px solid #003366;
             padding-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .header-content {
+            margin-left: 20px;
+            text-align: center;
+            flex-grow: 1;
         }
             
         .client-info {
@@ -212,8 +218,6 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             padding: 3px;
             border: 0.5px solid #ddd;
         }
-        .debit { color: #D32F2F; text-align: right; }
-        .credit { color: #388E3C; text-align: right; }
         .totals {
             margin-top: 10px;
             border-top: 1px solid #003366;
@@ -224,7 +228,9 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
 
     <div class="header">
         '.$logo_html.'
-        <div style="font-size: 10pt; font-weight: bold;">ESTADO DE CUENTA</div>
+        <div class="header-content">
+            <div style="font-size: 10pt; font-weight: bold;">ESTADO DE CUENTA</div>
+        </div>
     </div>
 
     <div class="client-info">
@@ -254,11 +260,12 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             <table class="transaction-table">
                 <thead>
                     <tr>
-                        <th style="width: 15%;">Fecha</th>
-                        <th style="width: 20%;">Serial</th>
-                        <th style="width: 35%;">Descripción</th>
-                        <th style="width: 15%;">Débito</th>
-                        <th style="width: 15%;">Crédito</th>
+                        <th style="width: 12%;">Fecha</th>
+                        <th style="width: 18%;">Serial</th>
+                        <th style="width: 30%;">Descripción</th>
+                        <th style="width: 12%;">Débito</th>
+                        <th style="width: 12%;">Crédito</th>
+                        <th style="width: 16%;">Saldo</th>
                     </tr>
                 </thead>
                 <tbody>';
@@ -269,8 +276,9 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
                     <td>'.date('d/m/Y', strtotime($trans['fecha'])).'</td>
                     <td>'.htmlspecialchars($trans['referencia']).'</td>
                     <td>'.htmlspecialchars($trans['descripcion']).'</td>
-                    <td class="debit">'.($trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '').'</td>
-                    <td class="credit">'.($trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '').'</td>
+                    <td style="text-align: right;">'.($trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '').'</td>
+                    <td style="text-align: right;">'.($trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '').'</td>
+                    <td style="text-align: right;">'.number_format($trans['saldo'], 2, ',', '.').'</td>
                 </tr>';
         }
         
@@ -307,10 +315,9 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
 
 function validateDate($date, $format = 'Y-m-d') {
     $d = DateTime::createFromFormat($format, $date);
-    return $d && $d->format($format) === $date;
+    return $d && $d->format($format) == $date;
 }
 
-// Limpiar buffer para la salida HTML
 ob_end_flush();
 ?>
 
