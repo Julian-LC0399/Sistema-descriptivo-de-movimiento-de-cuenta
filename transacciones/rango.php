@@ -1,4 +1,7 @@
 <?php
+// Iniciar buffer de salida para evitar problemas con TCPDF
+ob_start();
+
 require_once __DIR__ . '/../includes/config.php'; 
 session_start();
 
@@ -99,6 +102,17 @@ try {
         $saldos_por_mes[$mes_ano]['saldo_final'] = $saldo_acumulado;
     }
 
+    // Inicializar y calcular totales generales
+    $total_general_debitos = 0;
+    $total_general_creditos = 0;
+    $saldo_final = $saldo_inicial;
+    
+    foreach ($saldos_por_mes as $mes) {
+        $total_general_debitos += $mes['total_debitos'];
+        $total_general_creditos += $mes['total_creditos'];
+        $saldo_final = $mes['saldo_final'];
+    }
+
     if (!empty($cuenta)) {
         $stmt_cliente_web = $pdo->prepare("SELECT c.cusna1 AS nombre_completo 
                                           FROM cumst c JOIN acmst a ON c.cuscun = a.acmcun
@@ -114,6 +128,9 @@ try {
 }
 
 if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
+    // Limpiar buffer de salida antes de generar PDF
+    ob_end_clean();
+    
     require_once __DIR__ . '/../includes/library/tcpdf.php';
     
     $pdf = new TCPDF('P', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
@@ -123,18 +140,16 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     
     $pdf->setPrintHeader(false);
     $pdf->setPrintFooter(false);
-    $pdf->SetMargins(8, 5, 8);
-    $pdf->SetAutoPageBreak(TRUE, 8);
+    $pdf->SetMargins(10, 10, 10);
+    $pdf->SetAutoPageBreak(TRUE, 10);
     $pdf->AddPage();
-    $pdf->SetFont('helvetica', '', 7.5);
+    $pdf->SetFont('helvetica', '', 9);
 
     $logo_path = realpath(__DIR__ . '/../assets/images/logo-banco.jpg');
     $logo_html = '';
     
     if (file_exists($logo_path)) {
-        $logo_html = '<img src="'.$logo_path.'" width="150" style="margin-bottom: 2px;">';
-    } else {
-        error_log("Logo no encontrado: " . $logo_path);
+        $logo_html = '<img src="'.$logo_path.'" width="100">';
     }
 
     try {
@@ -162,125 +177,92 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     
     $html = '
     <style>
-        .header { text-align:center; margin-bottom:2px; padding-top: 2px; }
-        .client-container { display: flex; justify-content: space-between; margin-bottom: 5px; }
-        .client-info { line-height:1.1; font-size:9px; }
-        .account-info { margin:2px 0; font-weight:bold; }
-        .title { 
-            text-align:center; 
-            font-weight:bold; 
-            font-size:10px; 
-            margin:3px 0 2px 0;
-            border-top:1px solid #000; 
-            border-bottom:1px solid #000; 
-            padding:1px 0; 
-            text-transform:uppercase; 
+        .header { 
+            text-align: center; 
+            margin-bottom: 5px; 
+            border-bottom: 1px solid #003366;
+            padding-bottom: 5px;
+        }
+        .bank-title {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #003366;
+        }
+        .client-info {
+            font-size: 9pt;
+            line-height: 1.3;
+            margin-bottom: 5px;
+        }
+        .account-box {
+            background-color: #f5f5f5;
+            border-left: 3px solid #003366;
+            padding: 5px;
+            margin: 5px 0;
+            font-size: 8pt;
         }
         .transaction-table {
-            table-layout: fixed;
             width: 100%;
             border-collapse: collapse;
-            font-size: 6.5pt;
+            font-size: 7pt;
+            margin-top: 5px;
         }
         .transaction-table th {
-            background-color: #f5f5f5;
-            color: #333;
-            font-weight: bold;
-            padding: 2px 1px;
-            border: 0.5px solid #ddd;
+            background-color: #003366;
+            color: white;
+            padding: 3px;
             text-align: center;
-            height: 14px;
-            font-size: 7pt;
         }
         .transaction-table td {
-            padding: 2px 1px;
+            padding: 3px;
             border: 0.5px solid #ddd;
-            height: 14px;
-            line-height: 1.2;
-            font-size: 6.5pt;
-            overflow: hidden;
-            word-wrap: break-word;
         }
-        .transaction-table .date-col { width: 12%; text-align: center; }
-        .transaction-table .ref-col { width: 15%; text-align: center; }
-        .transaction-table .desc-col { width: 33%; }
-        .transaction-table .amount-col { width: 12%; text-align: right; }
-        .transaction-table .balance-col { width: 15%; text-align: right; }
-        .transaction-table tr:nth-child(even) { background-color: #f9f9f9; }
-        .totals { 
-            margin-top:3px; 
-            font-size:8px; 
-            border-top:1px solid #000; 
-            padding-top:2px; 
-            width:60%; 
-            margin-left:auto; 
-            margin-right:auto; 
-        }
-        .total-row { display:flex; justify-content:space-between; margin:1px 0; }
-        .page-number { text-align:center; font-size:6px; margin-top:2px; }
-        .address-line { margin-bottom:1px; }
-        .logo-container { width: 30%; }
-        .client-data-container { width: 68%; }
-        .emission-date {
-            font-size: 9px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            text-align: left;
-        }
-        .client-data-right {
-            text-align: right;
-            width: 100%;
-        }
-        .client-name-header {
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 5px;
-            text-align: right;
-            text-transform: uppercase;
-            width: 100%;
+        .debit { color: #D32F2F; text-align: right; }
+        .credit { color: #388E3C; text-align: right; }
+        .totals {
+            margin-top: 10px;
+            border-top: 1px solid #003366;
+            padding-top: 5px;
+            font-size: 8pt;
         }
     </style>
-    
-    <div class="client-container">
-        <div class="logo-container">
-            '.$logo_html.'
-        </div>
-        <div class="client-data-container">
-            <div class="client-name-header">'.strtoupper($nombre_cliente).'</div>
-            <div class="client-info client-data-right">
-                <div class="address-line"><strong>'.strtoupper($direccion1).'</strong></div>
-                <div class="address-line"><strong>'.strtoupper($direccion2).'</strong></div>
-                <div class="address-line"><strong>'.strtoupper($ciudad).'</strong></div>
-                <div><strong>NÚMERO DE CUENTA: '.$cuenta.'</strong></div>
-                <div><strong>SUCURSAL: '.$sucursal.'</strong></div>
-            </div>
-        </div>
+
+    <div class="header">
+        '.$logo_html.'
+        <div style="font-size: 10pt; font-weight: bold;">ESTADO DE CUENTA</div>
     </div>
-    
-    <div class="emission-date">Fecha Emisión: '.date('d-m-Y H:i A').'</div>';
-    
-    $total_general_debitos = $total_general_creditos = 0;
-    $saldo_final = $saldo_inicial;
-    
+
+    <div class="client-info">
+        <strong>CLIENTE:</strong> '.strtoupper($nombre_cliente).'<br>
+        <strong>DIRECCIÓN:</strong> '.strtoupper($direccion1.', '.$direccion2.', '.$ciudad).'
+    </div>
+
+    <div class="account-box">
+        <strong>CUENTA:</strong> '.$cuenta.' | 
+        <strong>SUCURSAL:</strong> '.$sucursal.' | 
+        <strong>PERÍODO:</strong> '.date('d/m/Y', strtotime($fecha_inicio)).' AL '.date('d/m/Y', strtotime($fecha_fin)).' | 
+        <strong>EMISIÓN:</strong> '.date('d-m-Y H:i A').'
+    </div>';
+
     foreach ($transacciones_por_mes as $mes_ano => $trans_mes) {
         $mes_nombre = getMesEspanol('01-'.$mes_ano).' '.date('Y', strtotime('01-'.$mes_ano));
         $saldo_mes = $saldos_por_mes[$mes_ano];
         
         $html .= '
-        <div>
-            <div class="title">ESTADO DE CUENTA '.strtoupper($mes_nombre).'</div>
-            <div style="text-align:center; font-size:8px; margin-bottom:3px;">
+        <div style="margin-top: 10px;">
+            <div style="font-weight: bold; font-size: 9pt; border-bottom: 1px solid #003366;">
+                '.strtoupper($mes_nombre).'
+            </div>
+            <div style="font-size: 8pt; margin: 3px 0;">
                 <strong>Saldo Inicial:</strong> '.number_format($saldo_mes['saldo_inicial'], 2, ',', '.').' '.$moneda.'
             </div>
             <table class="transaction-table">
                 <thead>
                     <tr>
-                        <th class="date-col">Fecha</th>
-                        <th class="ref-col">Serial</th>
-                        <th class="desc-col">Descripción</th>
-                        <th class="amount-col">Débito</th>
-                        <th class="amount-col">Crédito</th>
-                        <th class="balance-col">Saldo</th>
+                        <th style="width: 15%;">Fecha</th>
+                        <th style="width: 20%;">Serial</th>
+                        <th style="width: 35%;">Descripción</th>
+                        <th style="width: 15%;">Débito</th>
+                        <th style="width: 15%;">Crédito</th>
                     </tr>
                 </thead>
                 <tbody>';
@@ -288,63 +270,42 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         foreach ($trans_mes as $trans) {
             $html .= '
                 <tr>
-                    <td class="date-col">'.date('d/m/Y', strtotime($trans['fecha'])).'</td>
-                    <td class="ref-col">'.htmlspecialchars($trans['referencia']).'</td>
-                    <td class="desc-col">'.htmlspecialchars($trans['descripcion']).'</td>
-                    <td class="amount-col">'.($trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '').'</td>
-                    <td class="amount-col">'.($trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '').'</td>
-                    <td class="balance-col">'.number_format($trans['saldo'], 2, ',', '.').'</td>
+                    <td>'.date('d/m/Y', strtotime($trans['fecha'])).'</td>
+                    <td>'.htmlspecialchars($trans['referencia']).'</td>
+                    <td>'.htmlspecialchars($trans['descripcion']).'</td>
+                    <td class="debit">'.($trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '').'</td>
+                    <td class="credit">'.($trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '').'</td>
                 </tr>';
-            $saldo_final = $trans['saldo'];
         }
         
         $html .= '
                 </tbody>
             </table>
-            <div class="totals">
-                <div class="total-row">
-                    <span>Total Débitos:</span>
-                    <span>'.number_format($saldo_mes['total_debitos'], 2, ',', '.').' '.$moneda.'</span>
-                </div>
-                <div class="total-row">
-                    <span>Total Créditos:</span>
-                    <span>'.number_format($saldo_mes['total_creditos'], 2, ',', '.').' '.$moneda.'</span>
-                </div>
-                <div class="total-row">
-                    <span>Saldo Final:</span>
-                    <span>'.number_format($saldo_mes['saldo_final'], 2, ',', '.').' '.$moneda.'</span>
-                </div>
+            <div class="totals" style="text-align: right;">
+                <div><strong>Total Débitos:</strong> '.number_format($saldo_mes['total_debitos'], 2, ',', '.').' '.$moneda.'</div>
+                <div><strong>Total Créditos:</strong> '.number_format($saldo_mes['total_creditos'], 2, ',', '.').' '.$moneda.'</div>
+                <div><strong>Saldo Final:</strong> '.number_format($saldo_mes['saldo_final'], 2, ',', '.').' '.$moneda.'</div>
             </div>
         </div>';
-        
-        $total_general_debitos += $saldo_mes['total_debitos'];
-        $total_general_creditos += $saldo_mes['total_creditos'];
     }
-    
+
     $html .= '
-    <div class="title">RESUMEN GENERAL</div>
-    <div class="totals">
-        <div class="total-row">
-            <span>Saldo Inicial Total:</span>
-            <span>'.number_format($saldo_inicial, 2, ',', '.').' '.$moneda.'</span>
-        </div>
-        <div class="total-row">
-            <span>Total General Débitos:</span>
-            <span>'.number_format($total_general_debitos, 2, ',', '.').' '.$moneda.'</span>
-        </div>
-        <div class="total-row">
-            <span>Total General Créditos:</span>
-            <span>'.number_format($total_general_creditos, 2, ',', '.').' '.$moneda.'</span>
-        </div>
-        <div class="total-row">
-            <span>Saldo Final Total:</span>
-            <span>'.number_format($saldo_final, 2, ',', '.').' '.$moneda.'</span>
+    <div class="totals" style="margin-top: 15px; border-top: 2px solid #003366;">
+        <div style="text-align: center; font-weight: bold; font-size: 9pt;">RESUMEN GENERAL</div>
+        <div style="text-align: right;">
+            <div><strong>Saldo Inicial:</strong> '.number_format($saldo_inicial, 2, ',', '.').' '.$moneda.'</div>
+            <div><strong>Total Débitos:</strong> '.number_format($total_general_debitos, 2, ',', '.').' '.$moneda.'</div>
+            <div><strong>Total Créditos:</strong> '.number_format($total_general_creditos, 2, ',', '.').' '.$moneda.'</div>
+            <div style="font-weight: bold;"><strong>Saldo Final:</strong> '.number_format($saldo_final, 2, ',', '.').' '.$moneda.'</div>
         </div>
     </div>
-    <div class="page-number">Página '.$pdf->getAliasNumPage().' / '.$pdf->getAliasNbPages().'</div>';
-    
+
+    <div style="text-align: center; font-size: 7pt; margin-top: 10px; color: #555;">
+        Documento generado electrónicamente - Banco Caroni C.A.
+    </div>';
+
     $pdf->writeHTML($html, true, false, true, false, '');
-    $pdf->Output('estado_cuenta_'.$fecha_inicio.'_'.$fecha_fin.'.pdf', 'D');
+    $pdf->Output('estado_cuenta_'.$cuenta.'_'.date('Ymd').'.pdf', 'D');
     exit();
 }
 
@@ -352,6 +313,9 @@ function validateDate($date, $format = 'Y-m-d') {
     $d = DateTime::createFromFormat($format, $date);
     return $d && $d->format($format) === $date;
 }
+
+// Limpiar buffer para la salida HTML
+ob_end_flush();
 ?>
 
 <!DOCTYPE html>
