@@ -131,6 +131,9 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     
     require_once __DIR__ . '/../includes/library/tcpdf.php';
     
+    // Establecer zona horaria de Venezuela solo para el PDF
+    date_default_timezone_set('America/Caracas');
+    
     $pdf = new TCPDF('P', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
     $pdf->SetCreator('Banco Caroni');
     $pdf->SetAuthor('Sistema Bancario');
@@ -275,10 +278,9 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     </div>
 
     <div class="account-box">
-        <strong>CUENTA:</strong> '.$cuenta.' | 
-        <strong>SUCURSAL:</strong> '.$sucursal.' | 
+        <strong>CUENTA:</strong> '.$cuenta.' |  
         <strong>PERÍODO:</strong> '.date('d/m/Y', strtotime($fecha_inicio)).' AL '.date('d/m/Y', strtotime($fecha_fin)).' | 
-        <strong>EMISIÓN:</strong> '.date('d-m-Y H:i A').'
+        <strong>EMISIÓN:</strong> '.date('d-m-Y H:i A').' (Hora Venezuela)
     </div>';
 
     foreach ($transacciones_por_mes as $mes_ano => $trans_mes) {
@@ -341,7 +343,8 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     </div>
 
     <div style="text-align: center; font-size: 7pt; margin-top: 10px; color: #555;">
-        Documento generado electrónicamente - Banco Caroni C.A.
+        Documento generado electrónicamente - Banco Caroni C.A.<br>
+        Fecha y hora de generación: '.date('d-m-Y H:i A').' (Hora de Venezuela)
     </div>';
 
     $pdf->writeHTML($html, true, false, true, false, '');
