@@ -141,13 +141,12 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     $pdf->SetMargins(10, 10, 10);
     $pdf->SetAutoPageBreak(TRUE, 10);
     $pdf->AddPage();
-    $pdf->SetFont('helvetica', '', 9);
+    $pdf->SetFont('dejavusans', '', 8);
 
     $logo_path = realpath(__DIR__ . '/../assets/images/logo-banco.jpg');
     $logo_html = '';
     
     if (file_exists($logo_path)) {
-        // Cambio realizado: Imagen más grande (150px) y alineada a la izquierda
         $logo_html = '<div style="text-align: left;"><img src="'.$logo_path.'" width="150"></div>';
     }
 
@@ -205,24 +204,61 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         .transaction-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 7pt;
+            font-size: 7.5pt;
             margin-top: 5px;
+            page-break-inside: avoid;
         }
         .transaction-table th {
             background-color: #003366;
             color: white;
-            padding: 3px;
+            padding: 4px;
             text-align: center;
+            font-weight: bold;
+            border: 0.5px solid #003366;
         }
         .transaction-table td {
-            padding: 3px;
+            padding: 4px;
             border: 0.5px solid #ddd;
+            vertical-align: top;
+        }
+        .transaction-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .align-right {
+            text-align: right;
+        }
+        .align-center {
+            text-align: center;
+        }
+        .debito {
+            color: #CC0000;
+            font-weight: bold;
+        }
+        .credito {
+            color: #009900;
+            font-weight: bold;
+        }
+        .saldo {
+            color: #003366;
+            font-weight: bold;
         }
         .totals {
             margin-top: 10px;
             border-top: 1px solid #003366;
             padding-top: 5px;
             font-size: 8pt;
+        }
+        .total-debito {
+            color: #CC0000;
+            font-weight: bold;
+        }
+        .total-credito {
+            color: #009900;
+            font-weight: bold;
+        }
+        .total-saldo {
+            color: #003366;
+            font-weight: bold;
         }
     </style>
 
@@ -251,21 +287,21 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         
         $html .= '
         <div style="margin-top: 10px;">
-            <div style="font-weight: bold; font-size: 9pt; border-bottom: 1px solid #003366;">
+            <div style="font-weight: bold; font-size: 9pt; border-bottom: 1px solid #003366; margin-bottom: 5px;">
                 '.strtoupper($mes_nombre).'
             </div>
             <div style="font-size: 8pt; margin: 3px 0;">
-                <strong>Saldo Inicial:</strong> '.number_format($saldo_mes['saldo_inicial'], 2, ',', '.').' '.$moneda.'
+                <strong>Saldo Inicial:</strong> <span class="saldo">'.number_format($saldo_mes['saldo_inicial'], 2, ',', '.').' '.$moneda.'</span>
             </div>
             <table class="transaction-table">
                 <thead>
                     <tr>
-                        <th style="width: 12%;">Fecha</th>
-                        <th style="width: 18%;">Serial</th>
-                        <th style="width: 30%;">Descripción</th>
-                        <th style="width: 12%;">Débito</th>
-                        <th style="width: 12%;">Crédito</th>
-                        <th style="width: 16%;">Saldo</th>
+                        <th style="width: 10%;" class="align-center">Fecha</th>
+                        <th style="width: 15%;" class="align-center">Referencia</th>
+                        <th style="width: 35%;" class="align-center">Descripción</th>
+                        <th style="width: 12%;" class="align-center">Débito</th>
+                        <th style="width: 12%;" class="align-center">Crédito</th>
+                        <th style="width: 16%;" class="align-center">Saldo</th>
                     </tr>
                 </thead>
                 <tbody>';
@@ -273,12 +309,12 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         foreach ($trans_mes as $trans) {
             $html .= '
                 <tr>
-                    <td>'.date('d/m/Y', strtotime($trans['fecha'])).'</td>
-                    <td>'.htmlspecialchars($trans['referencia']).'</td>
+                    <td class="align-center">'.date('d/m/Y', strtotime($trans['fecha'])).'</td>
+                    <td class="align-center">'.htmlspecialchars($trans['referencia']).'</td>
                     <td>'.htmlspecialchars($trans['descripcion']).'</td>
-                    <td style="text-align: right;">'.($trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '').'</td>
-                    <td style="text-align: right;">'.($trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '').'</td>
-                    <td style="text-align: right;">'.number_format($trans['saldo'], 2, ',', '.').'</td>
+                    <td class="align-right '.($trans['tipo'] == 'D' ? 'debito' : '').'">'.($trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '-').'</td>
+                    <td class="align-right '.($trans['tipo'] == 'C' ? 'credito' : '').'">'.($trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '-').'</td>
+                    <td class="align-right saldo">'.number_format($trans['saldo'], 2, ',', '.').'</td>
                 </tr>';
         }
         
@@ -286,9 +322,9 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
                 </tbody>
             </table>
             <div class="totals" style="text-align: right;">
-                <div><strong>Total Débitos:</strong> '.number_format($saldo_mes['total_debitos'], 2, ',', '.').' '.$moneda.'</div>
-                <div><strong>Total Créditos:</strong> '.number_format($saldo_mes['total_creditos'], 2, ',', '.').' '.$moneda.'</div>
-                <div><strong>Saldo Final:</strong> '.number_format($saldo_mes['saldo_final'], 2, ',', '.').' '.$moneda.'</div>
+                <div><strong>Total Débitos:</strong> <span class="total-debito">'.number_format($saldo_mes['total_debitos'], 2, ',', '.').' '.$moneda.'</span></div>
+                <div><strong>Total Créditos:</strong> <span class="total-credito">'.number_format($saldo_mes['total_creditos'], 2, ',', '.').' '.$moneda.'</span></div>
+                <div><strong>Saldo Final:</strong> <span class="total-saldo">'.number_format($saldo_mes['saldo_final'], 2, ',', '.').' '.$moneda.'</span></div>
             </div>
         </div>';
     }
@@ -297,10 +333,10 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     <div class="totals" style="margin-top: 15px; border-top: 2px solid #003366;">
         <div style="text-align: center; font-weight: bold; font-size: 9pt;">RESUMEN GENERAL</div>
         <div style="text-align: right;">
-            <div><strong>Saldo Inicial:</strong> '.number_format($saldo_inicial, 2, ',', '.').' '.$moneda.'</div>
-            <div><strong>Total Débitos:</strong> '.number_format($total_general_debitos, 2, ',', '.').' '.$moneda.'</div>
-            <div><strong>Total Créditos:</strong> '.number_format($total_general_creditos, 2, ',', '.').' '.$moneda.'</div>
-            <div style="font-weight: bold;"><strong>Saldo Final:</strong> '.number_format($saldo_final, 2, ',', '.').' '.$moneda.'</div>
+            <div><strong>Saldo Inicial:</strong> <span class="saldo">'.number_format($saldo_inicial, 2, ',', '.').' '.$moneda.'</span></div>
+            <div><strong>Total Débitos:</strong> <span class="total-debito">'.number_format($total_general_debitos, 2, ',', '.').' '.$moneda.'</span></div>
+            <div><strong>Total Créditos:</strong> <span class="total-credito">'.number_format($total_general_creditos, 2, ',', '.').' '.$moneda.'</span></div>
+            <div style="font-weight: bold;"><strong>Saldo Final:</strong> <span class="total-saldo">'.number_format($saldo_final, 2, ',', '.').' '.$moneda.'</span></div>
         </div>
     </div>
 
