@@ -27,6 +27,16 @@ function getMesEspanol($fecha) {
     return $meses[$mes_ingles] ?? $mes_ingles;
 }
 
+function getSaldoColor($saldo) {
+    if ($saldo > 0) {
+        return '#007050';
+    } elseif ($saldo < 0) {
+        return '#c00000';
+    } else {
+        return '#003366';
+    }
+}
+
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
     exit();
@@ -71,7 +81,6 @@ if (!empty($cuenta)) {
             }
         }
 
-        // Obtener datos del cliente
         $stmt_cliente = $pdo->prepare("SELECT c.cusna1 AS nombre_completo, c.cusna2 AS direccion1, 
                                       c.cusna3 AS direccion2, c.cuscty AS ciudad
                                       FROM cumst c JOIN acmst a ON c.cuscun = a.acmcun
@@ -167,13 +176,11 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         }
         
         public function Header() {
-            // Logo más compacto (20mm de ancho)
             $logo_path = realpath(__DIR__ . '/../assets/images/logo-banco.jpg');
             if (file_exists($logo_path)) {
                 $this->Image($logo_path, 10, 8, 20, 0, 'JPG', '', 'T', false, 300, '', false, false, 0, false, false, false);
             }
             
-            // Encabezado compacto en 2 líneas
             $this->SetFont('helvetica', 'B', 9);
             $this->SetY(10);
             $this->Cell(0, 4, 'BANCO CARONI C.A. | RIF: J-12345678-9', 0, 1, 'C');
@@ -181,7 +188,6 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             $this->SetFont('helvetica', '', 7);
             $this->Cell(0, 4, 'PERÍODO: '.date('d/m/Y', strtotime($this->fecha_inicio)).' - '.date('d/m/Y', strtotime($this->fecha_fin)).' | Emisión: '.date('d/m/Y H:i'), 0, 1, 'C');
             
-            // Información del cliente en bloque compacto
             $this->SetY(18);
             $this->SetFont('helvetica', 'B', 7);
             $this->Cell(15, 3, 'CLIENTE:', 0, 0, 'L');
@@ -193,10 +199,9 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             $this->SetFont('helvetica', '', 7);
             $this->Cell(80, 3, $this->cuenta.' | '.$this->moneda.' | SUC: '.$this->sucursal, 0, 1, 'L');
             
-            // Línea separadora fina
             $this->SetLineWidth(0.1);
             $this->Line(10, 25, $this->getPageWidth()-10, 25);
-            $this->SetY(27); // Posición después del encabezado
+            $this->SetY(27);
         }
         
         public function Footer() {
@@ -214,16 +219,15 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     $pdf->SetTitle('Estado de Cuenta '.$fecha_inicio.' al '.$fecha_fin);
     $pdf->setPrintHeader(true);
     $pdf->setPrintFooter(true);
-    $pdf->SetMargins(10, 27, 10); // Márgenes más ajustados (izq, arriba, der)
+    $pdf->SetMargins(10, 27, 10);
     $pdf->SetHeaderMargin(5);
     $pdf->SetFooterMargin(5);
-    $pdf->SetAutoPageBreak(TRUE, 15); // Margen inferior más pequeño
+    $pdf->SetAutoPageBreak(TRUE, 15);
     $pdf->AddPage();
-    $pdf->SetFont('helvetica', '', 7); // Fuente más pequeña pero legible
+    $pdf->SetFont('helvetica', '', 7);
     
     $html = '
     <style>
-        /* Estilos optimizados con mejor espaciado */
         .month-header {
             background-color: #f5f5f5;
             font-weight: bold;
@@ -232,6 +236,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             margin: 2mm 0 1mm 0;
             border-left: 2mm solid #003366;
             page-break-after: avoid;
+            text-align: center;
         }
         .saldo-inicial {
             font-size: 6pt;
@@ -265,20 +270,6 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         .balance-col { width: 10%; text-align: right; }
         .debit { color: #cc0000; }
         .credit { color: #009900; }
-        .month-totals {
-            font-size: 6pt;
-            text-align: right;
-            margin: 3mm 0 5mm 0;
-            padding-top: 2mm;
-            border-top: 0.2mm solid #f0f0f0;
-        }
-        .month-totals span {
-            display: inline-block;
-            margin-left: 5mm;
-            padding: 1mm 2mm;
-            background-color: #f9f9f9;
-            border-radius: 1mm;
-        }
         .summary-section {
             page-break-before: avoid;
             margin-top: 5mm;
@@ -352,22 +343,36 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
                     <td class="desc-col">'.htmlspecialchars($trans['descripcion']).'</td>
                     <td class="amount-col '.($trans['tipo'] == 'D' ? 'debit' : '').'">'.($trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '-').'</td>
                     <td class="amount-col '.($trans['tipo'] == 'C' ? 'credit' : '').'">'.($trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '-').'</td>
-                    <td class="balance-col">'.(!empty($cuenta) ? number_format($trans['saldo'], 2, ',', '.') : '-').'</td>
+                    <td class="balance-col" style="color: '.getSaldoColor($trans['saldo']).';">'.(!empty($cuenta) ? number_format($trans['saldo'], 2, ',', '.') : '-').'</td>
                 </tr>';
         }
         
         $html .= '
             </tbody>
         </table>
-        <div class="month-totals">
-            <span><strong>Total Débitos:</strong> <span class="debit">'.number_format($saldo_mes['total_debitos'], 2, ',', '.').' '.$moneda.'</span></span>
-            <span><strong>Total Créditos:</strong> <span class="credit">'.number_format($saldo_mes['total_creditos'], 2, ',', '.').' '.$moneda.'</span></span>';
-        
-        if (!empty($cuenta)) {
-            $html .= '<span><strong>Saldo Final:</strong> '.number_format($saldo_mes['saldo_final'], 2, ',', '.').' '.$moneda.'</span>';
-        }
-        
-        $html .= '</div>';
+        <div style="margin: 2mm 0 4mm 0; page-break-inside: avoid;">
+            <table style="width: 100%; border-collapse: separate; border-spacing: 1mm; font-size: 7pt;">
+                <tr>
+                    <td style="width: 32%; text-align: center; padding: 1.5mm; background-color: #fff8f8; border: 0.3mm solid #ffdddd; border-radius: 1mm;">
+                        <div style="font-weight: bold; margin-bottom: 0.5mm; color: #990000;">DÉBITOS</div>
+                        <div style="font-size: 8pt; font-weight: bold; color: #cc0000;">'.number_format($saldo_mes['total_debitos'], 2, ',', '.').' '.$moneda.'</div>
+                        <div style="font-size: 5pt; color: #666; margin-top: 0.5mm;">▼ Movimientos</div>
+                    </td>
+                    
+                    <td style="width: 32%; text-align: center; padding: 1.5mm; background-color: #f8fff8; border: 0.3mm solid #ddffdd; border-radius: 1mm;">
+                        <div style="font-weight: bold; margin-bottom: 0.5mm; color: #009900;">CRÉDITOS</div>
+                        <div style="font-size: 8pt; font-weight: bold; color: #009900;">'.number_format($saldo_mes['total_creditos'], 2, ',', '.').' '.$moneda.'</div>
+                        <div style="font-size: 5pt; color: #666; margin-top: 0.5mm;">▲ Movimientos</div>
+                    </td>
+                    
+                    <td style="width: 36%; text-align: center; padding: 1.5mm; background-color: #f8f8ff; border: 0.3mm solid '.getSaldoColor($saldo_mes['saldo_final']).'; border-radius: 1mm;">
+                        <div style="font-weight: bold; margin-bottom: 0.5mm; color: #003366;">SALDO FINAL</div>
+                        <div style="font-size: 9pt; font-weight: bold; color: '.getSaldoColor($saldo_mes['saldo_final']).';">'.number_format($saldo_mes['saldo_final'], 2, ',', '.').' '.$moneda.'</div>
+                        <div style="font-size: 5pt; color: #666; margin-top: 0.5mm;">'.date('d/m/Y', strtotime(end($trans_mes)['fecha'])).'</div>
+                    </td>
+                </tr>
+            </table>
+        </div>';
     }
 
     $html .= '
@@ -393,7 +398,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         $html .= '
             <tr>
                 <td style="font-weight: bold;"><strong>Saldo Final</strong></td>
-                <td style="text-align: right; font-weight: bold;">'.number_format($saldo_final, 2, ',', '.').' '.$moneda.'</td>
+                <td style="text-align: right; font-weight: bold; color: '.getSaldoColor($saldo_final).';">'.number_format($saldo_final, 2, ',', '.').' '.$moneda.'</td>
             </tr>';
     }
     
@@ -547,7 +552,7 @@ ob_end_flush();
                                         <td class="debit"><?= $trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '' ?></td>
                                         <td class="credit"><?= $trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '' ?></td>
                                         <?php if (!empty($cuenta)): ?>
-                                            <td class="balance"><?= number_format($trans['saldo'], 2, ',', '.') ?></td>
+                                            <td class="balance" style="color: <?= getSaldoColor($trans['saldo']) ?>"><?= number_format($trans['saldo'], 2, ',', '.') ?></td>
                                         <?php endif; ?>
                                     </tr>
                                 <?php endforeach; ?>
@@ -567,7 +572,7 @@ ob_end_flush();
                         <?php if (!empty($cuenta)): ?>
                             <div class="total-box">
                                 <div class="total-label"><i class="fas fa-coins"></i> Saldo Final</div>
-                                <div class="total-value"><?= number_format($saldo_mes['saldo_final'], 2, ',', '.') ?></div>
+                                <div class="total-value" style="color: <?= getSaldoColor($saldo_mes['saldo_final']) ?>"><?= number_format($saldo_mes['saldo_final'], 2, ',', '.') ?></div>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -592,7 +597,7 @@ ob_end_flush();
                     <?php if (!empty($cuenta)): ?>
                         <div class="total-box">
                             <div class="total-label"><i class="fas fa-wallet"></i> Saldo Final</div>
-                            <div class="total-value"><?= number_format($saldo_final, 2, ',', '.') ?></div>
+                            <div class="total-value" style="color: <?= getSaldoColor($saldo_final) ?>"><?= number_format($saldo_final, 2, ',', '.') ?></div>
                         </div>
                     <?php endif; ?>
                 </div>
