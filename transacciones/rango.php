@@ -39,6 +39,25 @@ function getSaldoColor($saldo) {
     }
 }
 
+// Función para formatear número de cuenta según estándar Banco Caroní
+function formatAccountNumber($cuenta) {
+    if (empty($cuenta)) return '';
+    
+    // Eliminar cualquier caracter no numérico
+    $cuenta = preg_replace('/[^0-9]/', '', $cuenta);
+    
+    // Formato específico para cuentas de 20 dígitos (01280001140108935107 -> 0128-0001-14-0108935107)
+    if (strlen($cuenta) == 20) {
+        return substr($cuenta, 0, 4) . '-' . 
+               substr($cuenta, 4, 4) . '-' . 
+               substr($cuenta, 8, 2) . '-' . 
+               substr($cuenta, 10, 10);
+    }
+    
+    // Para otros tipos de cuenta, devolver sin formato
+    return $cuenta;
+}
+
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
     exit();
@@ -209,7 +228,8 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             $this->SetFont('helvetica', 'B', 7);
             $this->Cell(15, 3, 'CUENTA:', 0, 0, 'L');
             $this->SetFont('helvetica', '', 7);
-            $this->Cell(80, 3, $this->cuenta.' | '.$this->moneda.' | SUC: '.$this->sucursal, 0, 1, 'L');
+            $formatted_account = formatAccountNumber($this->cuenta);
+            $this->Cell(80, 3, $formatted_account.' | '.$this->moneda.' | SUC: '.$this->sucursal, 0, 1, 'L');
             
             $this->SetLineWidth(0.1);
             $this->Line(10, 25, $this->getPageWidth()-10, 25);
@@ -311,6 +331,11 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             padding-top: 3mm;
             border-top: 0.2mm solid #f0f0f0;
         }
+        .account-number {
+            font-family: "Courier New", monospace;
+            letter-spacing: 0.5px;
+            font-size: 6.5pt;
+        }
     </style>';
 
     foreach ($transacciones_por_mes as $mes_ano => $trans_mes) {
@@ -348,7 +373,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
                     <td class="ref-col">'.htmlspecialchars($trans['referencia']).'</td>';
             
             if (empty($cuenta)) {
-                $html .= '<td class="desc-col">'.htmlspecialchars($trans['cuenta'] ?? '').'</td>';
+                $html .= '<td class="desc-col account-number">'.htmlspecialchars(formatAccountNumber($trans['cuenta'] ?? '')).'</td>';
             }
             
             $html .= '
@@ -530,7 +555,7 @@ ob_end_flush();
                     <?php if (!empty($cuenta)): ?>
                         <div class="account-info">
                             <p><strong><i class="fas fa-user"></i> Cliente:</strong> <?= htmlspecialchars($nombre_cliente_web) ?></p>
-                            <p><strong><i class="fas fa-wallet"></i> Número de Cuenta:</strong> <?= htmlspecialchars($cuenta) ?></p>
+                            <p><strong><i class="fas fa-wallet"></i> Número de Cuenta:</strong> <?= htmlspecialchars(formatAccountNumber($cuenta)) ?></p>
                             <p><strong><i class="fas fa-coins"></i> Saldo Inicial:</strong> <?= number_format($saldo_mes['saldo_inicial'], 2, ',', '.') ?></p>
                         </div>
                     <?php endif; ?>
@@ -558,7 +583,7 @@ ob_end_flush();
                                         <td><?= date('d/m/Y', strtotime($trans['fecha'])) ?></td>
                                         <td><?= htmlspecialchars($trans['referencia']) ?></td>
                                         <?php if (empty($cuenta)): ?>
-                                            <td><?= htmlspecialchars($trans['cuenta'] ?? '') ?></td>
+                                            <td class="account-number"><?= htmlspecialchars(formatAccountNumber($trans['cuenta'] ?? '')) ?></td>
                                         <?php endif; ?>
                                         <td><?= htmlspecialchars($trans['descripcion']) ?></td>
                                         <td class="debit"><?= $trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '' ?></td>
