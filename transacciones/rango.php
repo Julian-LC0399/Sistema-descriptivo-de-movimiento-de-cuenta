@@ -13,6 +13,8 @@ $saldo_inicial = 0;
 $saldo_final = 0;
 $total_general_debitos = 0;
 $total_general_creditos = 0;
+$total_count_debitos = 0;
+$total_count_creditos = 0;
 $moneda = 'VES';
 $direccion1 = $direccion2 = $ciudad = $sucursal = '';
 
@@ -128,19 +130,29 @@ try {
     foreach ($transacciones_por_mes as $mes_ano => $trans_mes) {
         $saldos_por_mes[$mes_ano]['saldo_inicial'] = $saldo_acumulado;
         $total_debitos = $total_creditos = 0;
+        $count_debitos = $count_creditos = 0;
         
         foreach ($trans_mes as $trans) {
-            if ($trans['tipo'] == 'D') $total_debitos += $trans['monto'];
-            else $total_creditos += $trans['monto'];
+            if ($trans['tipo'] == 'D') {
+                $total_debitos += $trans['monto'];
+                $count_debitos++;
+            } else {
+                $total_creditos += $trans['monto'];
+                $count_creditos++;
+            }
             $saldo_acumulado = $trans['saldo'];
         }
         
         $saldos_por_mes[$mes_ano]['total_debitos'] = $total_debitos;
         $saldos_por_mes[$mes_ano]['total_creditos'] = $total_creditos;
         $saldos_por_mes[$mes_ano]['saldo_final'] = $saldo_acumulado;
+        $saldos_por_mes[$mes_ano]['count_debitos'] = $count_debitos;
+        $saldos_por_mes[$mes_ano]['count_creditos'] = $count_creditos;
         
         $total_general_debitos += $total_debitos;
         $total_general_creditos += $total_creditos;
+        $total_count_debitos += $count_debitos;
+        $total_count_creditos += $count_creditos;
         $saldo_final = $saldo_acumulado;
     }
 } catch(PDOException $e) {
@@ -356,13 +368,13 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
                     <td style="width: 32%; text-align: center; padding: 1.5mm; background-color: #fff8f8; border: 0.3mm solid #ffdddd; border-radius: 1mm;">
                         <div style="font-weight: bold; margin-bottom: 0.5mm; color: #990000;">DÉBITOS</div>
                         <div style="font-size: 8pt; font-weight: bold; color: #cc0000;">'.number_format($saldo_mes['total_debitos'], 2, ',', '.').' '.$moneda.'</div>
-                        <div style="font-size: 5pt; color: #666; margin-top: 0.5mm;">▼ Movimientos</div>
+                        <div style="font-size: 5pt; color: #666; margin-top: 0.5mm;">'.$saldo_mes['count_debitos'].' Movimientos ▼</div>
                     </td>
                     
                     <td style="width: 32%; text-align: center; padding: 1.5mm; background-color: #f8fff8; border: 0.3mm solid #ddffdd; border-radius: 1mm;">
                         <div style="font-weight: bold; margin-bottom: 0.5mm; color: #009900;">CRÉDITOS</div>
                         <div style="font-size: 8pt; font-weight: bold; color: #009900;">'.number_format($saldo_mes['total_creditos'], 2, ',', '.').' '.$moneda.'</div>
-                        <div style="font-size: 5pt; color: #666; margin-top: 0.5mm;">▲ Movimientos</div>
+                        <div style="font-size: 5pt; color: #666; margin-top: 0.5mm;">'.$saldo_mes['count_creditos'].' Movimientos ▲</div>
                     </td>
                     
                     <td style="width: 36%; text-align: center; padding: 1.5mm; background-color: #f8f8ff; border: 0.3mm solid '.getSaldoColor($saldo_mes['saldo_final']).'; border-radius: 1mm;">
@@ -386,11 +398,11 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
                 <td style="width: 60%; text-align: right;">'.number_format($saldo_inicial, 2, ',', '.').' '.$moneda.'</td>
             </tr>
             <tr>
-                <td><strong>Total Débitos</strong></td>
+                <td><strong>Total Débitos ('.$total_count_debitos.' movimientos)</strong></td>
                 <td style="text-align: right; color: #cc0000;">'.number_format($total_general_debitos, 2, ',', '.').' '.$moneda.'</td>
             </tr>
             <tr>
-                <td><strong>Total Créditos</strong></td>
+                <td><strong>Total Créditos ('.$total_count_creditos.' movimientos)</strong></td>
                 <td style="text-align: right; color: #009900;">'.number_format($total_general_creditos, 2, ',', '.').' '.$moneda.'</td>
             </tr>';
     
@@ -564,10 +576,12 @@ ob_end_flush();
                         <div class="total-box">
                             <div class="total-label"><i class="fas fa-arrow-down"></i> Total Débitos</div>
                             <div class="total-value"><?= number_format($saldo_mes['total_debitos'], 2, ',', '.') ?></div>
+                            <div class="total-count"><?= $saldo_mes['count_debitos'] ?> movimientos</div>
                         </div>
                         <div class="total-box">
                             <div class="total-label"><i class="fas fa-arrow-up"></i> Total Créditos</div>
                             <div class="total-value"><?= number_format($saldo_mes['total_creditos'], 2, ',', '.') ?></div>
+                            <div class="total-count"><?= $saldo_mes['count_creditos'] ?> movimientos</div>
                         </div>
                         <?php if (!empty($cuenta)): ?>
                             <div class="total-box">
@@ -589,10 +603,12 @@ ob_end_flush();
                     <div class="total-box">
                         <div class="total-label"><i class="fas fa-arrow-down"></i> Total Débitos</div>
                         <div class="total-value"><?= number_format($total_general_debitos, 2, ',', '.') ?></div>
+                        <div class="total-count"><?= $total_count_debitos ?> movimientos</div>
                     </div>
                     <div class="total-box">
                         <div class="total-label"><i class="fas fa-arrow-up"></i> Total Créditos</div>
                         <div class="total-value"><?= number_format($total_general_creditos, 2, ',', '.') ?></div>
+                        <div class="total-count"><?= $total_count_creditos ?> movimientos</div>
                     </div>
                     <?php if (!empty($cuenta)): ?>
                         <div class="total-box">
