@@ -167,129 +167,146 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         }
         
         public function Header() {
-            // Logo
+            // Logo más compacto (20mm de ancho)
             $logo_path = realpath(__DIR__ . '/../assets/images/logo-banco.jpg');
             if (file_exists($logo_path)) {
-                $this->Image($logo_path, 15, 10, 30, 0, 'JPG', '', 'T', false, 300, '', false, false, 0, false, false, false);
+                $this->Image($logo_path, 10, 8, 20, 0, 'JPG', '', 'T', false, 300, '', false, false, 0, false, false, false);
             }
             
-            // Título del banco
-            $this->SetFont('helvetica', 'B', 10);
-            $this->SetY(12);
-            $this->Cell(0, 5, 'BANCO CARONI C.A. - RIF: J-12345678-9', 0, 1, 'C');
+            // Encabezado compacto en 2 líneas
+            $this->SetFont('helvetica', 'B', 9);
+            $this->SetY(10);
+            $this->Cell(0, 4, 'BANCO CARONI C.A. | RIF: J-12345678-9', 0, 1, 'C');
             
-            // Información del cliente
-            $this->SetFont('helvetica', '', 8);
-            $this->SetY(20);
-            $this->Cell(50, 4, 'CLIENTE:', 0, 0, 'L');
-            $this->Cell(90, 4, strtoupper($this->nombre_cliente), 0, 1, 'L');
-            
-            $this->Cell(50, 4, 'DIRECCIÓN:', 0, 0, 'L');
-            $this->Cell(90, 4, $this->direccion, 0, 1, 'L');
-            
-            $this->Cell(50, 4, 'CUENTA:', 0, 0, 'L');
-            $this->Cell(90, 4, $this->cuenta.' | '.$this->moneda.' | SUC: '.$this->sucursal, 0, 1, 'L');
-            
-            // Período
-            $this->SetFont('helvetica', 'B', 8);
+            $this->SetFont('helvetica', '', 7);
             $this->Cell(0, 4, 'PERÍODO: '.date('d/m/Y', strtotime($this->fecha_inicio)).' - '.date('d/m/Y', strtotime($this->fecha_fin)).' | Emisión: '.date('d/m/Y H:i'), 0, 1, 'C');
             
-            // Línea separadora
-            $this->SetLineWidth(0.2);
-            $this->Line(15, 32, $this->getPageWidth()-15, 32);
-            $this->SetY(35);
+            // Información del cliente en bloque compacto
+            $this->SetY(18);
+            $this->SetFont('helvetica', 'B', 7);
+            $this->Cell(15, 3, 'CLIENTE:', 0, 0, 'L');
+            $this->SetFont('helvetica', '', 7);
+            $this->Cell(80, 3, strtoupper($this->nombre_cliente), 0, 1, 'L');
+            
+            $this->SetFont('helvetica', 'B', 7);
+            $this->Cell(15, 3, 'CUENTA:', 0, 0, 'L');
+            $this->SetFont('helvetica', '', 7);
+            $this->Cell(80, 3, $this->cuenta.' | '.$this->moneda.' | SUC: '.$this->sucursal, 0, 1, 'L');
+            
+            // Línea separadora fina
+            $this->SetLineWidth(0.1);
+            $this->Line(10, 25, $this->getPageWidth()-10, 25);
+            $this->SetY(27); // Posición después del encabezado
         }
         
         public function Footer() {
-            $this->SetY(-15);
-            $this->SetFont('helvetica', 'I', 8);
-            $this->Cell(0, 10, 'Página '.$this->getAliasNumPage().'/'.$this->getAliasNbPages(), 0, false, 'C', 0, '', 0, false, 'T', 'M');
+            $this->SetY(-10);
+            $this->SetFont('helvetica', 'I', 6);
+            $this->Cell(0, 5, 'Página '.$this->getAliasNumPage().'/'.$this->getAliasNbPages(), 0, false, 'C');
         }
     }
 
     $direccion_completa = trim($direccion1 . ' ' . $direccion2 . ' ' . $ciudad);
-    $pdf = new MYPDF('P', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false, false, $cuenta, $nombre_cliente, $fecha_inicio, $fecha_fin, $moneda, $sucursal, $direccion_completa);
+    $pdf = new MYPDF('P', 'mm', 'A4', true, 'UTF-8', false, false, $cuenta, $nombre_cliente, $fecha_inicio, $fecha_fin, $moneda, $sucursal, $direccion_completa);
     
     $pdf->SetCreator('Banco Caroni');
     $pdf->SetAuthor('Sistema Bancario');
     $pdf->SetTitle('Estado de Cuenta '.$fecha_inicio.' al '.$fecha_fin);
     $pdf->setPrintHeader(true);
     $pdf->setPrintFooter(true);
-    $pdf->SetMargins(15, empty($cuenta) ? 45 : 50, 15);
-    $pdf->SetHeaderMargin(10);
-    $pdf->SetFooterMargin(10);
-    $pdf->SetAutoPageBreak(TRUE, 25);
+    $pdf->SetMargins(10, 27, 10); // Márgenes más ajustados (izq, arriba, der)
+    $pdf->SetHeaderMargin(5);
+    $pdf->SetFooterMargin(5);
+    $pdf->SetAutoPageBreak(TRUE, 15); // Margen inferior más pequeño
     $pdf->AddPage();
-    $pdf->SetFont('helvetica', '', 8);
+    $pdf->SetFont('helvetica', '', 7); // Fuente más pequeña pero legible
     
     $html = '
     <style>
+        /* Estilos optimizados con mejor espaciado */
+        .month-header {
+            background-color: #f5f5f5;
+            font-weight: bold;
+            font-size: 7pt;
+            padding: 1mm 2mm;
+            margin: 2mm 0 1mm 0;
+            border-left: 2mm solid #003366;
+            page-break-after: avoid;
+        }
+        .saldo-inicial {
+            font-size: 6pt;
+            text-align: right;
+            margin-bottom: 2mm;
+            padding-right: 2mm;
+        }
         .transaction-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 7pt;
-            margin-top: 2mm;
+            font-size: 6pt;
+            margin: 0 0 1mm 0;
         }
         .transaction-table th {
             background-color: #003366;
             color: white;
-            padding: 3px;
+            padding: 1.5mm;
             text-align: center;
             font-weight: bold;
-            border: 0.2mm solid #003366;
+            border: 0.1mm solid #003366;
         }
         .transaction-table td {
-            padding: 3px;
-            border: 0.2mm solid #dddddd;
+            padding: 1.5mm;
+            border: 0.1mm solid #e0e0e0;
             vertical-align: middle;
         }
         .date-col { width: 10%; text-align: center; }
-        .ref-col { width: 12%; text-align: center; }
-        .desc-col { width: 38%; }
+        .ref-col { width: 12%; text-align: center; font-size: 5.5pt; }
+        .desc-col { width: 38%; font-size: 6pt; }
         .amount-col { width: 10%; text-align: right; }
         .balance-col { width: 10%; text-align: right; }
         .debit { color: #cc0000; }
         .credit { color: #009900; }
-        .month-header {
-            background-color: #f0f0f0;
-            font-weight: bold;
-            font-size: 8pt;
-            padding: 2mm;
-            margin-top: 3mm;
-            border-left: 3mm solid #003366;
-        }
-        .saldo-inicial {
-            font-size: 7pt;
+        .month-totals {
+            font-size: 6pt;
             text-align: right;
-            padding-right: 5mm;
-            margin-bottom: 1mm;
+            margin: 3mm 0 5mm 0;
+            padding-top: 2mm;
+            border-top: 0.2mm solid #f0f0f0;
+        }
+        .month-totals span {
+            display: inline-block;
+            margin-left: 5mm;
+            padding: 1mm 2mm;
+            background-color: #f9f9f9;
+            border-radius: 1mm;
         }
         .summary-section {
             page-break-before: avoid;
+            margin-top: 5mm;
         }
         .summary-header {
             background-color: #003366;
             color: white;
-            padding: 3mm;
+            padding: 2mm;
             font-weight: bold;
-            font-size: 9pt;
+            font-size: 7pt;
             text-align: center;
         }
         .summary-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 8pt;
-            margin-bottom: 5mm;
+            font-size: 7pt;
         }
         .summary-table td {
-            padding: 2mm;
-            border: 0.2mm solid #dddddd;
+            padding: 1.5mm;
+            border: 0.1mm solid #e0e0e0;
         }
         .footer-note {
-            font-size: 7pt;
+            font-size: 5.5pt;
             text-align: center;
-            color: #555555;
+            color: #666666;
             margin-top: 5mm;
+            padding-top: 3mm;
+            border-top: 0.2mm solid #f0f0f0;
         }
     </style>';
 
@@ -342,9 +359,9 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         $html .= '
             </tbody>
         </table>
-        <div style="text-align: right; font-size: 7pt; margin: 2mm 0 4mm;">
-            <span style="margin-right: 10mm;"><strong>Total Débitos:</strong> <span class="debit">'.number_format($saldo_mes['total_debitos'], 2, ',', '.').' '.$moneda.'</span></span>
-            <span style="margin-right: 10mm;"><strong>Total Créditos:</strong> <span class="credit">'.number_format($saldo_mes['total_creditos'], 2, ',', '.').' '.$moneda.'</span></span>';
+        <div class="month-totals">
+            <span><strong>Total Débitos:</strong> <span class="debit">'.number_format($saldo_mes['total_debitos'], 2, ',', '.').' '.$moneda.'</span></span>
+            <span><strong>Total Créditos:</strong> <span class="credit">'.number_format($saldo_mes['total_creditos'], 2, ',', '.').' '.$moneda.'</span></span>';
         
         if (!empty($cuenta)) {
             $html .= '<span><strong>Saldo Final:</strong> '.number_format($saldo_mes['saldo_final'], 2, ',', '.').' '.$moneda.'</span>';
