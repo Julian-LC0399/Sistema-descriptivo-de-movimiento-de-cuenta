@@ -16,7 +16,7 @@ $total_general_creditos = 0;
 $total_count_debitos = 0;
 $total_count_creditos = 0;
 $moneda = 'VES';
-$direccion1 = $direccion2 = $ciudad = $sucursal = '';
+$direccion1 = $direccion2 = $ciudad = '';
 
 function getMesEspanol($fecha) {
     $meses = [
@@ -39,14 +39,11 @@ function getSaldoColor($saldo) {
     }
 }
 
-// Función para formatear número de cuenta según estándar Banco Caroní
 function formatAccountNumber($cuenta) {
     if (empty($cuenta)) return '';
     
-    // Eliminar cualquier caracter no numérico
     $cuenta = preg_replace('/[^0-9]/', '', $cuenta);
     
-    // Formato específico para cuentas de 20 dígitos (01280001140108935107 -> 0128-0001-14-0108935107)
     if (strlen($cuenta) == 20) {
         return substr($cuenta, 0, 4) . '-' . 
                substr($cuenta, 4, 4) . '-' . 
@@ -54,7 +51,6 @@ function formatAccountNumber($cuenta) {
                substr($cuenta, 10, 10);
     }
     
-    // Para otros tipos de cuenta, devolver sin formato
     return $cuenta;
 }
 
@@ -93,12 +89,11 @@ if (!empty($cuenta)) {
         if ($resultado = $stmt_saldo->fetch(PDO::FETCH_ASSOC)) {
             $saldo_inicial = $resultado['saldo_inicial'];
         } else {
-            $stmt_saldo_cuenta = $pdo->prepare("SELECT acmbal, acmccy, acmbrn FROM acmst WHERE acmacc = :cuenta");
+            $stmt_saldo_cuenta = $pdo->prepare("SELECT acmbal, acmccy FROM acmst WHERE acmacc = :cuenta");
             $stmt_saldo_cuenta->execute([':cuenta' => $cuenta]);
             if ($resultado = $stmt_saldo_cuenta->fetch(PDO::FETCH_ASSOC)) {
                 $saldo_inicial = $resultado['acmbal'];
                 $moneda = $resultado['acmccy'] ?? 'VES';
-                $sucursal = $resultado['acmbrn'] ?? 'ND';
             }
         }
 
@@ -192,17 +187,15 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         protected $fecha_inicio;
         protected $fecha_fin;
         protected $moneda;
-        protected $sucursal;
         protected $direccion;
         
-        public function __construct($orientation, $unit, $format, $unicode, $encoding, $diskcache, $pdfa, $cuenta = '', $nombre_cliente = '', $fecha_inicio = '', $fecha_fin = '', $moneda = 'VES', $sucursal = '', $direccion = '') {
+        public function __construct($orientation, $unit, $format, $unicode, $encoding, $diskcache, $pdfa, $cuenta = '', $nombre_cliente = '', $fecha_inicio = '', $fecha_fin = '', $moneda = 'VES', $direccion = '') {
             parent::__construct($orientation, $unit, $format, $unicode, $encoding, $diskcache, $pdfa);
             $this->cuenta = $cuenta;
             $this->nombre_cliente = $nombre_cliente;
             $this->fecha_inicio = $fecha_inicio;
             $this->fecha_fin = $fecha_fin;
             $this->moneda = $moneda;
-            $this->sucursal = $sucursal;
             $this->direccion = $direccion;
         }
         
@@ -220,20 +213,27 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             $this->Cell(0, 4, 'PERÍODO: '.date('d/m/Y', strtotime($this->fecha_inicio)).' - '.date('d/m/Y', strtotime($this->fecha_fin)).' | Emisión: '.date('d/m/Y H:i'), 0, 1, 'C');
             
             $this->SetY(18);
+            
+            // Datos del cliente con mejor formato
             $this->SetFont('helvetica', 'B', 7);
-            $this->Cell(15, 3, 'CLIENTE:', 0, 0, 'L');
+            $this->Cell(20, 4, 'CLIENTE:', 0, 0, 'L');
             $this->SetFont('helvetica', '', 7);
-            $this->Cell(80, 3, strtoupper($this->nombre_cliente), 0, 1, 'L');
+            $this->Cell(0, 4, strtoupper($this->nombre_cliente), 0, 1, 'L');
             
             $this->SetFont('helvetica', 'B', 7);
-            $this->Cell(15, 3, 'CUENTA:', 0, 0, 'L');
+            $this->Cell(20, 4, 'CUENTA:', 0, 0, 'L');
             $this->SetFont('helvetica', '', 7);
             $formatted_account = formatAccountNumber($this->cuenta);
-            $this->Cell(80, 3, $formatted_account.' | '.$this->moneda.' | SUC: '.$this->sucursal, 0, 1, 'L');
+            $this->Cell(0, 4, $formatted_account.' | '.$this->moneda, 0, 1, 'L');
+            
+            $this->SetFont('helvetica', 'B', 7);
+            $this->Cell(20, 4, 'DIRECCIÓN:', 0, 0, 'L');
+            $this->SetFont('helvetica', '', 7);
+            $this->Cell(0, 4, strtoupper($this->direccion), 0, 1, 'L');
             
             $this->SetLineWidth(0.1);
-            $this->Line(10, 25, $this->getPageWidth()-10, 25);
-            $this->SetY(27);
+            $this->Line(10, $this->GetY()+2, $this->getPageWidth()-10, $this->GetY()+2);
+            $this->SetY($this->GetY()+5);
         }
         
         public function Footer() {
@@ -243,15 +243,15 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         }
     }
 
-    $direccion_completa = trim($direccion1 . ' ' . $direccion2 . ' ' . $ciudad);
-    $pdf = new MYPDF('P', 'mm', 'A4', true, 'UTF-8', false, false, $cuenta, $nombre_cliente, $fecha_inicio, $fecha_fin, $moneda, $sucursal, $direccion_completa);
+    $direccion_completa = trim(implode(' ', array_filter([$direccion1, $direccion2, $ciudad])));
+    $pdf = new MYPDF('P', 'mm', 'A4', true, 'UTF-8', false, false, $cuenta, $nombre_cliente, $fecha_inicio, $fecha_fin, $moneda, $direccion_completa);
     
     $pdf->SetCreator('Banco Caroni');
     $pdf->SetAuthor('Sistema Bancario');
     $pdf->SetTitle('Estado de Cuenta '.$fecha_inicio.' al '.$fecha_fin);
     $pdf->setPrintHeader(true);
     $pdf->setPrintFooter(true);
-    $pdf->SetMargins(10, 27, 10);
+    $pdf->SetMargins(10, 35, 10); // Margen superior aumentado a 35
     $pdf->SetHeaderMargin(5);
     $pdf->SetFooterMargin(5);
     $pdf->SetAutoPageBreak(TRUE, 15);
