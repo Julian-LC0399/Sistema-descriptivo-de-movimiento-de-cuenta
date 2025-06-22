@@ -1,9 +1,20 @@
 <?php
-// Iniciar buffer de salida para evitar problemas con TCPDF
 ob_start();
 
 require_once __DIR__ . '/../includes/config.php'; 
 session_start();
+
+// Inicializar variables
+$nombre_cliente = 'CLIENTE NO ESPECIFICADO';
+$nombre_cliente_web = '';
+$transacciones_por_mes = [];
+$saldos_por_mes = [];
+$saldo_inicial = 0;
+$saldo_final = 0;
+$total_general_debitos = 0;
+$total_general_creditos = 0;
+$moneda = 'VES';
+$direccion1 = $direccion2 = $ciudad = $sucursal = '';
 
 function getMesEspanol($fecha) {
     $meses = [
@@ -12,7 +23,8 @@ function getMesEspanol($fecha) {
         'July' => 'Julio', 'August' => 'Agosto', 'September' => 'Septiembre',
         'October' => 'Octubre', 'November' => 'Noviembre', 'December' => 'Diciembre'
     ];
-    return $meses[date('F', strtotime($fecha))] ?? date('F', strtotime($fecha));
+    $mes_ingles = date('F', strtotime($fecha));
+    return $meses[$mes_ingles] ?? $mes_ingles;
 }
 
 if (!isset($_SESSION['user_id'])) {
@@ -39,7 +51,6 @@ if (!empty($cuenta) && !preg_match('/^[0-9]{9,20}$/', $cuenta)) {
     die("Número de cuenta inválido. Debe contener solo dígitos (9-20 caracteres).");
 }
 
-$saldo_inicial = 0;
 if (!empty($cuenta)) {
     try {
         $sql_saldo_inicial = "SELECT t.trdbal AS saldo_inicial FROM actrd t 
@@ -51,21 +62,40 @@ if (!empty($cuenta)) {
         if ($resultado = $stmt_saldo->fetch(PDO::FETCH_ASSOC)) {
             $saldo_inicial = $resultado['saldo_inicial'];
         } else {
-            $stmt_saldo_cuenta = $pdo->prepare("SELECT acmbal FROM acmst WHERE acmacc = :cuenta");
+            $stmt_saldo_cuenta = $pdo->prepare("SELECT acmbal, acmccy, acmbrn FROM acmst WHERE acmacc = :cuenta");
             $stmt_saldo_cuenta->execute([':cuenta' => $cuenta]);
             if ($resultado = $stmt_saldo_cuenta->fetch(PDO::FETCH_ASSOC)) {
                 $saldo_inicial = $resultado['acmbal'];
+                $moneda = $resultado['acmccy'] ?? 'VES';
+                $sucursal = $resultado['acmbrn'] ?? 'ND';
             }
         }
+
+        // Obtener datos del cliente
+        $stmt_cliente = $pdo->prepare("SELECT c.cusna1 AS nombre_completo, c.cusna2 AS direccion1, 
+                                      c.cusna3 AS direccion2, c.cuscty AS ciudad
+                                      FROM cumst c JOIN acmst a ON c.cuscun = a.acmcun
+                                      WHERE a.acmacc = :cuenta");
+        $stmt_cliente->execute([':cuenta' => $cuenta]);
+        $cliente_info = $stmt_cliente->fetch(PDO::FETCH_ASSOC) ?? [];
+        
+        $nombre_cliente = $cliente_info['nombre_completo'] ?? 'CLIENTE NO ENCONTRADO';
+        $direccion1 = $cliente_info['direccion1'] ?? '';
+        $direccion2 = $cliente_info['direccion2'] ?? '';
+        $ciudad = $cliente_info['ciudad'] ?? '';
+        $nombre_cliente_web = $nombre_cliente;
     } catch(PDOException $e) {
-        error_log("Error al obtener saldo inicial: " . $e->getMessage());
+        error_log("Error al obtener datos iniciales: " . $e->getMessage());
     }
 }
 
 $sql = "SELECT t.trddat AS fecha, t.trdseq AS secuencia, t.trdmd AS tipo,
                t.trdamt AS monto, t.trdbal AS saldo, t.trddsc AS descripcion,
-               t.trdref AS referencia, t.trdusr AS usuario, a.acmccy AS moneda
-        FROM actrd t JOIN acmst a ON t.trdacc = a.acmacc
+               t.trdref AS referencia, t.trdusr AS usuario, a.acmccy AS moneda";
+               
+if (empty($cuenta)) $sql .= ", t.trdacc AS cuenta";
+
+$sql .= " FROM actrd t JOIN acmst a ON t.trdacc = a.acmacc
         WHERE t.trddat BETWEEN :fecha_inicio AND :fecha_fin";
 
 if (!empty($cuenta)) $sql .= " AND t.trdacc = :cuenta";
@@ -79,13 +109,12 @@ try {
     $stmt->execute($params);
     $transacciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    $transacciones_por_mes = [];
     foreach ($transacciones as $trans) {
         $mes_ano = date('m-Y', strtotime($trans['fecha']));
         $transacciones_por_mes[$mes_ano][] = $trans;
+        $moneda = $trans['moneda'] ?? $moneda;
     }
     
-    $saldos_por_mes = [];
     $saldo_acumulado = $saldo_inicial;
     foreach ($transacciones_por_mes as $mes_ano => $trans_mes) {
         $saldos_por_mes[$mes_ano]['saldo_inicial'] = $saldo_acumulado;
@@ -100,255 +129,267 @@ try {
         $saldos_por_mes[$mes_ano]['total_debitos'] = $total_debitos;
         $saldos_por_mes[$mes_ano]['total_creditos'] = $total_creditos;
         $saldos_por_mes[$mes_ano]['saldo_final'] = $saldo_acumulado;
-    }
-
-    $total_general_debitos = 0;
-    $total_general_creditos = 0;
-    $saldo_final = $saldo_inicial;
-    
-    foreach ($saldos_por_mes as $mes) {
-        $total_general_debitos += $mes['total_debitos'];
-        $total_general_creditos += $mes['total_creditos'];
-        $saldo_final = $mes['saldo_final'];
-    }
-
-    if (!empty($cuenta)) {
-        $stmt_cliente_web = $pdo->prepare("SELECT c.cusna1 AS nombre_completo 
-                                          FROM cumst c JOIN acmst a ON c.cuscun = a.acmcun
-                                          WHERE a.acmacc = :cuenta");
-        $stmt_cliente_web->execute([':cuenta' => $cuenta]);
-        $cliente_info_web = $stmt_cliente_web->fetch(PDO::FETCH_ASSOC) ?? [];
-        $nombre_cliente_web = $cliente_info_web['nombre_completo'] ?? 'CLIENTE NO ENCONTRADO';
-    } else {
-        $nombre_cliente_web = '';
+        
+        $total_general_debitos += $total_debitos;
+        $total_general_creditos += $total_creditos;
+        $saldo_final = $saldo_acumulado;
     }
 } catch(PDOException $e) {
     die("Ocurrió un error al procesar su solicitud. Por favor intente más tarde.");
 }
 
 if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
-    ob_end_clean();
+    while (ob_get_level()) {
+        ob_end_clean();
+    }
     
     require_once __DIR__ . '/../includes/library/tcpdf.php';
-    
-    // Establecer zona horaria de Venezuela solo para el PDF
     date_default_timezone_set('America/Caracas');
+
+    class MYPDF extends TCPDF {
+        protected $cuenta;
+        protected $nombre_cliente;
+        protected $fecha_inicio;
+        protected $fecha_fin;
+        protected $moneda;
+        protected $sucursal;
+        protected $direccion;
+        
+        public function __construct($orientation, $unit, $format, $unicode, $encoding, $diskcache, $pdfa, $cuenta = '', $nombre_cliente = '', $fecha_inicio = '', $fecha_fin = '', $moneda = 'VES', $sucursal = '', $direccion = '') {
+            parent::__construct($orientation, $unit, $format, $unicode, $encoding, $diskcache, $pdfa);
+            $this->cuenta = $cuenta;
+            $this->nombre_cliente = $nombre_cliente;
+            $this->fecha_inicio = $fecha_inicio;
+            $this->fecha_fin = $fecha_fin;
+            $this->moneda = $moneda;
+            $this->sucursal = $sucursal;
+            $this->direccion = $direccion;
+        }
+        
+        public function Header() {
+            // Logo
+            $logo_path = realpath(__DIR__ . '/../assets/images/logo-banco.jpg');
+            if (file_exists($logo_path)) {
+                $this->Image($logo_path, 15, 10, 30, 0, 'JPG', '', 'T', false, 300, '', false, false, 0, false, false, false);
+            }
+            
+            // Título del banco
+            $this->SetFont('helvetica', 'B', 10);
+            $this->SetY(12);
+            $this->Cell(0, 5, 'BANCO CARONI C.A. - RIF: J-12345678-9', 0, 1, 'C');
+            
+            // Información del cliente
+            $this->SetFont('helvetica', '', 8);
+            $this->SetY(20);
+            $this->Cell(50, 4, 'CLIENTE:', 0, 0, 'L');
+            $this->Cell(90, 4, strtoupper($this->nombre_cliente), 0, 1, 'L');
+            
+            $this->Cell(50, 4, 'DIRECCIÓN:', 0, 0, 'L');
+            $this->Cell(90, 4, $this->direccion, 0, 1, 'L');
+            
+            $this->Cell(50, 4, 'CUENTA:', 0, 0, 'L');
+            $this->Cell(90, 4, $this->cuenta.' | '.$this->moneda.' | SUC: '.$this->sucursal, 0, 1, 'L');
+            
+            // Período
+            $this->SetFont('helvetica', 'B', 8);
+            $this->Cell(0, 4, 'PERÍODO: '.date('d/m/Y', strtotime($this->fecha_inicio)).' - '.date('d/m/Y', strtotime($this->fecha_fin)).' | Emisión: '.date('d/m/Y H:i'), 0, 1, 'C');
+            
+            // Línea separadora
+            $this->SetLineWidth(0.2);
+            $this->Line(15, 32, $this->getPageWidth()-15, 32);
+            $this->SetY(35);
+        }
+        
+        public function Footer() {
+            $this->SetY(-15);
+            $this->SetFont('helvetica', 'I', 8);
+            $this->Cell(0, 10, 'Página '.$this->getAliasNumPage().'/'.$this->getAliasNbPages(), 0, false, 'C', 0, '', 0, false, 'T', 'M');
+        }
+    }
+
+    $direccion_completa = trim($direccion1 . ' ' . $direccion2 . ' ' . $ciudad);
+    $pdf = new MYPDF('P', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false, false, $cuenta, $nombre_cliente, $fecha_inicio, $fecha_fin, $moneda, $sucursal, $direccion_completa);
     
-    $pdf = new TCPDF('P', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
     $pdf->SetCreator('Banco Caroni');
     $pdf->SetAuthor('Sistema Bancario');
     $pdf->SetTitle('Estado de Cuenta '.$fecha_inicio.' al '.$fecha_fin);
-    
-    $pdf->setPrintHeader(false);
-    $pdf->setPrintFooter(false);
-    $pdf->SetMargins(10, 10, 10);
-    $pdf->SetAutoPageBreak(TRUE, 10);
+    $pdf->setPrintHeader(true);
+    $pdf->setPrintFooter(true);
+    $pdf->SetMargins(15, empty($cuenta) ? 45 : 50, 15);
+    $pdf->SetHeaderMargin(10);
+    $pdf->SetFooterMargin(10);
+    $pdf->SetAutoPageBreak(TRUE, 25);
     $pdf->AddPage();
-    $pdf->SetFont('dejavusans', '', 8);
-
-    $logo_path = realpath(__DIR__ . '/../assets/images/logo-banco.jpg');
-    $logo_html = '';
-    
-    if (file_exists($logo_path)) {
-        $logo_html = '<div style="text-align: left;"><img src="'.$logo_path.'" width="150"></div>';
-    }
-
-    try {
-        $stmt_cliente = $pdo->prepare("SELECT c.cusna1 AS nombre_completo, c.cusna2 AS direccion1, 
-                                      c.cusna3 AS direccion2, c.cuscty AS ciudad, a.acmccy AS moneda,
-                                      a.acmbrn AS sucursal
-                                      FROM cumst c JOIN acmst a ON c.cuscun = a.acmcun
-                                      WHERE a.acmacc = :cuenta");
-        $stmt_cliente->execute([':cuenta' => $cuenta]);
-        $cliente_info = $stmt_cliente->fetch(PDO::FETCH_ASSOC) ?? [];
-        
-        $nombre_cliente = $cliente_info['nombre_completo'] ?? 'CLIENTE NO ENCONTRADO';
-        $direccion1 = $cliente_info['direccion1'] ?? '';
-        $direccion2 = $cliente_info['direccion2'] ?? '';
-        $ciudad = $cliente_info['ciudad'] ?? '';
-        $moneda = $cliente_info['moneda'] ?? 'VES';
-        $sucursal = $cliente_info['sucursal'] ?? 'ND';
-    } catch(PDOException $e) {
-        error_log("Error al obtener info cliente: " . $e->getMessage());
-        $nombre_cliente = 'CLIENTE NO ENCONTRADO';
-        $direccion1 = $direccion2 = $ciudad = '';
-        $moneda = 'VES';
-        $sucursal = 'ND';
-    }
+    $pdf->SetFont('helvetica', '', 8);
     
     $html = '
     <style>
-        .header { 
-            margin-bottom: 5px; 
-            border-bottom: 1px solid #003366;
-            padding-bottom: 5px;
-            display: flex;
-            align-items: center;
-        }
-        
-        .header-content {
-            margin-left: 20px;
-            text-align: center;
-            flex-grow: 1;
-        }
-            
-        .client-info {
-            font-size: 9pt;
-            line-height: 1.3;
-            margin-bottom: 5px;
-        }
-        .account-box {
-            background-color: #f5f5f5;
-            border-left: 3px solid #003366;
-            padding: 5px;
-            margin: 5px 0;
-            font-size: 8pt;
-        }
         .transaction-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 7.5pt;
-            margin-top: 5px;
-            page-break-inside: avoid;
+            font-size: 7pt;
+            margin-top: 2mm;
         }
         .transaction-table th {
             background-color: #003366;
             color: white;
-            padding: 4px;
+            padding: 3px;
             text-align: center;
             font-weight: bold;
-            border: 0.5px solid #003366;
+            border: 0.2mm solid #003366;
         }
         .transaction-table td {
-            padding: 4px;
-            border: 0.5px solid #ddd;
-            vertical-align: top;
+            padding: 3px;
+            border: 0.2mm solid #dddddd;
+            vertical-align: middle;
         }
-        .transaction-table tr:nth-child(even) {
-            background-color: #f9f9f9;
+        .date-col { width: 10%; text-align: center; }
+        .ref-col { width: 12%; text-align: center; }
+        .desc-col { width: 38%; }
+        .amount-col { width: 10%; text-align: right; }
+        .balance-col { width: 10%; text-align: right; }
+        .debit { color: #cc0000; }
+        .credit { color: #009900; }
+        .month-header {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            font-size: 8pt;
+            padding: 2mm;
+            margin-top: 3mm;
+            border-left: 3mm solid #003366;
         }
-        .align-right {
+        .saldo-inicial {
+            font-size: 7pt;
             text-align: right;
+            padding-right: 5mm;
+            margin-bottom: 1mm;
         }
-        .align-center {
+        .summary-section {
+            page-break-before: avoid;
+        }
+        .summary-header {
+            background-color: #003366;
+            color: white;
+            padding: 3mm;
+            font-weight: bold;
+            font-size: 9pt;
             text-align: center;
         }
-        .debito {
-            color: #CC0000;
-            font-weight: bold;
-        }
-        .credito {
-            color: #009900;
-            font-weight: bold;
-        }
-        .saldo {
-            color: #003366;
-            font-weight: bold;
-        }
-        .totals {
-            margin-top: 10px;
-            border-top: 1px solid #003366;
-            padding-top: 5px;
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
             font-size: 8pt;
+            margin-bottom: 5mm;
         }
-        .total-debito {
-            color: #CC0000;
-            font-weight: bold;
+        .summary-table td {
+            padding: 2mm;
+            border: 0.2mm solid #dddddd;
         }
-        .total-credito {
-            color: #009900;
-            font-weight: bold;
+        .footer-note {
+            font-size: 7pt;
+            text-align: center;
+            color: #555555;
+            margin-top: 5mm;
         }
-        .total-saldo {
-            color: #003366;
-            font-weight: bold;
-        }
-    </style>
-
-    <div class="header">
-        '.$logo_html.'
-        <div class="header-content">
-            <div style="font-size: 10pt; font-weight: bold;">ESTADO DE CUENTA</div>
-        </div>
-    </div>
-
-    <div class="client-info">
-        <strong>CLIENTE:</strong> '.strtoupper($nombre_cliente).'<br>
-        <strong>DIRECCIÓN:</strong> '.strtoupper($direccion1.', '.$direccion2.', '.$ciudad).'
-    </div>
-
-    <div class="account-box">
-        <strong>CUENTA:</strong> '.$cuenta.' |  
-        <strong>PERÍODO:</strong> '.date('d/m/Y', strtotime($fecha_inicio)).' AL '.date('d/m/Y', strtotime($fecha_fin)).' | 
-        <strong>EMISIÓN:</strong> '.date('d-m-Y H:i A').' (Hora Venezuela)
-    </div>';
+    </style>';
 
     foreach ($transacciones_por_mes as $mes_ano => $trans_mes) {
         $mes_nombre = getMesEspanol('01-'.$mes_ano).' '.date('Y', strtotime('01-'.$mes_ano));
         $saldo_mes = $saldos_por_mes[$mes_ano];
         
         $html .= '
-        <div style="margin-top: 10px;">
-            <div style="font-weight: bold; font-size: 9pt; border-bottom: 1px solid #003366; margin-bottom: 5px;">
-                '.strtoupper($mes_nombre).'
-            </div>
-            <div style="font-size: 8pt; margin: 3px 0;">
-                <strong>Saldo Inicial:</strong> <span class="saldo">'.number_format($saldo_mes['saldo_inicial'], 2, ',', '.').' '.$moneda.'</span>
-            </div>
-            <table class="transaction-table">
-                <thead>
-                    <tr>
-                        <th style="width: 10%;" class="align-center">Fecha</th>
-                        <th style="width: 15%;" class="align-center">Referencia</th>
-                        <th style="width: 35%;" class="align-center">Descripción</th>
-                        <th style="width: 12%;" class="align-center">Débito</th>
-                        <th style="width: 12%;" class="align-center">Crédito</th>
-                        <th style="width: 16%;" class="align-center">Saldo</th>
-                    </tr>
-                </thead>
-                <tbody>';
+        <div class="month-header">'.strtoupper($mes_nombre).'</div>
+        <div class="saldo-inicial">
+            <strong>Saldo Inicial:</strong> '.number_format($saldo_mes['saldo_inicial'], 2, ',', '.').' '.$moneda.'
+        </div>
+        <table class="transaction-table">
+            <thead>
+                <tr>
+                    <th class="date-col">FECHA</th>
+                    <th class="ref-col">REFERENCIA</th>';
+        
+        if (empty($cuenta)) {
+            $html .= '<th class="desc-col">CUENTA</th>';
+        }
+        
+        $html .= '
+                    <th class="desc-col">DESCRIPCIÓN</th>
+                    <th class="amount-col">DÉBITO</th>
+                    <th class="amount-col">CRÉDITO</th>
+                    <th class="balance-col">SALDO</th>
+                </tr>
+            </thead>
+            <tbody>';
         
         foreach ($trans_mes as $trans) {
             $html .= '
                 <tr>
-                    <td class="align-center">'.date('d/m/Y', strtotime($trans['fecha'])).'</td>
-                    <td class="align-center">'.htmlspecialchars($trans['referencia']).'</td>
-                    <td>'.htmlspecialchars($trans['descripcion']).'</td>
-                    <td class="align-right '.($trans['tipo'] == 'D' ? 'debito' : '').'">'.($trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '-').'</td>
-                    <td class="align-right '.($trans['tipo'] == 'C' ? 'credito' : '').'">'.($trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '-').'</td>
-                    <td class="align-right saldo">'.number_format($trans['saldo'], 2, ',', '.').'</td>
+                    <td class="date-col">'.date('d/m/Y', strtotime($trans['fecha'])).'</td>
+                    <td class="ref-col">'.htmlspecialchars($trans['referencia']).'</td>';
+            
+            if (empty($cuenta)) {
+                $html .= '<td class="desc-col">'.htmlspecialchars($trans['cuenta'] ?? '').'</td>';
+            }
+            
+            $html .= '
+                    <td class="desc-col">'.htmlspecialchars($trans['descripcion']).'</td>
+                    <td class="amount-col '.($trans['tipo'] == 'D' ? 'debit' : '').'">'.($trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '-').'</td>
+                    <td class="amount-col '.($trans['tipo'] == 'C' ? 'credit' : '').'">'.($trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '-').'</td>
+                    <td class="balance-col">'.(!empty($cuenta) ? number_format($trans['saldo'], 2, ',', '.') : '-').'</td>
                 </tr>';
         }
         
         $html .= '
-                </tbody>
-            </table>
-            <div class="totals" style="text-align: right;">
-                <div><strong>Total Débitos:</strong> <span class="total-debito">'.number_format($saldo_mes['total_debitos'], 2, ',', '.').' '.$moneda.'</span></div>
-                <div><strong>Total Créditos:</strong> <span class="total-credito">'.number_format($saldo_mes['total_creditos'], 2, ',', '.').' '.$moneda.'</span></div>
-                <div><strong>Saldo Final:</strong> <span class="total-saldo">'.number_format($saldo_mes['saldo_final'], 2, ',', '.').' '.$moneda.'</span></div>
-            </div>
-        </div>';
+            </tbody>
+        </table>
+        <div style="text-align: right; font-size: 7pt; margin: 2mm 0 4mm;">
+            <span style="margin-right: 10mm;"><strong>Total Débitos:</strong> <span class="debit">'.number_format($saldo_mes['total_debitos'], 2, ',', '.').' '.$moneda.'</span></span>
+            <span style="margin-right: 10mm;"><strong>Total Créditos:</strong> <span class="credit">'.number_format($saldo_mes['total_creditos'], 2, ',', '.').' '.$moneda.'</span></span>';
+        
+        if (!empty($cuenta)) {
+            $html .= '<span><strong>Saldo Final:</strong> '.number_format($saldo_mes['saldo_final'], 2, ',', '.').' '.$moneda.'</span>';
+        }
+        
+        $html .= '</div>';
     }
 
     $html .= '
-    <div class="totals" style="margin-top: 15px; border-top: 2px solid #003366;">
-        <div style="text-align: center; font-weight: bold; font-size: 9pt;">RESUMEN GENERAL</div>
-        <div style="text-align: right;">
-            <div><strong>Saldo Inicial:</strong> <span class="saldo">'.number_format($saldo_inicial, 2, ',', '.').' '.$moneda.'</span></div>
-            <div><strong>Total Débitos:</strong> <span class="total-debito">'.number_format($total_general_debitos, 2, ',', '.').' '.$moneda.'</span></div>
-            <div><strong>Total Créditos:</strong> <span class="total-credito">'.number_format($total_general_creditos, 2, ',', '.').' '.$moneda.'</span></div>
-            <div style="font-weight: bold;"><strong>Saldo Final:</strong> <span class="total-saldo">'.number_format($saldo_final, 2, ',', '.').' '.$moneda.'</span></div>
+    <div class="summary-section">
+        <div class="summary-header">
+            RESUMEN GENERAL
         </div>
+        <table class="summary-table">
+            <tr>
+                <td style="width: 40%;"><strong>Saldo Inicial</strong></td>
+                <td style="width: 60%; text-align: right;">'.number_format($saldo_inicial, 2, ',', '.').' '.$moneda.'</td>
+            </tr>
+            <tr>
+                <td><strong>Total Débitos</strong></td>
+                <td style="text-align: right; color: #cc0000;">'.number_format($total_general_debitos, 2, ',', '.').' '.$moneda.'</td>
+            </tr>
+            <tr>
+                <td><strong>Total Créditos</strong></td>
+                <td style="text-align: right; color: #009900;">'.number_format($total_general_creditos, 2, ',', '.').' '.$moneda.'</td>
+            </tr>';
+    
+    if (!empty($cuenta)) {
+        $html .= '
+            <tr>
+                <td style="font-weight: bold;"><strong>Saldo Final</strong></td>
+                <td style="text-align: right; font-weight: bold;">'.number_format($saldo_final, 2, ',', '.').' '.$moneda.'</td>
+            </tr>';
+    }
+    
+    $html .= '
+        </table>
     </div>
-
-    <div style="text-align: center; font-size: 7pt; margin-top: 10px; color: #555;">
+    <div class="footer-note">
         Documento generado electrónicamente - Banco Caroni C.A.<br>
         Fecha y hora de generación: '.date('d-m-Y H:i A').' (Hora de Venezuela)
     </div>';
 
     $pdf->writeHTML($html, true, false, true, false, '');
-    $pdf->Output('estado_cuenta_'.$cuenta.'_'.date('Ymd').'.pdf', 'D');
+    $pdf->Output('estado_cuenta_'.(!empty($cuenta) ? $cuenta.'_' : '').date('Ymd').'.pdf', 'D');
     exit();
 }
 
@@ -452,11 +493,13 @@ ob_end_flush();
                         </div>
                     <?php endif; ?>
                     
-                    <div class="account-info">
-                        <p><strong><i class="fas fa-user"></i> Cliente:</strong> <?= htmlspecialchars($nombre_cliente_web) ?></p>
-                        <p><strong><i class="fas fa-wallet"></i> Número de Cuenta:</strong> <?= htmlspecialchars($cuenta) ?></p>
-                        <p><strong><i class="fas fa-coins"></i> Saldo Inicial:</strong> <?= number_format($saldo_mes['saldo_inicial'], 2, ',', '.') ?></p>
-                    </div>
+                    <?php if (!empty($cuenta)): ?>
+                        <div class="account-info">
+                            <p><strong><i class="fas fa-user"></i> Cliente:</strong> <?= htmlspecialchars($nombre_cliente_web) ?></p>
+                            <p><strong><i class="fas fa-wallet"></i> Número de Cuenta:</strong> <?= htmlspecialchars($cuenta) ?></p>
+                            <p><strong><i class="fas fa-coins"></i> Saldo Inicial:</strong> <?= number_format($saldo_mes['saldo_inicial'], 2, ',', '.') ?></p>
+                        </div>
+                    <?php endif; ?>
                     
                     <div class="table-container">
                         <table class="transactions-table">
@@ -464,10 +507,15 @@ ob_end_flush();
                                 <tr>
                                     <th><i class="far fa-calendar"></i> Fecha</th>
                                     <th><i class="fas fa-barcode"></i> Serial</th>
+                                    <?php if (empty($cuenta)): ?>
+                                        <th><i class="fas fa-wallet"></i> Cuenta</th>
+                                    <?php endif; ?>
                                     <th><i class="fas fa-align-left"></i> Descripción</th>
                                     <th><i class="fas fa-arrow-down"></i> Débito</th>
                                     <th><i class="fas fa-arrow-up"></i> Crédito</th>
-                                    <th><i class="fas fa-wallet"></i> Saldo</th>
+                                    <?php if (!empty($cuenta)): ?>
+                                        <th><i class="fas fa-wallet"></i> Saldo</th>
+                                    <?php endif; ?>
                                 </tr>
                             </thead>
                             <tbody>
@@ -475,10 +523,15 @@ ob_end_flush();
                                     <tr>
                                         <td><?= date('d/m/Y', strtotime($trans['fecha'])) ?></td>
                                         <td><?= htmlspecialchars($trans['referencia']) ?></td>
+                                        <?php if (empty($cuenta)): ?>
+                                            <td><?= htmlspecialchars($trans['cuenta'] ?? '') ?></td>
+                                        <?php endif; ?>
                                         <td><?= htmlspecialchars($trans['descripcion']) ?></td>
                                         <td class="debit"><?= $trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '' ?></td>
                                         <td class="credit"><?= $trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '' ?></td>
-                                        <td class="balance"><?= number_format($trans['saldo'], 2, ',', '.') ?></td>
+                                        <?php if (!empty($cuenta)): ?>
+                                            <td class="balance"><?= number_format($trans['saldo'], 2, ',', '.') ?></td>
+                                        <?php endif; ?>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -494,13 +547,39 @@ ob_end_flush();
                             <div class="total-label"><i class="fas fa-arrow-up"></i> Total Créditos</div>
                             <div class="total-value"><?= number_format($saldo_mes['total_creditos'], 2, ',', '.') ?></div>
                         </div>
-                        <div class="total-box">
-                            <div class="total-label"><i class="fas fa-coins"></i> Saldo Final</div>
-                            <div class="total-value"><?= number_format($saldo_mes['saldo_final'], 2, ',', '.') ?></div>
-                        </div>
+                        <?php if (!empty($cuenta)): ?>
+                            <div class="total-box">
+                                <div class="total-label"><i class="fas fa-coins"></i> Saldo Final</div>
+                                <div class="total-value"><?= number_format($saldo_mes['saldo_final'], 2, ',', '.') ?></div>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             <?php endforeach; ?>
+            
+            <div class="general-totals">
+                <h3>Resumen General</h3>
+                <div class="totals-grid">
+                    <div class="total-box">
+                        <div class="total-label"><i class="fas fa-coins"></i> Saldo Inicial</div>
+                        <div class="total-value"><?= number_format($saldo_inicial, 2, ',', '.') ?></div>
+                    </div>
+                    <div class="total-box">
+                        <div class="total-label"><i class="fas fa-arrow-down"></i> Total Débitos</div>
+                        <div class="total-value"><?= number_format($total_general_debitos, 2, ',', '.') ?></div>
+                    </div>
+                    <div class="total-box">
+                        <div class="total-label"><i class="fas fa-arrow-up"></i> Total Créditos</div>
+                        <div class="total-value"><?= number_format($total_general_creditos, 2, ',', '.') ?></div>
+                    </div>
+                    <?php if (!empty($cuenta)): ?>
+                        <div class="total-box">
+                            <div class="total-label"><i class="fas fa-wallet"></i> Saldo Final</div>
+                            <div class="total-value"><?= number_format($saldo_final, 2, ',', '.') ?></div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
         <?php else: ?>
             <div class="no-results">
                 <i class="fas fa-info-circle"></i>
