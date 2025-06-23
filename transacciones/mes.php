@@ -414,7 +414,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     if (!empty($cuenta)) {
         $html .= '
             <tr>
-                <td style="font-weight: bold;"><strong>Saldo Final (desde BD)</strong></td>
+                <td style="font-weight: bold;"><strong>Saldo Final</strong></td>
                 <td style="text-align: right; font-weight: bold; color: '.getSaldoColor($saldo_final).';">'.number_format($saldo_final, 2, ',', '.').' '.$moneda.'</td>
             </tr>';
     }
@@ -520,7 +520,6 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
                         <p><strong><i class="fas fa-user"></i> Cliente:</strong> <?= htmlspecialchars($nombre_cliente) ?></p>
                         <p><strong><i class="fas fa-wallet"></i> Número de Cuenta:</strong> <?= htmlspecialchars(formatAccountNumber($cuenta)) ?></p>
                         <p><strong><i class="fas fa-coins"></i> Saldo Inicial:</strong> <?= number_format($saldo_inicial, 2, ',', '.') ?></p>
-                        <p><strong><i class="fas fa-database"></i> Saldo Final (desde BD):</strong> <span style="color: <?= getSaldoColor($saldo_final) ?>"><?= number_format($saldo_final, 2, ',', '.') ?></span></p>
                     </div>
                 <?php endif; ?>
                 
@@ -574,7 +573,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
                     </div>
                     <?php if (!empty($cuenta)): ?>
                         <div class="total-box">
-                            <div class="total-label"><i class="fas fa-database"></i> Saldo Final (BD)</div>
+                            <div class="total-label"><i class="fas fa-database"></i> Saldo Final</div>
                             <div class="total-value" style="color: <?= getSaldoColor($saldo_final) ?>"><?= number_format($saldo_final, 2, ',', '.') ?></div>
                         </div>
                     <?php endif; ?>
