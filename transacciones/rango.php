@@ -214,7 +214,6 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             
             $this->SetY(18);
             
-            // Datos del cliente con mejor formato
             $this->SetFont('helvetica', 'B', 7);
             $this->Cell(20, 4, 'CLIENTE:', 0, 0, 'L');
             $this->SetFont('helvetica', '', 7);
@@ -251,7 +250,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     $pdf->SetTitle('Estado de Cuenta '.$fecha_inicio.' al '.$fecha_fin);
     $pdf->setPrintHeader(true);
     $pdf->setPrintFooter(true);
-    $pdf->SetMargins(10, 35, 10); // Margen superior aumentado a 35
+    $pdf->SetMargins(10, 35, 10);
     $pdf->SetHeaderMargin(5);
     $pdf->SetFooterMargin(5);
     $pdf->SetAutoPageBreak(TRUE, 15);
@@ -270,11 +269,25 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             page-break-after: avoid;
             text-align: center;
         }
-        .saldo-inicial {
-            font-size: 6pt;
+        .saldo-inicial-mejorado {
             text-align: right;
-            margin-bottom: 2mm;
-            padding-right: 2mm;
+            font-size: 7pt;
+            margin-right: 10px;
+            margin-bottom: 5px;
+            border-bottom: 0.5px solid #e0e0e0;
+            padding-bottom: 3px;
+        }
+        .saldo-inicial-mejorado .label {
+            font-weight: bold;
+            color: #003366;
+        }
+        .saldo-inicial-mejorado .value {
+            font-weight: bold;
+        }
+        .saldo-inicial-mejorado .fecha {
+            color: #666666;
+            font-size: 6pt;
+            margin-left: 5px;
         }
         .transaction-table {
             width: 100%;
@@ -341,11 +354,18 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     foreach ($transacciones_por_mes as $mes_ano => $trans_mes) {
         $mes_nombre = getMesEspanol('01-'.$mes_ano).' '.date('Y', strtotime('01-'.$mes_ano));
         $saldo_mes = $saldos_por_mes[$mes_ano];
+        $primer_dia_mes = date('Y-m-01', strtotime('01-'.$mes_ano));
         
         $html .= '
-        <div class="month-header">'.strtoupper($mes_nombre).'</div>
-        <div class="saldo-inicial">
-            <strong>Saldo Inicial:</strong> '.number_format($saldo_mes['saldo_inicial'], 2, ',', '.').' '.$moneda.'
+        <div style="margin-bottom: 5px;">
+            <div class="month-header">'.strtoupper($mes_nombre).'</div>
+            <div class="saldo-inicial-mejorado">
+                <span class="label">SALDO INICIAL: </span>
+                <span class="value" style="color: '.getSaldoColor($saldo_mes['saldo_inicial']).'">
+                    '.number_format($saldo_mes['saldo_inicial'], 2, ',', '.').' '.$moneda.'
+                </span>
+                <span class="fecha">(al '.date('d/m/Y', strtotime($primer_dia_mes)).')</span>
+            </div>
         </div>
         <table class="transaction-table">
             <thead>
@@ -564,32 +584,32 @@ ob_end_flush();
                         <table class="transactions-table">
                             <thead>
                                 <tr>
-                                    <th><i class="far fa-calendar"></i> Fecha</th>
-                                    <th><i class="fas fa-barcode"></i> Serial</th>
+                                    <th style="text-align: center;"><i class="far fa-calendar"></i> Fecha</th>
+                                    <th style="text-align: center;"><i class="fas fa-barcode"></i> Serial</th>
                                     <?php if (empty($cuenta)): ?>
-                                        <th><i class="fas fa-wallet"></i> Cuenta</th>
+                                        <th style="text-align: center;"><i class="fas fa-wallet"></i> Cuenta</th>
                                     <?php endif; ?>
-                                    <th><i class="fas fa-align-left"></i> Descripción</th>
-                                    <th><i class="fas fa-arrow-down"></i> Débito</th>
-                                    <th><i class="fas fa-arrow-up"></i> Crédito</th>
+                                    <th style="text-align: center;"><i class="fas fa-align-left"></i> Descripción</th>
+                                    <th style="text-align: center;"><i class="fas fa-arrow-down"></i> Débito</th>
+                                    <th style="text-align: center;"><i class="fas fa-arrow-up"></i> Crédito</th>
                                     <?php if (!empty($cuenta)): ?>
-                                        <th><i class="fas fa-wallet"></i> Saldo</th>
+                                        <th style="text-align: center;"><i class="fas fa-wallet"></i> Saldo</th>
                                     <?php endif; ?>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($trans_mes as $trans): ?>
                                     <tr>
-                                        <td><?= date('d/m/Y', strtotime($trans['fecha'])) ?></td>
-                                        <td><?= htmlspecialchars($trans['referencia']) ?></td>
+                                        <td style="text-align: center;"><?= date('d/m/Y', strtotime($trans['fecha'])) ?></td>
+                                        <td style="text-align: center;"><?= htmlspecialchars($trans['referencia']) ?></td>
                                         <?php if (empty($cuenta)): ?>
-                                            <td class="account-number"><?= htmlspecialchars(formatAccountNumber($trans['cuenta'] ?? '')) ?></td>
+                                            <td class="account-number" style="text-align: center;"><?= htmlspecialchars(formatAccountNumber($trans['cuenta'] ?? '')) ?></td>
                                         <?php endif; ?>
                                         <td><?= htmlspecialchars($trans['descripcion']) ?></td>
-                                        <td class="debit"><?= $trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '' ?></td>
-                                        <td class="credit"><?= $trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '' ?></td>
+                                        <td class="debit" style="text-align: right;"><?= $trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '' ?></td>
+                                        <td class="credit" style="text-align: right;"><?= $trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '' ?></td>
                                         <?php if (!empty($cuenta)): ?>
-                                            <td class="balance" style="color: <?= getSaldoColor($trans['saldo']) ?>"><?= number_format($trans['saldo'], 2, ',', '.') ?></td>
+                                            <td class="balance" style="text-align: right; color: <?= getSaldoColor($trans['saldo']) ?>"><?= number_format($trans['saldo'], 2, ',', '.') ?></td>
                                         <?php endif; ?>
                                     </tr>
                                 <?php endforeach; ?>
@@ -619,7 +639,7 @@ ob_end_flush();
             <?php endforeach; ?>
             
             <div class="general-totals">
-                <h3>Resumen General</h3>
+                <h3 style="text-align: center;">Resumen General</h3>
                 <div class="totals-grid">
                     <div class="total-box">
                         <div class="total-label"><i class="fas fa-coins"></i> Saldo Inicial</div>
