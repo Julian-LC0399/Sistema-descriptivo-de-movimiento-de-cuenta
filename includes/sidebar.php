@@ -43,13 +43,6 @@ if (!defined('BASE_URL')) {
                 </a>
             </li>
             
-            <li class="nav-item">
-                <a class="nav-link" href="<?= BASE_URL ?>simulador/">
-                    <i class="fas fa-calculator"></i>
-                    <span>Simulador</span>
-                </a>
-            </li>
-            
             <li class="nav-item logout-item">
                 <a class="nav-link" href="<?= BASE_URL ?>logout.php">
                     <i class="fas fa-sign-out-alt"></i>
