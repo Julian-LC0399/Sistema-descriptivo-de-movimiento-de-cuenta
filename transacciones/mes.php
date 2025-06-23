@@ -191,7 +191,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             $this->Cell(0, 4, 'BANCO CARONI C.A. | RIF: J-12345678-9', 0, 1, 'C');
             
             $this->SetFont('helvetica', '', 7);
-            $this->Cell(0, 4, 'PERÍODO: '.date('d/m/Y', strtotime($this->fecha_inicio)).' - '.date('d/m/Y', strtotime($this->fecha_fin)).' | Emisión: '.date('d/m/Y H:i'), 0, 1, 'C');
+            $this->Cell(0, 4, 'Emisión: '.date('d/m/Y H:i'), 0, 1, 'C');
             
             $this->SetY(18);
             
@@ -574,7 +574,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
                     <?php if (!empty($cuenta)): ?>
                         <div class="total-box">
                             <div class="total-label"><i class="fas fa-coins"></i> Saldo Final</div>
-                            <div class="total-value" style="color: <?= getSaldoColor($saldo_final) ?>"><?= number_format($saldo_final, 2, ',', '.') ?></td>
+                            <div class="total-value" style="color: <?= getSaldoColor($saldo_final) ?>"><?= number_format($saldo_final, 2, ',', '.') ?></div>
                         </div>
                     <?php endif; ?>
                 </div>
