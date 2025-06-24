@@ -93,6 +93,11 @@ try {
         
         $saldo_inicial = $saldo_inicial ?: 0;
         $saldo_acumulado = $saldo_inicial;
+
+        // Obtener saldo final directamente desde acmst
+        $stmt_saldo_final = $pdo->prepare("SELECT acmbal FROM acmst WHERE acmacc = ?");
+        $stmt_saldo_final->execute([$cuenta]);
+        $saldo_final = $stmt_saldo_final->fetchColumn() ?: 0;
     }
 
     // Consulta principal de transacciones
@@ -125,7 +130,7 @@ try {
     $stmt->execute($params);
     $transacciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Calcular totales
+    // Calcular totales (solo débitos y créditos)
     foreach ($transacciones as &$t) {
         if ($t['tipo'] == 'D') {
             $total_debitos += $t['monto'];
@@ -133,18 +138,13 @@ try {
             $total_creditos += $t['monto'];
         }
         
+        // Opcional: Mostrar saldo acumulado por transacción (usando trdbal)
         if (!empty($cuenta)) {
-            if ($t['tipo'] == 'D') {
-                $saldo_acumulado -= $t['monto'];
-            } else {
-                $saldo_acumulado += $t['monto'];
-            }
-            $t['saldo_acumulado'] = $saldo_acumulado;
+            $t['saldo_acumulado'] = $t['saldo']; // Usamos el saldo registrado en actrd
         }
     }
     unset($t);
-    
-    $saldo_final = $saldo_acumulado;
+
 } catch(PDOException $e) {
     error_log("Error en consulta de transacciones: " . $e->getMessage());
     die("Ocurrió un error al procesar su solicitud.");
@@ -352,7 +352,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             <tr>
                 <th class="date-col">FECHA</th>
                 <th class="ref-col">REFERENCIA</th>';
-    
+
     if (empty($cuenta)) {
         $html .= '<th class="desc-col">CUENTA</th>';
     }
@@ -381,7 +381,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
                 <td class="desc-col">'.htmlspecialchars($trans['descripcion']).'</td>
                 <td class="amount-col '.($trans['tipo'] == 'D' ? 'debit' : '').'">'.($trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '-').'</td>
                 <td class="amount-col '.($trans['tipo'] == 'C' ? 'credit' : '').'">'.($trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '-').'</td>
-                '.(!empty($cuenta) ? '<td class="balance-col" style="color: '.getSaldoColor($trans['saldo_acumulado'] ?? $trans['saldo']).';">'.number_format($trans['saldo_acumulado'] ?? $trans['saldo'], 2, ',', '.').'</td>' : '').'
+                '.(!empty($cuenta) ? '<td class="balance-col" style="color: '.getSaldoColor($trans['saldo']).';">'.number_format($trans['saldo'], 2, ',', '.').'</td>' : '').'
             </tr>';
         }
     } else {
@@ -410,7 +410,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
                 <td><strong>Total Créditos ('.count(array_filter($transacciones, function($t) { return $t['tipo'] == 'C'; })).' movimientos)</strong></td>
                 <td style="text-align: right; color: #009900;">'.number_format($total_creditos, 2, ',', '.').' '.$moneda.'</td>
             </tr>';
-    
+
     if (!empty($cuenta)) {
         $html .= '
             <tr>
@@ -552,7 +552,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
                                     <td class="debit"><?= $trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '' ?></td>
                                     <td class="credit"><?= $trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '' ?></td>
                                     <?php if (!empty($cuenta)): ?>
-                                        <td class="balance" style="color: <?= getSaldoColor($trans['saldo_acumulado'] ?? $trans['saldo']) ?>"><?= number_format($trans['saldo_acumulado'] ?? $trans['saldo'], 2, ',', '.') ?></td>
+                                        <td class="balance" style="color: <?= getSaldoColor($trans['saldo']) ?>"><?= number_format($trans['saldo'], 2, ',', '.') ?></td>
                                     <?php endif; ?>
                                 </tr>
                             <?php endforeach; ?>
@@ -573,7 +573,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
                     </div>
                     <?php if (!empty($cuenta)): ?>
                         <div class="total-box">
-                            <div class="total-label"><i class="fas fa-coins"></i> Saldo Final</div>
+                            <div class="total-label"><i class="fas fa-database"></i> Saldo Final</div>
                             <div class="total-value" style="color: <?= getSaldoColor($saldo_final) ?>"><?= number_format($saldo_final, 2, ',', '.') ?></div>
                         </div>
                     <?php endif; ?>
