@@ -183,7 +183,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         public function Header() {
             $logo_path = realpath(__DIR__ . '/../assets/images/logo-banco.jpg');
             if (file_exists($logo_path)) {
-                $this->Image($logo_path, 10, 8, 20, 0, 'JPG', '', 'T', false, 300, '', false, false, 0, false, false, false);
+                $this->Image($logo_path, 10, 8, 30, 0, 'JPG', '', 'T', false, 300, '', false, false, 0, false, false, false);
             }
             
             $this->SetFont('helvetica', 'B', 9);
