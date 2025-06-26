@@ -1,10 +1,10 @@
 # Sistema Descriptivo de Movimiento de Cuenta
 
-<h1 Descripción</h1>
+<h1Descripción</h1>
 
 Este repositorio contiene un sistema para gestionar y describir movimientos de cuentas. El proyecto está diseñado para ofrecer una solución eficiente para el seguimiento y análisis de transacciones financieras.
 
-<h1 Características principales</h1>
+<h1Características principales</h1>
 
 1) Registro detallado de movimientos de cuentas
 
