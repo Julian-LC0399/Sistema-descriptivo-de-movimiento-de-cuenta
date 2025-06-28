@@ -25,20 +25,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banco Caroní - SEC</title>
+    <title>Banco Caroní - SIDEMOCU</title>
     <link rel="stylesheet" href="assets/css/login.css">
 </head>
 <body>
     <!-- Barra superior con fecha animada -->
     <div class="date-ticker">
         <div class="ticker-content">
-            <span id="current-date"></span> | Bienvenido al Sistema Estado de Cuenta del Banco Caroní
+            <span id="current-date"></span> | Bienvenido al Sistema Descriptivo de Movimiento de Cuenta del Banco Caroní
         </div>
     </div>
 
     <div class="login-container">
         <h1 class="bank-header">Banco Caroní</h1>
-        <div class="sec-title">SEC - Sistema Estado de Cuenta</div>
+        <div class="sec-title">SIDEMOCU - Sistema Descriptivo de Movimiento de Cuenta </div>
 
         <?php if ($error): ?>
             <div class="error-message">
