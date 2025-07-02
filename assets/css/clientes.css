@@ -1,4 +1,4 @@
-/* assets/css/clientes.css */
+/* assets/css/clientes.css - Versión Banco Caroni */
 
 /* Estilos generales para la página de clientes */
 body.clientes {
@@ -16,7 +16,7 @@ body.clientes {
 
 /* Barra de navegación superior */
 .navbar-custom {
-    background-color: #2c3e50;
+    background-color: #005883; /* Azul oscuro corporativo */
     padding: 10px 20px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     position: sticky;
@@ -27,6 +27,7 @@ body.clientes {
 .navbar-brand {
     font-weight: 600;
     font-size: 1.2rem;
+    color: white !important;
 }
 
 /* Contenedor de la tabla */
@@ -38,9 +39,10 @@ body.clientes {
     margin-top: 20px;
 }
 
-/* Caja de búsqueda */
+/* Caja de búsqueda - Modificado el botón buscar */
 .search-box {
-    background-color: #f1f5f9;
+    background-color: white;
+    border: 1px solid rgba(0, 88, 131, 0.2);
     padding: 20px;
     border-radius: 8px;
     margin-bottom: 25px;
@@ -54,25 +56,53 @@ body.clientes {
     padding: 8px 12px;
 }
 
+.search-box .btn-primary {
+    background-color: #005883; /* Azul corporativo */
+    border-color: #005883;
+    padding: 8px 16px;
+    color: white;
+}
+
+.search-box .btn-primary:hover {
+    background-color: #003D5C; /* Azul más oscuro */
+    border-color: #003D5C;
+}
+
+.search-box .form-control:focus,
+.search-box .form-select:focus {
+    border-color: #F7941D;
+    box-shadow: 0 0 0 0.25rem rgba(247, 148, 29, 0.25);
+}
+
 /* Estilos para la tabla */
 .table {
     margin-bottom: 0;
 }
 
 .table thead th {
-    background-color: #3498db;
+    background-color: #005883; /* Azul corporativo */
     color: white;
     font-weight: 500;
     border-bottom: none;
     padding: 12px 15px;
+    position: sticky;
+    top: 60px; /* Debajo de la navbar */
+    z-index: 100;
 }
 
 .table tbody tr {
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
 }
 
 .table tbody tr:hover {
     background-color: #f8f9fa;
+    border-left: 3px solid #F7941D; /* Naranja corporativo */
+    transform: translateX(2px);
+}
+
+.table tbody tr:nth-child(even) {
+    background-color: #E6F0F5; /* Azul muy claro para filas pares */
 }
 
 .table tbody td {
@@ -88,43 +118,68 @@ body.clientes {
 }
 
 .page-item.active .page-link {
-    background-color: #3498db;
-    border-color: #3498db;
+    background-color: #F7941D; /* Naranja corporativo */
+    border-color: #F7941D;
 }
 
 .page-link {
-    color: #3498db;
+    color: #005883; /* Azul corporativo */
     padding: 8px 15px;
     margin: 0 3px;
     border-radius: 4px;
 }
 
-/* Botones */
+/* Botones principales (mantienen naranja excepto el de búsqueda) */
 .btn-primary {
-    background-color: #3498db;
-    border-color: #3498db;
+    background-color: #F7941D; /* Naranja corporativo */
+    border-color: #F7941D;
     padding: 8px 16px;
 }
 
 .btn-primary:hover {
-    background-color: #2980b9;
-    border-color: #2980b9;
+    background-color: #E07E0C; /* Naranja más oscuro */
+    border-color: #E07E0C;
 }
 
 .btn-secondary {
-    background-color: #95a5a6;
-    border-color: #95a5a6;
+    background-color: #005883; /* Azul corporativo */
+    border-color: #005883;
+    color: white;
 }
 
 .btn-secondary:hover {
-    background-color: #7f8c8d;
-    border-color: #7f8c8d;
+    background-color: #003D5C; /* Azul más oscuro */
+    border-color: #003D5C;
 }
 
 /* Mensajes */
 .alert {
     border-radius: 4px;
     padding: 12px 15px;
+}
+
+/* Efectos visuales */
+.table-hover tbody tr:hover {
+    box-shadow: 0 2px 8px rgba(247, 148, 29, 0.2); /* Sombra naranja */
+}
+
+/* Estilos para el contador de resultados */
+.results-count {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+/* Iconos */
+.bi {
+    margin-right: 5px;
+}
+
+/* Título centrado */
+.main-container h2 {
+    text-align: center;
+    width: 100%;
+    color: #005883; /* Azul corporativo */
+    margin-bottom: 25px;
 }
 
 /* Responsive */
@@ -167,30 +222,6 @@ body.clientes {
         content: attr(data-label);
         font-weight: 600;
         margin-right: 15px;
-        color: #7f8c8d;
+        color: #005883; /* Azul corporativo */
     }
-}
-
-/* Efectos visuales */
-.table-hover tbody tr:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transform: translateY(-1px);
-    transition: all 0.2s ease;
-}
-
-/* Estilos para el contador de resultados */
-.results-count {
-    color: #7f8c8d;
-    font-size: 0.9rem;
-}
-
-/* Iconos */
-.bi {
-    margin-right: 5px;
-}
-
-/* Nuevos estilos para centrar el título */
-.main-container h2 {
-    text-align: center;
-    width: 100%;
 }
