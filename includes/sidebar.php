@@ -30,6 +30,13 @@ if (!defined('BASE_URL')) {
             <li class="menu-section">CONSULTAS</li>
             
             <li class="nav-item">
+                <a class="nav-link" href="<?= BASE_URL ?>clientes/lista.php">
+                    <i class="fas fa-users"></i>
+                    <span>Clientes</span>
+                </a>
+            </li>
+            
+            <li class="nav-item">
                 <a class="nav-link" href="<?= BASE_URL ?>transacciones/mes.php">
                     <i class="fas fa-calendar-week"></i>
                     <span>Consulta por mes</span>
