@@ -5,7 +5,7 @@ require_once '../includes/database.php';
 requireLogin(); // Requiere que el usuario esté logueado
 
 $tituloPagina = "Listado de Clientes";
-$mensaje = '';
+$mensaje = isset($_GET['mensaje']) ? $_GET['mensaje'] : '';
 
 // Configuración de paginación
 $clientesPorPagina = 20;
@@ -85,7 +85,7 @@ $camposBusqueda = [
 
     <!-- Contenido principal -->
     <div class="main-container">
-        <!-- Título centrado con ambos métodos -->
+        <!-- Título centrado -->
         <div class="d-flex justify-content-center mb-4">
             <h2><?= e($tituloPagina) ?></h2>
         </div>
@@ -128,12 +128,13 @@ $camposBusqueda = [
                             <th>Ciudad</th>
                             <th>Email</th>
                             <th>Teléfono</th>
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($clientes)): ?>
                             <tr>
-                                <td colspan="6" class="text-center py-4">No se encontraron clientes</td>
+                                <td colspan="7" class="text-center py-4">No se encontraron clientes</td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($clientes as $cliente): ?>
@@ -144,6 +145,14 @@ $camposBusqueda = [
                                     <td data-label="Ciudad"><?= e($cliente['cuscty']) ?></td>
                                     <td data-label="Email"><?= e($cliente['cuseml']) ?></td>
                                     <td data-label="Teléfono"><?= e($cliente['cusphn']) ?></td>
+                                    <td data-label="Acciones">
+                                        <a href="editar.php?id=<?= e($cliente['cuscun']) ?>" class="btn btn-sm btn-warning">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-danger btn-borrar" data-id="<?= e($cliente['cuscun']) ?>">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -197,8 +206,8 @@ $camposBusqueda = [
                     Mostrando <?= ($offset + 1) ?> a <?= min($offset + $clientesPorPagina, $totalClientes) ?> de <?= $totalClientes ?> clientes
                 </div>
                 <div>
-                    <a href="<?= BASE_URL ?>index.php" class="btn btn-secondary">
-                        <i class="bi bi-house-door"></i> Volver al inicio
+                    <a href="crear.php" class="btn btn-success">
+                        <i class="bi bi-plus-circle"></i> Agregar Cliente
                     </a>
                 </div>
             </div>
@@ -206,5 +215,20 @@ $camposBusqueda = [
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Manejar el clic en botones de borrar
+        document.querySelectorAll('.btn-borrar').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const idCliente = this.getAttribute('data-id');
+                
+                if (confirm('¿Estás seguro de que deseas borrar este cliente? Esta acción no se puede deshacer.')) {
+                    window.location.href = 'borrar.php?id=' + idCliente;
+                }
+            });
+        });
+    });
+    </script>
 </body>
 </html>
