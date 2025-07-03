@@ -151,6 +151,12 @@ try {
             </form>
         </div>
         
+        <!-- Mostrar mensaje de éxito si existe -->
+        <?php if (isset($_SESSION['mensaje'])): ?>
+            <div class="alert alert-success"><?= htmlspecialchars($_SESSION['mensaje']) ?></div>
+            <?php unset($_SESSION['mensaje']); ?>
+        <?php endif; ?>
+        
         <!-- Tabla de cuentas -->
         <div class="table-responsive">
             <table class="table table-striped table-hover">
@@ -187,10 +193,16 @@ try {
                                 <td><?= date('d/m/Y', strtotime($cuenta['fecha_apertura'])) ?></td>
                                 <?php if ($isAdminOrGerente): ?>
                                     <td>
-                                        <a href="editar.php?cuenta=<?= urlencode($cuenta['cuenta']) ?>" 
+                                        <a href="editar.php?id=<?= urlencode($cuenta['cuenta']) ?>" 
                                            class="btn btn-sm btn-warning" title="Editar">
                                             <i class="bi bi-pencil-fill"></i> Editar
                                         </a>
+                                        <button class="btn btn-sm btn-danger btn-borrar" 
+                                                data-cuenta="<?= htmlspecialchars($cuenta['cuenta']) ?>" 
+                                                data-nombre="<?= htmlspecialchars($cuenta['nombre_cliente']) ?>"
+                                                title="Borrar">
+                                            <i class="bi bi-trash-fill"></i> Borrar
+                                        </button>
                                     </td>
                                 <?php endif; ?>
                             </tr>
@@ -199,6 +211,20 @@ try {
                 </tbody>
             </table>
         </div>
+        
+        <!-- Resumen -->
+        <div class="alert alert-info mt-3">
+            Mostrando <?= count($cuentas) ?> de <?= $totalRegistros ?> cuentas encontradas.
+        </div>
+
+        <!-- Botón para agregar nueva cuenta (solo visible para admin/gerente) -->
+        <?php if ($isAdminOrGerente): ?>
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+            <a href="crear.php" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Agregar Nueva Cuenta
+            </a>
+        </div>
+        <?php endif; ?>
         
         <!-- Paginación -->
         <?php if ($totalPaginas > 1): ?>
@@ -230,14 +256,24 @@ try {
                 </ul>
             </nav>
         <?php endif; ?>
-        
-        <!-- Resumen -->
-        <div class="alert alert-info mt-3">
-            Mostrando <?= count($cuentas) ?> de <?= $totalRegistros ?> cuentas encontradas.
-        </div>
     </main>
 
     <!-- Bootstrap JS Bundle con Popper -->
     <script src="<?= BASE_URL ?>assets/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Script para confirmar borrado -->
+    <script>
+    // Confirmación para borrar cuenta
+    document.querySelectorAll('.btn-borrar').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const cuenta = this.getAttribute('data-cuenta');
+            const nombre = this.getAttribute('data-nombre');
+            
+            if (confirm(`¿Está seguro que desea borrar la cuenta ${cuenta} del cliente ${nombre}?\n\nEsta acción no se puede deshacer.`)) {
+                window.location.href = `borrar.php?id=${encodeURIComponent(cuenta)}`;
+            }
+        });
+    });
+    </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-/* assets/css/clientes.css - Versión Banco Caroni */
+/* assets/css/clientes.css */
 
 /* Estilos generales para la página de clientes */
 body.clientes {
@@ -16,7 +16,7 @@ body.clientes {
 
 /* Barra de navegación superior */
 .navbar-custom {
-    background-color: #005883; /* Azul oscuro corporativo */
+    background-color: #003366; /* Azul oscuro Caroni */
     padding: 10px 20px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     position: sticky;
@@ -27,7 +27,7 @@ body.clientes {
 .navbar-brand {
     font-weight: 600;
     font-size: 1.2rem;
-    color: white !important;
+    color: white;
 }
 
 /* Contenedor de la tabla */
@@ -39,10 +39,9 @@ body.clientes {
     margin-top: 20px;
 }
 
-/* Caja de búsqueda - Modificado el botón buscar */
+/* Caja de búsqueda */
 .search-box {
-    background-color: white;
-    border: 1px solid rgba(0, 88, 131, 0.2);
+    background-color: #f1f5f9;
     padding: 20px;
     border-radius: 8px;
     margin-bottom: 25px;
@@ -56,53 +55,38 @@ body.clientes {
     padding: 8px 12px;
 }
 
-.search-box .btn-primary {
-    background-color: #005883; /* Azul corporativo */
-    border-color: #005883;
-    padding: 8px 16px;
-    color: white;
-}
-
-.search-box .btn-primary:hover {
-    background-color: #003D5C; /* Azul más oscuro */
-    border-color: #003D5C;
-}
-
-.search-box .form-control:focus,
-.search-box .form-select:focus {
-    border-color: #005883;
-    box-shadow: 0 0 0 0.25rem rgba(0, 88, 131, 0.25);
-}
-
 /* Estilos para la tabla */
 .table {
     margin-bottom: 0;
 }
 
 .table thead th {
-    background-color: #005883; /* Azul corporativo */
+    background-color: #003366; /* Azul oscuro Caroni */
     color: white;
     font-weight: 500;
     border-bottom: none;
     padding: 12px 15px;
-    position: sticky;
-    top: 60px; /* Debajo de la navbar */
-    z-index: 100;
 }
 
 .table tbody tr {
     transition: all 0.2s ease;
-    border-left: 3px solid transparent;
+    position: relative; /* Para el pseudo-elemento de la línea azul */
 }
 
 .table tbody tr:hover {
-    background-color: #f8f9fa;
-    border-left: 3px solid #F7941D; /* Naranja corporativo */
-    transform: translateX(2px);
+    background-color: rgba(0, 51, 102, 0.05); /* Tinte muy claro del azul Caroni */
 }
 
-.table tbody tr:nth-child(even) {
-    background-color: #E6F0F5; /* Azul muy claro para filas pares */
+.table tbody tr:active::after,
+.table tbody tr:focus::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    background-color: #003366; /* Azul Caroni */
+    z-index: 1;
 }
 
 .table tbody td {
@@ -118,68 +102,58 @@ body.clientes {
 }
 
 .page-item.active .page-link {
-    background-color: #F7941D; /* Naranja corporativo */
-    border-color: #F7941D;
+    background-color: #CC0000; /* Rojo Caroni */
+    border-color: #CC0000;
 }
 
 .page-link {
-    color: #005883; /* Azul corporativo */
+    color: #003366; /* Azul Caroni */
     padding: 8px 15px;
     margin: 0 3px;
     border-radius: 4px;
 }
 
-/* Botones principales (mantienen naranja excepto el de búsqueda) */
+/* Botones */
 .btn-primary {
-    background-color: #F7941D; /* Naranja corporativo */
-    border-color: #F7941D;
+    background-color: #003366; /* Azul Caroni */
+    border-color: #003366;
     padding: 8px 16px;
 }
 
 .btn-primary:hover {
-    background-color: #E07E0C; /* Naranja más oscuro */
-    border-color: #E07E0C;
+    background-color: #002244; /* Azul más oscuro */
+    border-color: #002244;
 }
 
 .btn-secondary {
-    background-color: #005883; /* Azul corporativo */
-    border-color: #005883;
+    background-color: #CC0000; /* Rojo Caroni */
+    border-color: #CC0000;
     color: white;
 }
 
 .btn-secondary:hover {
-    background-color: #003D5C; /* Azul más oscuro */
-    border-color: #003D5C;
+    background-color: #AA0000; /* Rojo más oscuro */
+    border-color: #AA0000;
+    color: white;
+}
+
+/* Botón de acción especial con dorado Caroni */
+.btn-action {
+    background-color: #FFCC00; /* Dorado Caroni */
+    border-color: #FFCC00;
+    color: #333;
+}
+
+.btn-action:hover {
+    background-color: #E6B800; /* Dorado más oscuro */
+    border-color: #E6B800;
+    color: #333;
 }
 
 /* Mensajes */
 .alert {
     border-radius: 4px;
     padding: 12px 15px;
-}
-
-/* Efectos visuales */
-.table-hover tbody tr:hover {
-    box-shadow: 0 2px 8px rgba(247, 148, 29, 0.2); /* Sombra naranja */
-}
-
-/* Estilos para el contador de resultados */
-.results-count {
-    color: #7f8c8d;
-    font-size: 0.9rem;
-}
-
-/* Iconos */
-.bi {
-    margin-right: 5px;
-}
-
-/* Título centrado */
-.main-container h2 {
-    text-align: center;
-    width: 100%;
-    color: #005883; /* Azul corporativo */
-    margin-bottom: 25px;
 }
 
 /* Responsive */
@@ -222,6 +196,40 @@ body.clientes {
         content: attr(data-label);
         font-weight: 600;
         margin-right: 15px;
-        color: #005883; /* Azul corporativo */
+        color: #7f8c8d;
+    }
+}
+
+/* Efectos visuales */
+.table-hover tbody tr:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+/* Estilos para el contador de resultados */
+.results-count {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+/* Iconos */
+.bi {
+    margin-right: 5px;
+}
+
+/* Título centrado */
+.main-container h2 {
+    text-align: center;
+    width: 100%;
+    color: #003366; /* Azul Caroni para el título */
+}
+
+/* Estilos específicos para dispositivos táctiles */
+@media (hover: none) {
+    .table tbody tr:active {
+        background-color: rgba(0, 51, 102, 0.05);
+    }
+    .table tbody tr:active::after {
+        background-color: #003366;
     }
 }
