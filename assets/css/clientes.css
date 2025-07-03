@@ -1,178 +1,272 @@
-/* assets/css/clientes.css */
+/* assets/css/clientes.css - Estilos unificados con cuentas.css */
 
-/* Estilos generales para la página de clientes */
-body.clientes {
+/* ============ ESTILOS GENERALES ============ */
+body {
     background-color: #f8f9fa;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #333;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
 }
 
-/* Contenedor principal */
-.main-container {
-    margin-left: 250px; /* Ajuste para el sidebar */
-    padding: 20px;
+main.container {
+    margin-left: 250px;
+    padding: 25px;
     transition: margin-left 0.3s ease;
 }
 
-/* Barra de navegación superior */
-.navbar-custom {
-    background-color: #003366; /* Azul oscuro Caroni */
-    padding: 10px 20px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    position: sticky;
-    top: 0;
-    z-index: 1000;
+@media (max-width: 992px) {
+    main.container {
+        margin-left: 0;
+        padding: 20px;
+    }
 }
 
-.navbar-brand {
+/* ============ ENCABEZADOS ============ */
+h2 {
+    color: #005883;
     font-weight: 600;
-    font-size: 1.2rem;
-    color: white;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 1.8rem;
 }
 
-/* Contenedor de la tabla */
-.table-container {
+/* ============ FILTROS ============ */
+.filtros {
     background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
-    padding: 25px;
-    margin-top: 20px;
-}
-
-/* Caja de búsqueda */
-.search-box {
-    background-color: #f1f5f9;
+    border: 1px solid rgba(0, 88, 131, 0.2);
     padding: 20px;
     border-radius: 8px;
     margin-bottom: 25px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
-.search-box .form-control,
-.search-box .form-select {
-    border-radius: 4px;
-    border: 1px solid #ced4da;
-    padding: 8px 12px;
+.form-label {
+    display: block;
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 0.95rem;
+    margin-bottom: 8px;
 }
 
-/* Estilos para la tabla */
+.form-control, .form-select {
+    width: 100%;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 0.95rem;
+    transition: all 0.25s ease;
+    background-color: #fff;
+    height: calc(1.5em + 0.75rem + 2px);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #005883;
+    box-shadow: 0 0 0 0.25rem rgba(0, 88, 131, 0.25);
+    outline: none;
+}
+
+/* ============ BOTONES ============ */
+.btn {
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.25s ease;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid transparent;
+}
+
+.btn-primary {
+    background-color: #005883;
+    border-color: #005883;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #003D5C;
+    border-color: #003D5C;
+    transform: translateY(-1px);
+}
+
+.btn-outline-secondary {
+    background-color: transparent;
+    border: 1px solid #d1d5db;
+    color: #4a5568;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #f8f9fa;
+    border-color: #bdc3c7;
+}
+
+.btn-success {
+    background-color: #00A859;
+    border-color: #00A859;
+}
+
+.btn-warning {
+    background-color: #F7941D;
+    border-color: #F7941D;
+}
+
+.btn-danger {
+    background-color: #CC0000;
+    border-color: #CC0000;
+}
+
+/* ============ TABLA ============ */
 .table {
+    width: 100%;
     margin-bottom: 0;
+    font-size: 0.95rem;
+    color: #4a5568;
 }
 
 .table thead th {
-    background-color: #003366; /* Azul oscuro Caroni */
+    background-color: #005883;
     color: white;
     font-weight: 500;
     border-bottom: none;
     padding: 12px 15px;
+    vertical-align: middle;
+    text-align: left;
 }
 
 .table tbody tr {
-    transition: all 0.2s ease;
-    position: relative; /* Para el pseudo-elemento de la línea azul */
+    transition: all 0.25s ease;
+    border-left: 3px solid transparent;
 }
 
 .table tbody tr:hover {
-    background-color: rgba(0, 51, 102, 0.05); /* Tinte muy claro del azul Caroni */
+    background-color: #f8f9fa;
+    border-left: 3px solid #F7941D;
+    transform: translateX(2px);
+    box-shadow: 0 2px 8px rgba(247, 148, 29, 0.2);
 }
 
-.table tbody tr:active::after,
-.table tbody tr:focus::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: -1px;
-    height: 2px;
-    background-color: #003366; /* Azul Caroni */
-    z-index: 1;
+.table tbody tr:nth-child(even) {
+    background-color: #E6F0F5;
 }
 
-.table tbody td {
+.table td {
     padding: 12px 15px;
     vertical-align: middle;
     border-top: 1px solid #e9ecef;
 }
 
-/* Paginación */
+/* ============ BADGES ============ */
+.badge {
+    padding: 8px 14px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border-radius: 20px;
+    letter-spacing: 0.3px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.badge.bg-success {
+    background-color: #00A859 !important;
+}
+
+.badge.bg-secondary {
+    background-color: #7f8c8d !important;
+}
+
+/* ============ PAGINACIÓN ============ */
 .pagination {
-    justify-content: center;
-    margin-top: 25px;
+    margin: 0;
 }
 
 .page-item.active .page-link {
-    background-color: #CC0000; /* Rojo Caroni */
-    border-color: #CC0000;
+    background-color: #F7941D;
+    border-color: #F7941D;
+    color: white;
 }
 
 .page-link {
-    color: #003366; /* Azul Caroni */
-    padding: 8px 15px;
-    margin: 0 3px;
+    color: #005883;
+    border: 1px solid #e9ecef;
+    margin: 0 5px;
     border-radius: 4px;
+    padding: 8px 15px;
+    font-weight: 600;
+    transition: all 0.2s;
 }
 
-/* Botones */
-.btn-primary {
-    background-color: #003366; /* Azul Caroni */
-    border-color: #003366;
-    padding: 8px 16px;
+.page-link:hover {
+    background-color: #FFF9E6;
+    color: #003D5C;
 }
 
-.btn-primary:hover {
-    background-color: #002244; /* Azul más oscuro */
-    border-color: #002244;
+/* ============ FORMULARIOS ============ */
+.form-container {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    padding: 25px;
+    margin-bottom: 30px;
+    border: 1px solid rgba(0, 88, 131, 0.2);
 }
 
-.btn-secondary {
-    background-color: #CC0000; /* Rojo Caroni */
-    border-color: #CC0000;
-    color: white;
+.card {
+    margin-bottom: 20px;
+    border: 1px solid rgba(0, 88, 131, 0.2);
+    border-radius: 8px;
 }
 
-.btn-secondary:hover {
-    background-color: #AA0000; /* Rojo más oscuro */
-    border-color: #AA0000;
-    color: white;
+.card-header {
+    background-color: #E6F0F5;
+    border-bottom: 1px solid rgba(0, 88, 131, 0.2);
+    padding: 12px 15px;
+    font-weight: 600;
+    color: #005883;
 }
 
-/* Botón de acción especial con dorado Caroni */
-.btn-action {
-    background-color: #FFCC00; /* Dorado Caroni */
-    border-color: #FFCC00;
-    color: #333;
+.card-body {
+    padding: 20px;
 }
 
-.btn-action:hover {
-    background-color: #E6B800; /* Dorado más oscuro */
-    border-color: #E6B800;
-    color: #333;
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
 }
 
-/* Mensajes */
+/* ============ ALERTS ============ */
 .alert {
     border-radius: 4px;
     padding: 12px 15px;
+    margin-bottom: 20px;
 }
 
-/* Responsive */
-@media (max-width: 992px) {
-    .main-container {
-        margin-left: 0;
-    }
-    
-    .search-box .col-md-6,
-    .search-box .col-md-4 {
-        margin-bottom: 10px;
-    }
+.alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
 }
 
+.alert-danger {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
+/* ============ RESPONSIVE ============ */
 @media (max-width: 768px) {
-    .table-responsive {
-        border: none;
-    }
-    
     .table thead {
         display: none;
     }
@@ -182,6 +276,7 @@ body.clientes {
         margin-bottom: 15px;
         border: 1px solid #e9ecef;
         border-radius: 4px;
+        padding: 10px;
     }
     
     .table tbody td {
@@ -190,6 +285,7 @@ body.clientes {
         align-items: center;
         border-top: none;
         border-bottom: 1px solid #e9ecef;
+        padding: 12px 10px;
     }
     
     .table tbody td::before {
@@ -197,39 +293,46 @@ body.clientes {
         font-weight: 600;
         margin-right: 15px;
         color: #7f8c8d;
+        font-size: 0.9rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
     }
 }
 
-/* Efectos visuales */
-.table-hover tbody tr:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transform: translateY(-1px);
+/* ============ ICONOS ============ */
+.bi {
+    margin-right: 5px;
 }
 
-/* Estilos para el contador de resultados */
+/* ============ ESPECÍFICO PARA CLIENTES ============ */
+.search-box {
+    background-color: #f1f5f9;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
 .results-count {
     color: #7f8c8d;
     font-size: 0.9rem;
 }
 
-/* Iconos */
-.bi {
-    margin-right: 5px;
+.btn-sm {
+    padding: 5px 10px;
+    font-size: 0.85rem;
 }
 
-/* Título centrado */
-.main-container h2 {
-    text-align: center;
-    width: 100%;
-    color: #003366; /* Azul Caroni para el título */
-}
-
-/* Estilos específicos para dispositivos táctiles */
+/* Efectos para dispositivos táctiles */
 @media (hover: none) {
     .table tbody tr:active {
         background-color: rgba(0, 51, 102, 0.05);
-    }
-    .table tbody tr:active::after {
-        background-color: #003366;
     }
 }

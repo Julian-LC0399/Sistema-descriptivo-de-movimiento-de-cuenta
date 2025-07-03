@@ -1,33 +1,34 @@
 <?php
 // clientes/editar.php
-require_once '../includes/config.php';
-require_once '../includes/database.php';
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/database.php';
 requireLogin();
 
 $tituloPagina = "Editar Cliente";
-$mensaje = '';
 
 // Obtener ID del cliente a editar
 $idCliente = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if ($idCliente <= 0) {
-    header("Location: lista.php?error=ID+de+cliente+no+válido");
+    $_SESSION['error'] = "ID de cliente no válido";
+    header("Location: lista.php");
     exit();
 }
 
 // Obtener datos actuales del cliente
-$cliente = [];
 try {
     $stmt = $pdo->prepare("SELECT * FROM cumst WHERE cuscun = :id");
     $stmt->execute([':id' => $idCliente]);
     $cliente = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$cliente) {
-        header("Location: lista.php?error=Cliente+no+encontrado");
+        $_SESSION['error'] = "Cliente no encontrado";
+        header("Location: lista.php");
         exit();
     }
 } catch (PDOException $e) {
-    header("Location: lista.php?error=Error+al+obtener+cliente");
+    $_SESSION['error'] = "Error al obtener cliente";
+    header("Location: lista.php");
     exit();
 }
 
@@ -68,13 +69,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':usuario' => $_SESSION['username'] ?? 'SISTEMA'
         ]);
         
-        header("Location: lista.php?mensaje=Cliente+actualizado+exitosamente");
+        $_SESSION['mensaje'] = "Cliente actualizado exitosamente";
+        header("Location: lista.php");
         exit();
         
     } catch (PDOException $e) {
-        $mensaje = "Error al actualizar cliente: " . $e->getMessage();
+        $error = "Error al actualizar cliente: " . $e->getMessage();
     } catch (Exception $e) {
-        $mensaje = $e->getMessage();
+        $error = $e->getMessage();
     }
 }
 ?>
@@ -85,64 +87,81 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($tituloPagina) ?> - Sistema Bancario</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/clientes.css">
+    <link href="<?= BASE_URL ?>assets/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link href="<?= BASE_URL ?>assets/css/clientes.css" rel="stylesheet">
 </head>
-<body class="clientes">
-    <?php include '../includes/sidebar.php'; ?>
+<body>
+    <?php include __DIR__ . '/../includes/sidebar.php'; ?>
+    
+    <main class="container mt-4">
+        <h2 class="mb-4"><?= htmlspecialchars($tituloPagina) ?></h2>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="form-container">
+                    <?php if (!empty($error)): ?>
+                        <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+                    <?php endif; ?>
+                    
+                    <form method="post">
+                        <input type="hidden" name="id" value="<?= $idCliente ?>">
+                        
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                Información Básica
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="nombre" class="form-label">Nombre <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="nombre" name="nombre" 
+                                           value="<?= htmlspecialchars($cliente['cusna1'] ?? '') ?>" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="direccion" class="form-label">Dirección <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="direccion" name="direccion" 
+                                           value="<?= htmlspecialchars($cliente['cusna2'] ?? '') ?>" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="ciudad" class="form-label">Ciudad <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="ciudad" name="ciudad" 
+                                           value="<?= htmlspecialchars($cliente['cuscty'] ?? '') ?>" required>
+                                </div>
+                            </div>
+                        </div>
 
-    <div class="main-container">
-        <div class="d-flex justify-content-center mb-4">
-            <h2><?= htmlspecialchars($tituloPagina) ?></h2>
-        </div>
-        
-        <?php if (!empty($mensaje)): ?>
-            <div class="alert alert-danger"><?= htmlspecialchars($mensaje) ?></div>
-        <?php endif; ?>
-        
-        <div class="card">
-            <div class="card-body">
-                <form method="post">
-                    <input type="hidden" name="id" value="<?= $idCliente ?>">
-                    <div class="mb-3">
-                        <label for="nombre" class="form-label">Nombre <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="nombre" name="nombre" 
-                               value="<?= htmlspecialchars($cliente['cusna1'] ?? '') ?>" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="direccion" class="form-label">Dirección <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="direccion" name="direccion" 
-                               value="<?= htmlspecialchars($cliente['cusna2'] ?? '') ?>" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="ciudad" class="form-label">Ciudad <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="ciudad" name="ciudad" 
-                               value="<?= htmlspecialchars($cliente['cuscty'] ?? '') ?>" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" name="email" 
-                               value="<?= htmlspecialchars($cliente['cuseml'] ?? '') ?>">
-                    </div>
-                    <div class="mb-3">
-                        <label for="telefono" class="form-label">Teléfono</label>
-                        <input type="text" class="form-control" id="telefono" name="telefono" 
-                               value="<?= htmlspecialchars($cliente['cusphn'] ?? '') ?>">
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <a href="lista.php" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Volver al listado
-                        </a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-save"></i> Guardar Cambios
-                        </button>
-                    </div>
-                </form>
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                Información de Contacto
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           value="<?= htmlspecialchars($cliente['cuseml'] ?? '') ?>">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="telefono" class="form-label">Teléfono</label>
+                                    <input type="text" class="form-control" id="telefono" name="telefono" 
+                                           value="<?= htmlspecialchars($cliente['cusphn'] ?? '') ?>">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <a href="lista.php" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    </main>
+
+    <script src="<?= BASE_URL ?>assets/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
