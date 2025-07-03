@@ -1,4 +1,4 @@
-/* assets/css/clientes.css - Estilos actualizados */
+/* assets/css/clientes.css - Estilos completos para Banco Caroni */
 /* Paleta principal: Azul oscuro #005883, Naranja #F7941D, Verde #00A859 */
 
 /* ============ ESTILOS GENERALES ============ */
@@ -7,39 +7,68 @@ body {
     color: #333;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
+    margin: 0;
+    padding: 0;
+}
+
+a {
+    color: #005883;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: #003D5C;
 }
 
 main.container {
     margin-left: 250px;
     padding: 25px;
     transition: margin-left 0.3s ease;
+    min-height: 100vh;
 }
 
 @media (max-width: 992px) {
     main.container {
         margin-left: 0;
-        padding: 20px;
+        padding: 15px;
     }
 }
 
-/* ============ ENCABEZADOS (SIN LÍNEA AMARILLA) ============ */
-h2 {
+/* ============ ENCABEZADOS ============ */
+h1, h2, h3, h4, h5, h6 {
     color: #005883;
     font-weight: 600;
+    margin-top: 0;
+}
+
+h2 {
     text-align: center;
     margin-bottom: 30px;
     font-size: 1.8rem;
-    /* Se eliminó el pseudo-elemento ::after que creaba la línea amarilla */
+    position: relative;
+    padding-bottom: 10px;
 }
 
-/* ============ FILTROS (CON CAMPO BUSCAR MÁS PEQUEÑO) ============ */
+h2::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 3px;
+    background-color: #F7941D;
+}
+
+/* ============ COMPONENTES DE FILTROS ============ */
 .filtros-card {
     background-color: white;
     border: 1px solid rgba(0, 88, 131, 0.2);
-    padding: 20px;
+    padding: 25px;
     border-radius: 8px;
-    margin-bottom: 25px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
 }
 
 .filtros-header {
@@ -64,11 +93,10 @@ h2 {
     color: #005883;
 }
 
-/* NUEVO: Grid con campo de búsqueda más pequeño */
 .filtros-grid {
     display: grid;
-    grid-template-columns: 2fr 3fr auto; /* Campo buscar más estrecho */
-    gap: 15px;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 20px;
     align-items: end;
 }
 
@@ -76,30 +104,63 @@ h2 {
     margin-bottom: 0;
 }
 
-/* Estilo específico para el campo de búsqueda */
-.filtros-grid .form-group:first-child {
-    max-width: 250px; /* Ancho máximo reducido */
+.filtros-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
 }
 
-/* Responsive para móviles */
-@media (max-width: 768px) {
-    .filtros-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .filtros-grid .form-group:first-child {
-        max-width: 100%; /* Ocupa todo el ancho en móviles */
-    }
+/* ============ FORMULARIOS ============ */
+.form-group {
+    margin-bottom: 20px;
 }
 
-/* ============ TABLA ============ */
+.form-label {
+    display: block;
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+}
+
+.form-control, 
+.form-select,
+.form-select-client {
+    width: 100%;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 10px 12px;
+    font-size: 0.95rem;
+    transition: all 0.25s ease;
+    background-color: #fff;
+    height: calc(1.5em + 0.75rem + 2px);
+}
+
+.form-control:focus, 
+.form-select:focus,
+.form-select-client:focus {
+    border-color: #005883;
+    box-shadow: 0 0 0 0.25rem rgba(0, 88, 131, 0.25);
+    outline: none;
+}
+
+input[type="number"] {
+    font-family: 'Roboto Mono', monospace;
+    text-align: right;
+}
+
+/* ============ TABLAS ============ */
 .table-container {
     background-color: white;
     border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
     padding: 25px;
     margin-bottom: 30px;
     border: 1px solid rgba(0, 88, 131, 0.2);
+    overflow-x: auto;
 }
 
 .table {
@@ -107,6 +168,8 @@ h2 {
     margin-bottom: 0;
     font-size: 0.95rem;
     color: #4a5568;
+    border-collapse: separate;
+    border-spacing: 0;
 }
 
 .table thead th {
@@ -117,6 +180,8 @@ h2 {
     padding: 12px 15px;
     vertical-align: middle;
     text-align: left;
+    position: sticky;
+    top: 0;
 }
 
 .table tbody tr {
@@ -132,13 +197,18 @@ h2 {
 }
 
 .table tbody tr:nth-child(even) {
-    background-color: #E6F0F5;
+    background-color: #f5fafd;
 }
 
 .table td {
     padding: 12px 15px;
     vertical-align: middle;
     border-top: 1px solid #e9ecef;
+}
+
+.table .acciones {
+    white-space: nowrap;
+    width: 1%;
 }
 
 /* ============ BOTONES ============ */
@@ -156,6 +226,11 @@ h2 {
     border: 1px solid transparent;
 }
 
+.btn-sm {
+    padding: 5px 10px;
+    font-size: 0.85rem;
+}
+
 .btn-primary {
     background-color: #005883;
     border-color: #005883;
@@ -166,10 +241,142 @@ h2 {
     background-color: #003D5C;
     border-color: #003D5C;
     transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-/* ============ RESPONSIVE TABLA ============ */
+.btn-outline-primary {
+    background-color: transparent;
+    border-color: #005883;
+    color: #005883;
+}
+
+.btn-outline-primary:hover {
+    background-color: #005883;
+    color: white;
+}
+
+.btn-success {
+    background-color: #00A859;
+    border-color: #00A859;
+    color: white;
+}
+
+.btn-warning {
+    background-color: #F7941D;
+    border-color: #F7941D;
+    color: white;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #bb2d3b;
+    border-color: #b02a37;
+}
+
+/* ============ ALERTAS ============ */
+.alert {
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+}
+
+.alert-success {
+    background-color: #d1e7dd;
+    border-color: #badbcc;
+    color: #0f5132;
+}
+
+.alert-info {
+    background-color: #cff4fc;
+    border-color: #b6effb;
+    color: #055160;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffecb5;
+    color: #664d03;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #842029;
+}
+
+/* ============ PAGINACIÓN ============ */
+.pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 30px;
+}
+
+.pagination {
+    margin: 0;
+}
+
+.page-item.active .page-link {
+    background-color: #F7941D;
+    border-color: #F7941D;
+    color: white;
+}
+
+.page-link {
+    color: #005883;
+    border: 1px solid #e9ecef;
+    margin: 0 3px;
+    border-radius: 4px;
+    padding: 8px 15px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.page-link:hover {
+    background-color: #f0f7fc;
+    color: #003D5C;
+}
+
+/* ============ BADGES ============ */
+.badge {
+    padding: 6px 12px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border-radius: 20px;
+    letter-spacing: 0.3px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.badge-primary {
+    background-color: #005883;
+}
+
+.badge-success {
+    background-color: #00A859;
+}
+
+.badge-warning {
+    background-color: #F7941D;
+}
+
+.badge-danger {
+    background-color: #dc3545;
+}
+
+/* ============ RESPONSIVE ============ */
 @media (max-width: 768px) {
+    .filtros-grid {
+        grid-template-columns: 1fr;
+    }
+    
     .table-container {
         padding: 15px;
     }
@@ -201,5 +408,29 @@ h2 {
         margin-right: 15px;
         color: #7f8c8d;
         font-size: 0.9rem;
+    }
+    
+    .filtros-actions,
+    .pagination-container {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    main.container {
+        padding: 10px;
+    }
+    
+    .filtros-card {
+        padding: 15px;
+    }
+    
+    .table td {
+        padding: 10px 8px;
     }
 }
