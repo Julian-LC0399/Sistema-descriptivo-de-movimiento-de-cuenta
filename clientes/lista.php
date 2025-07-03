@@ -121,7 +121,7 @@ $camposBusqueda = [
                     </div>
                     
                     <div class="form-group">
-                        <button type="submit" class="btn btn-primary w-100">
+                        <button type="submit" class="btn btn-primary w-100 h-100">
                             <i class="bi bi-search"></i> Buscar
                         </button>
                     </div>
