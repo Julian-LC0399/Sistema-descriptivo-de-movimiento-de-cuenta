@@ -1,4 +1,5 @@
-/* assets/css/clientes.css - Estilos unificados con cuentas.css */
+/* assets/css/cuentas.css - Estilos actualizados para Banco Caroni */
+/* Paleta principal: Azul oscuro #005883, Naranja #F7941D, Verde #00A859 */
 
 /* ============ ESTILOS GENERALES ============ */
 body {
@@ -30,14 +31,43 @@ h2 {
     font-size: 1.8rem;
 }
 
-/* ============ FILTROS ============ */
-.filtros {
+/* ============ FILTROS (ESTILO CLIENTES) ============ */
+.filtros-card {
     background-color: white;
     border: 1px solid rgba(0, 88, 131, 0.2);
     padding: 20px;
     border-radius: 8px;
     margin-bottom: 25px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.filtros-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.filtros-title {
+    font-weight: 700;
+    color: #005883;
+    margin: 0;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filtros-title i {
+    font-size: 1.3rem;
+    color: #005883;
+}
+
+.filtros-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
 }
 
 .form-label {
@@ -65,7 +95,16 @@ h2 {
     outline: none;
 }
 
-/* ============ BOTONES ============ */
+.filtros-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
+/* ============ BOTONES (ACTUALIZADOS - AZUL) ============ */
 .btn {
     padding: 8px 16px;
     border-radius: 4px;
@@ -103,22 +142,16 @@ h2 {
     border-color: #bdc3c7;
 }
 
-.btn-success {
-    background-color: #00A859;
-    border-color: #00A859;
+/* ============ TABLA (CONSERVANDO ALGUNOS ESTILOS ÚNICOS) ============ */
+.table-container {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    padding: 25px;
+    margin-bottom: 30px;
+    border: 1px solid rgba(0, 88, 131, 0.2);
 }
 
-.btn-warning {
-    background-color: #F7941D;
-    border-color: #F7941D;
-}
-
-.btn-danger {
-    background-color: #CC0000;
-    border-color: #CC0000;
-}
-
-/* ============ TABLA ============ */
 .table {
     width: 100%;
     margin-bottom: 0;
@@ -158,7 +191,7 @@ h2 {
     border-top: 1px solid #e9ecef;
 }
 
-/* ============ BADGES ============ */
+/* ============ BADGES (MANTENIENDO ESTILOS ORIGINALES) ============ */
 .badge {
     padding: 8px 14px;
     font-weight: 600;
@@ -179,6 +212,13 @@ h2 {
 }
 
 /* ============ PAGINACIÓN ============ */
+.pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 25px;
+}
+
 .pagination {
     margin: 0;
 }
@@ -204,7 +244,7 @@ h2 {
     color: #003D5C;
 }
 
-/* ============ FORMULARIOS ============ */
+/* ============ ESTILOS PARA CREAR CUENTA ============ */
 .form-container {
     background-color: white;
     border-radius: 8px;
@@ -214,22 +254,8 @@ h2 {
     border: 1px solid rgba(0, 88, 131, 0.2);
 }
 
-.card {
+.form-row {
     margin-bottom: 20px;
-    border: 1px solid rgba(0, 88, 131, 0.2);
-    border-radius: 8px;
-}
-
-.card-header {
-    background-color: #E6F0F5;
-    border-bottom: 1px solid rgba(0, 88, 131, 0.2);
-    padding: 12px 15px;
-    font-weight: 600;
-    color: #005883;
-}
-
-.card-body {
-    padding: 20px;
 }
 
 .form-actions {
@@ -240,17 +266,17 @@ h2 {
     border-top: 1px solid #e9ecef;
 }
 
-/* ============ ALERTS ============ */
+/* Ajustes para los inputs numéricos */
+input[type="number"] {
+    font-family: 'Roboto Mono', monospace;
+    text-align: right;
+}
+
+/* Estilos para los alerts */
 .alert {
     border-radius: 4px;
     padding: 12px 15px;
     margin-bottom: 20px;
-}
-
-.alert-success {
-    background-color: #d4edda;
-    border-color: #c3e6cb;
-    color: #155724;
 }
 
 .alert-danger {
@@ -259,14 +285,30 @@ h2 {
     color: #721c24;
 }
 
-.alert-info {
-    background-color: #d1ecf1;
-    border-color: #bee5eb;
-    color: #0c5460;
+/* Estilo para el select de clientes */
+.form-select-client {
+    width: 100%;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+    transition: all 0.25s ease;
+}
+
+.form-select-client:focus {
+    border-color: #005883;
+    box-shadow: 0 0 0 0.25rem rgba(0, 88, 131, 0.25);
 }
 
 /* ============ RESPONSIVE ============ */
 @media (max-width: 768px) {
+    .filtros-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .table-container {
+        padding: 15px;
+    }
+    
     .table thead {
         display: none;
     }
@@ -296,6 +338,11 @@ h2 {
         font-size: 0.9rem;
     }
     
+    .filtros-actions {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
     .form-actions {
         flex-direction: column;
         gap: 10px;
@@ -303,36 +350,5 @@ h2 {
     
     .form-actions .btn {
         width: 100%;
-    }
-}
-
-/* ============ ICONOS ============ */
-.bi {
-    margin-right: 5px;
-}
-
-/* ============ ESPECÍFICO PARA CLIENTES ============ */
-.search-box {
-    background-color: #f1f5f9;
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 25px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-}
-
-.results-count {
-    color: #7f8c8d;
-    font-size: 0.9rem;
-}
-
-.btn-sm {
-    padding: 5px 10px;
-    font-size: 0.85rem;
-}
-
-/* Efectos para dispositivos táctiles */
-@media (hover: none) {
-    .table tbody tr:active {
-        background-color: rgba(0, 51, 102, 0.05);
     }
 }
