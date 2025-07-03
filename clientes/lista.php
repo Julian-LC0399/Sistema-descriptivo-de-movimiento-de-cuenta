@@ -95,34 +95,44 @@ $camposBusqueda = [
             <?php unset($_SESSION['error']); ?>
         <?php endif; ?>
         
-        <!-- Filtros -->
-        <div class="filtros mb-4">
-            <form method="get" class="row g-3">
-                <div class="col-md-6">
-                    <input type="text" name="busqueda" class="form-control" placeholder="Buscar clientes..." 
-                           value="<?= htmlspecialchars($busqueda) ?>">
-                </div>
-                <div class="col-md-4">
-                    <select name="campo" class="form-select">
-                        <?php foreach ($camposBusqueda as $valor => $texto): ?>
-                            <option value="<?= htmlspecialchars($valor) ?>" <?= $campoBusqueda == $valor ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($texto) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-search"></i> Buscar
-                    </button>
+        <!-- Filtros Actualizados -->
+        <div class="filtros-card mb-4">
+            <div class="filtros-header">
+                <h3 class="filtros-title">
+                    <i class="bi bi-funnel"></i> Filtros de búsqueda
+                </h3>
+            </div>
+            
+            <form method="get">
+                <div class="filtros-grid">
+                    <div class="form-group">
+                        <input type="text" name="busqueda" class="form-control" 
+                               placeholder="Buscar clientes..." value="<?= htmlspecialchars($busqueda) ?>">
+                    </div>
+                    
+                    <div class="form-group">
+                        <select name="campo" class="form-select">
+                            <?php foreach ($camposBusqueda as $valor => $texto): ?>
+                                <option value="<?= htmlspecialchars($valor) ?>" <?= $campoBusqueda == $valor ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($texto) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-search"></i> Buscar
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
         
         <!-- Tabla de clientes -->
-        <div class="table-responsive">
-            <table class="table table-striped table-hover">
-                <thead class="table-dark">
+        <div class="table-container">
+            <table class="table">
+                <thead>
                     <tr>
                         <th>ID Cliente</th>
                         <th>Nombre</th>
@@ -171,7 +181,7 @@ $camposBusqueda = [
         </div>
 
         <!-- Botón para agregar nuevo cliente -->
-        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+        <div class="d-flex justify-content-end mt-4">
             <a href="crear.php" class="btn btn-success">
                 <i class="bi bi-plus-circle"></i> Agregar Nuevo Cliente
             </a>
@@ -179,8 +189,8 @@ $camposBusqueda = [
         
         <!-- Paginación -->
         <?php if ($totalPaginas > 1): ?>
-            <nav aria-label="Page navigation">
-                <ul class="pagination">
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
                     <?php if ($paginaActual > 1): ?>
                         <li class="page-item">
                             <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $paginaActual - 1])) ?>">
