@@ -50,9 +50,119 @@ h2 {
     padding-bottom: 10px;
 }
 
-/* Eliminar la línea amarilla debajo del título */
 h2::after {
     display: none;
+}
+
+/* ============ FORMULARIOS MEJORADOS ============ */
+.form-container {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 15px rgba(0, 88, 131, 0.1);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(0, 88, 131, 0.15);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.form-section {
+    margin-bottom: 2rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.form-section:hover {
+    box-shadow: 0 5px 15px rgba(0, 88, 131, 0.1);
+}
+
+.form-section .card-header {
+    background-color: #005883;
+    color: white;
+    padding: 1rem 1.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-section .card-body {
+    padding: 1.5rem;
+    background-color: #fdfdfd;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    color: #005883;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.required-field::after {
+    content: " *";
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.form-control, 
+.form-select {
+    width: 100%;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 0.75rem;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    background-color: #fff;
+}
+
+.form-control:focus, 
+.form-select:focus {
+    border-color: #005883;
+    box-shadow: 0 0 0 0.25rem rgba(0, 88, 131, 0.2);
+    outline: none;
+}
+
+.is-invalid {
+    border-color: #dc3545;
+}
+
+.is-invalid:focus {
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+}
+
+.invalid-feedback {
+    color: #dc3545;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.btn-form {
+    min-width: 120px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.btn-form i {
+    margin-right: 8px;
 }
 
 /* ============ COMPONENTES DE FILTROS ============ */
@@ -94,13 +204,11 @@ h2::after {
     align-items: stretch;
 }
 
-/* Ajustar el tamaño del campo de búsqueda para igualar al select */
 .filtros-grid .form-group:first-child input {
     width: 100%;
     box-sizing: border-box;
 }
 
-/* Asegurar que todos los elementos del filtro tengan la misma altura */
 .filtros-grid .form-group {
     display: flex;
     flex-direction: column;
@@ -120,45 +228,6 @@ h2::after {
     margin-top: 25px;
     padding-top: 20px;
     border-top: 1px solid #e9ecef;
-}
-
-/* ============ FORMULARIOS ============ */
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-label {
-    display: block;
-    font-weight: 600;
-    color: #4a5568;
-    font-size: 0.95rem;
-    margin-bottom: 8px;
-}
-
-.form-control, 
-.form-select,
-.form-select-client {
-    width: 100%;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    padding: 10px 12px;
-    font-size: 0.95rem;
-    transition: all 0.25s ease;
-    background-color: #fff;
-    height: calc(1.5em + 0.75rem + 2px);
-}
-
-.form-control:focus, 
-.form-select:focus,
-.form-select-client:focus {
-    border-color: #005883;
-    box-shadow: 0 0 0 0.25rem rgba(0, 88, 131, 0.25);
-    outline: none;
-}
-
-input[type="number"] {
-    font-family: 'Roboto Mono', monospace;
-    text-align: right;
 }
 
 /* ============ TABLAS ============ */
@@ -420,12 +489,14 @@ input[type="number"] {
     }
     
     .filtros-actions,
-    .pagination-container {
+    .pagination-container,
+    .form-actions {
         flex-direction: column;
         gap: 10px;
     }
     
-    .btn {
+    .btn,
+    .btn-form {
         width: 100%;
     }
 }
@@ -441,5 +512,22 @@ input[type="number"] {
     
     .table td {
         padding: 10px 8px;
+    }
+    
+    .form-container {
+        padding: 1rem;
+    }
+    
+    .form-section .card-header {
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+    }
+    
+    .form-section .card-body {
+        padding: 1rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1.25rem;
     }
 }

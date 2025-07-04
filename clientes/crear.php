@@ -6,53 +6,86 @@ requireLogin();
 
 $tituloPagina = "Agregar Nuevo Cliente";
 
+// Inicializar variables para mantener los valores del formulario
+$valoresFormulario = [
+    'nombre' => '',
+    'direccion' => '',
+    'ciudad' => '',
+    'email' => '',
+    'telefono' => ''
+];
+
+$errores = [];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        // Validar datos antes de insertar
-        $nombre = trim($_POST['nombre']);
-        $direccion = trim($_POST['direccion']);
-        $ciudad = trim($_POST['ciudad']);
-        $email = trim($_POST['email']);
-        $telefono = trim($_POST['telefono']);
+        // Obtener y sanitizar datos del formulario
+        $valoresFormulario = [
+            'nombre' => trim($_POST['nombre'] ?? ''),
+            'direccion' => trim($_POST['direccion'] ?? ''),
+            'ciudad' => trim($_POST['ciudad'] ?? ''),
+            'email' => trim($_POST['email'] ?? ''),
+            'telefono' => trim($_POST['telefono'] ?? '')
+        ];
 
-        if (empty($nombre) || empty($direccion) || empty($ciudad)) {
-            throw new Exception("Nombre, dirección y ciudad son campos obligatorios");
+        // Validar campos obligatorios
+        if (empty($valoresFormulario['nombre'])) {
+            $errores['nombre'] = "El nombre es obligatorio";
         }
 
-        // Generar el nuevo ID de cliente
-        $stmt = $pdo->query("SELECT MAX(cuscun) as max_id FROM cumst");
-        $maxId = (int)$stmt->fetch()['max_id'];
-        $nuevoId = $maxId + 1;
+        if (empty($valoresFormulario['direccion'])) {
+            $errores['direccion'] = "La dirección es obligatoria";
+        }
 
-        // Insertar con el nuevo ID generado
-        $stmt = $pdo->prepare("
-            INSERT INTO cumst (
-                cuscun, cusna1, cusna2, cuscty, 
-                cuseml, cusphn, cussts, cuslau, cuslut
-            ) VALUES (
-                :id, :nombre, :direccion, :ciudad, 
-                :email, :telefono, 'A', :usuario, NOW()
-            )
-        ");
-        
-        $stmt->execute([
-            ':id' => $nuevoId,
-            ':nombre' => $nombre,
-            ':direccion' => $direccion,
-            ':ciudad' => $ciudad,
-            ':email' => $email,
-            ':telefono' => $telefono,
-            ':usuario' => $_SESSION['username'] ?? 'SISTEMA'
-        ]);
-        
-        $_SESSION['mensaje'] = "Cliente agregado exitosamente";
-        header("Location: lista.php");
-        exit();
+        if (empty($valoresFormulario['ciudad'])) {
+            $errores['ciudad'] = "La ciudad es obligatoria";
+        }
+
+        // Validar email si se proporcionó
+        if (!empty($valoresFormulario['email']) && !filter_var($valoresFormulario['email'], FILTER_VALIDATE_EMAIL)) {
+            $errores['email'] = "El email no tiene un formato válido";
+        }
+
+        // Si no hay errores, proceder con la inserción
+        if (empty($errores)) {
+            // Generar el nuevo ID de cliente
+            $stmt = $pdo->query("SELECT MAX(cuscun) as max_id FROM cumst");
+            $maxId = (int)$stmt->fetch()['max_id'];
+            $nuevoId = $maxId + 1;
+
+            // Insertar con el nuevo ID generado
+            $stmt = $pdo->prepare("
+                INSERT INTO cumst (
+                    cuscun, cusna1, cusna2, cuscty, 
+                    cuseml, cusphn, cussts, cuslau, cuslut
+                ) VALUES (
+                    :id, :nombre, :direccion, :ciudad, 
+                    :email, :telefono, 'A', :usuario, NOW()
+                )
+            ");
+            
+            $stmt->execute([
+                ':id' => $nuevoId,
+                ':nombre' => $valoresFormulario['nombre'],
+                ':direccion' => $valoresFormulario['direccion'],
+                ':ciudad' => $valoresFormulario['ciudad'],
+                ':email' => $valoresFormulario['email'],
+                ':telefono' => $valoresFormulario['telefono'],
+                ':usuario' => $_SESSION['username'] ?? 'SISTEMA'
+            ]);
+            
+            $_SESSION['mensaje'] = [
+                'tipo' => 'success',
+                'texto' => "Cliente agregado exitosamente"
+            ];
+            header("Location: lista.php");
+            exit();
+        }
         
     } catch (PDOException $e) {
-        $error = "Error al agregar cliente: " . $e->getMessage();
+        $errores['general'] = "Error al agregar cliente: " . $e->getMessage();
     } catch (Exception $e) {
-        $error = $e->getMessage();
+        $errores['general'] = $e->getMessage();
     }
 }
 ?>
@@ -73,62 +106,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <main class="container mt-4">
         <h2 class="mb-4"><?= htmlspecialchars($tituloPagina) ?></h2>
         
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="form-container">
-                    <?php if (!empty($error)): ?>
-                        <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
-                    <?php endif; ?>
-                    
-                    <form method="post">
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                Información Básica
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label for="nombre" class="form-label">Nombre <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="nombre" name="nombre" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="direccion" class="form-label">Dirección <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="direccion" name="direccion" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="ciudad" class="form-label">Ciudad <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="ciudad" name="ciudad" required>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                Información de Contacto
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label for="email" class="form-label">Email</label>
-                                    <input type="email" class="form-control" id="email" name="email">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="telefono" class="form-label">Teléfono</label>
-                                    <input type="text" class="form-control" id="telefono" name="telefono">
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-actions">
-                            <a href="lista.php" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save"></i> Guardar Cliente
-                            </button>
-                        </div>
-                    </form>
+        <?php if (!empty($errores['general'])): ?>
+            <div class="alert alert-danger"><?= htmlspecialchars($errores['general']) ?></div>
+        <?php endif; ?>
+        
+        <form method="post" class="form-container">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Información Básica</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label required-field">Nombre</label>
+                        <input type="text" class="form-control <?= isset($errores['nombre']) ? 'is-invalid' : '' ?>" 
+                               id="nombre" name="nombre" value="<?= htmlspecialchars($valoresFormulario['nombre']) ?>" required>
+                        <?php if (isset($errores['nombre'])): ?>
+                            <div class="invalid-feedback"><?= htmlspecialchars($errores['nombre']) ?></div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="mb-3">
+                        <label for="direccion" class="form-label required-field">Dirección</label>
+                        <input type="text" class="form-control <?= isset($errores['direccion']) ? 'is-invalid' : '' ?>" 
+                               id="direccion" name="direccion" value="<?= htmlspecialchars($valoresFormulario['direccion']) ?>" required>
+                        <?php if (isset($errores['direccion'])): ?>
+                            <div class="invalid-feedback"><?= htmlspecialchars($errores['direccion']) ?></div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ciudad" class="form-label required-field">Ciudad</label>
+                        <input type="text" class="form-control <?= isset($errores['ciudad']) ? 'is-invalid' : '' ?>" 
+                               id="ciudad" name="ciudad" value="<?= htmlspecialchars($valoresFormulario['ciudad']) ?>" required>
+                        <?php if (isset($errores['ciudad'])): ?>
+                            <div class="invalid-feedback"><?= htmlspecialchars($errores['ciudad']) ?></div>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
-        </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Información de Contacto</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control <?= isset($errores['email']) ? 'is-invalid' : '' ?>" 
+                               id="email" name="email" value="<?= htmlspecialchars($valoresFormulario['email']) ?>">
+                        <?php if (isset($errores['email'])): ?>
+                            <div class="invalid-feedback"><?= htmlspecialchars($errores['email']) ?></div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="mb-3">
+                        <label for="telefono" class="form-label">Teléfono</label>
+                        <input type="tel" class="form-control" id="telefono" name="telefono" 
+                               value="<?= htmlspecialchars($valoresFormulario['telefono']) ?>">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <a href="lista.php" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Guardar Cliente
+                </button>
+            </div>
+        </form>
     </main>
 
     <script src="<?= BASE_URL ?>assets/js/bootstrap.bundle.min.js"></script>
