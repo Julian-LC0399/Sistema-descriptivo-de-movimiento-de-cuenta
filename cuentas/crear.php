@@ -109,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Crear Nueva Cuenta - Sistema Bancario</title>
     <link href="<?= BASE_URL ?>assets/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
-    <link href="<?= BASE_URL ?>assets/css/cuentas.css" rel="stylesheet">
+    <link href="<?= BASE_URL ?>assets/css/registros.css" rel="stylesheet">
 </head>
 <body>
     <?php include __DIR__ . '/../includes/sidebar.php'; ?>
