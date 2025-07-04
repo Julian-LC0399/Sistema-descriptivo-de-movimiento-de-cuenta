@@ -1,4 +1,4 @@
-/* assets/css/cuentas.css - Estilos completos con campos de filtro compactos */
+/* assets/css/cuentas.css - Estilos completos con correcciones para filtros */
 /* Paleta principal: Azul oscuro #005883, Naranja #F7941D, Verde #00A859 */
 
 /* ============ ESTILOS GENERALES ============ */
@@ -43,7 +43,7 @@ h2 {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
-/* ============ FILTROS COMPACTOS ============ */
+/* ============ FILTROS COMPACTOS - CORREGIDOS ============ */
 .filtros-card {
     background-color: white;
     padding: 15px;
@@ -95,6 +95,9 @@ h2 {
     transition: all 0.3s ease;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
     max-width: 220px;
+    box-sizing: border-box;
+    overflow: visible;
+    position: relative; /* Para elementos absolutos internos */
 }
 
 .form-group:hover {
@@ -119,6 +122,17 @@ h2 {
     font-size: 0.85rem;
     transition: all 0.25s ease;
     background-color: #fff;
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+.form-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 1em;
+    padding-right: 1.5rem;
 }
 
 .form-control:focus, .form-select:focus {
@@ -153,6 +167,7 @@ h2 {
     text-transform: uppercase;
     letter-spacing: 0.3px;
     border: 1px solid transparent;
+    box-sizing: border-box;
 }
 
 .btn-lg {
@@ -517,4 +532,18 @@ h2 {
     .table td, .table th {
         padding: 10px 12px;
     }
+}
+
+/* ============ CORRECCIONES ESPECÍFICAS PARA FILTROS ============ */
+.filtros-grid .form-group {
+    min-height: 80px; /* Altura consistente para todos los campos */
+}
+
+.form-control::placeholder {
+    color: #a0aec0;
+    opacity: 1;
+}
+
+.form-select option {
+    padding: 8px 12px;
 }
