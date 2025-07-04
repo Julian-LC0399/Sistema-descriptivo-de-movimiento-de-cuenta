@@ -143,7 +143,7 @@ h2 {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
-/* ============ FILTROS COMPACTOS ============ */
+/* ============ FILTROS COMPACTOS (MODIFICADO) ============ */
 .filtros-card {
     background-color: white;
     padding: 15px;
@@ -184,25 +184,20 @@ h2 {
     margin-bottom: 10px;
 }
 
-.form-group {
-    margin-bottom: 0;
-    display: flex;
-    flex-direction: column;
-    padding: 12px;
-    background-color: #f8fafc;
-    border-radius: 6px;
-    border: 1px solid #e2e8f0;
-    transition: all 0.3s ease;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-    max-width: 220px;
-    box-sizing: border-box;
-    overflow: visible;
-    position: relative;
+/* CAMBIO SOLICITADO: Eliminado el cuadro gris de los filtros */
+.filtros-grid .form-group {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+    min-height: auto;
 }
 
-.form-group:hover {
-    border-color: #005883;
-    box-shadow: 0 2px 8px rgba(0, 88, 131, 0.12);
+.filtros-grid .form-group:hover {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
 }
 
 .form-select {
@@ -568,7 +563,6 @@ h2 {
         padding: 5px 8px;
     }
     
-    /* Estilos responsive para formularios nuevos */
     .form-container {
         padding: 1rem;
     }
@@ -627,7 +621,6 @@ h2 {
         padding: 10px 12px;
     }
     
-    /* Ajustes adicionales para formularios en móviles */
     .form-container {
         padding: 0.75rem;
     }
@@ -639,10 +632,6 @@ h2 {
 }
 
 /* ============ CORRECCIONES ESPECÍFICAS PARA FILTROS ============ */
-.filtros-grid .form-group {
-    min-height: 80px;
-}
-
 .form-control::placeholder {
     color: #a0aec0;
     opacity: 1;
