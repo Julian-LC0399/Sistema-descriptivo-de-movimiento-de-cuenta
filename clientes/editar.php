@@ -132,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- Bootstrap CSS -->
     <link href="<?= BASE_URL ?>assets/css/bootstrap.min.css" rel="stylesheet">
     <!-- CSS personalizado -->
-    <link href="<?= BASE_URL ?>assets/css/cuentas.css" rel="stylesheet">
+    <link href="<?= BASE_URL ?>assets/css/registros.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
 </head>
