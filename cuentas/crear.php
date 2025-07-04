@@ -87,7 +87,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
         
         // Redirigir al listado con mensaje de éxito
-        $_SESSION['mensaje'] = "Cuenta creada exitosamente";
+        $_SESSION['mensaje'] = [
+            'tipo' => 'success',
+            'texto' => "Cuenta creada exitosamente"
+        ];
         header('Location: listar.php');
         exit;
         
@@ -103,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crear Nueva Cuenta</title>
+    <title>Crear Nueva Cuenta - Sistema Bancario</title>
     <link href="<?= BASE_URL ?>assets/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <link href="<?= BASE_URL ?>assets/css/cuentas.css" rel="stylesheet">
@@ -114,126 +117,128 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <main class="container mt-4">
         <h2 class="mb-4">Crear Nueva Cuenta Bancaria</h2>
         
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="form-container">
-                    <?php if (!empty($error)): ?>
-                        <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
-                    <?php endif; ?>
+        <?php if (!empty($error)): ?>
+            <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+        <?php endif; ?>
+        
+        <form method="post" class="form-container">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Información de la Cuenta</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="numero_cuenta" class="form-label required-field">Número de Cuenta</label>
+                        <input type="text" class="form-control" id="numero_cuenta" name="numero_cuenta" 
+                               required pattern="[0-9]{20}" title="Debe ser un número de 20 dígitos">
+                        <small class="form-text text-muted">Ejemplo: 01280001180101104262</small>
+                    </div>
                     
-                    <form method="post">
-                        <div class="form-row">
-                            <div class="mb-3">
-                                <label for="numero_cuenta" class="form-label">Número de Cuenta</label>
-                                <input type="text" class="form-control" id="numero_cuenta" name="numero_cuenta" 
-                                       required pattern="[0-9]{20}" title="Debe ser un número de 20 dígitos">
-                                <small class="form-text text-muted">Ejemplo: 01280001180101104262</small>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="cliente_id" class="form-label">Cliente</label>
-                                <select class="form-select" id="cliente_id" name="cliente_id" required>
-                                    <option value="">Seleccione un cliente</option>
-                                    <?php foreach ($clientes as $cliente): ?>
-                                        <option value="<?= htmlspecialchars($cliente['cuscun']) ?>">
-                                            <?= htmlspecialchars($cliente['nombre']) ?> (ID: <?= htmlspecialchars($cliente['cuscun']) ?>)
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="sucursal" class="form-label">Sucursal</label>
-                                    <select class="form-select" id="sucursal" name="sucursal" required>
-                                        <option value="">Seleccione sucursal</option>
-                                        <?php foreach ($sucursales as $suc): ?>
-                                            <option value="<?= htmlspecialchars($suc['acmbrn']) ?>">
-                                                Sucursal <?= htmlspecialchars($suc['acmbrn']) ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="producto_bancario" class="form-label">Producto Bancario</label>
-                                    <select class="form-select" id="producto_bancario" name="producto_bancario" required>
-                                        <option value="">Seleccione producto</option>
-                                        <?php foreach ($productos as $prod): ?>
-                                            <option value="<?= htmlspecialchars($prod['acmprd']) ?>">
-                                                Producto <?= htmlspecialchars($prod['acmprd']) ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="tipo_cuenta" class="form-label">Tipo de Cuenta</label>
-                                    <select class="form-select" id="tipo_cuenta" name="tipo_cuenta" required>
-                                        <option value="CA" selected>CA - Cuenta de Ahorros</option>
-                                        <option value="CC">CC - Cuenta Corriente</option>
-                                        <option value="PL">PL - Préstamo</option>
-                                        <option value="TD">TD - Depósito a Término</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="clase_cuenta" class="form-label">Clase de Cuenta</label>
-                                    <select class="form-select" id="clase_cuenta" name="clase_cuenta" required>
-                                        <option value="N" selected>N - Normal</option>
-                                        <option value="J">J - Jurídica</option>
-                                        <option value="E">E - Extranjera</option>
-                                        <option value="V">V - VIP</option>
-                                        <option value="P">P - Premium</option>
-                                    </select>
-                                </div>
-                            </div>
+                    <div class="mb-3">
+                        <label for="cliente_id" class="form-label required-field">Cliente</label>
+                        <select class="form-select" id="cliente_id" name="cliente_id" required>
+                            <option value="">Seleccione un cliente</option>
+                            <?php foreach ($clientes as $cliente): ?>
+                                <option value="<?= htmlspecialchars($cliente['cuscun']) ?>">
+                                    <?= htmlspecialchars($cliente['nombre']) ?> (ID: <?= htmlspecialchars($cliente['cuscun']) ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="sucursal" class="form-label required-field">Sucursal</label>
+                            <select class="form-select" id="sucursal" name="sucursal" required>
+                                <option value="">Seleccione sucursal</option>
+                                <?php foreach ($sucursales as $suc): ?>
+                                    <option value="<?= htmlspecialchars($suc['acmbrn']) ?>">
+                                        Sucursal <?= htmlspecialchars($suc['acmbrn']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
-                        
-                        <div class="form-row">
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="saldo_inicial" class="form-label">Saldo Inicial</label>
-                                    <input type="number" step="0.01" class="form-control" id="saldo_inicial" 
-                                           name="saldo_inicial" value="0.00" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="disponible" class="form-label">Disponible</label>
-                                    <input type="number" step="0.01" class="form-control" id="disponible" 
-                                           name="disponible" value="0.00" required>
-                                </div>
-                            </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="producto_bancario" class="form-label required-field">Producto Bancario</label>
+                            <select class="form-select" id="producto_bancario" name="producto_bancario" required>
+                                <option value="">Seleccione producto</option>
+                                <?php foreach ($productos as $prod): ?>
+                                    <option value="<?= htmlspecialchars($prod['acmprd']) ?>">
+                                        Producto <?= htmlspecialchars($prod['acmprd']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
-                        
-                        <div class="form-row">
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="estado" class="form-label">Estado</label>
-                                    <select class="form-select" id="estado" name="estado" required>
-                                        <option value="A" selected>Activo</option>
-                                        <option value="I">Inactivo</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="fecha_apertura" class="form-label">Fecha de Apertura</label>
-                                    <input type="date" class="form-control" id="fecha_apertura" name="fecha_apertura" 
-                                           value="<?= date('Y-m-d') ?>" required>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-actions">
-                            <a href="listar.php" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save"></i> Guardar Cuenta
-                            </button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
             </div>
-        </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Configuración de la Cuenta</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo_cuenta" class="form-label required-field">Tipo de Cuenta</label>
+                            <select class="form-select" id="tipo_cuenta" name="tipo_cuenta" required>
+                                <option value="CA" selected>CA - Cuenta de Ahorros</option>
+                                <option value="CC">CC - Cuenta Corriente</option>
+                                <option value="PL">PL - Préstamo</option>
+                                <option value="TD">TD - Depósito a Término</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="clase_cuenta" class="form-label required-field">Clase de Cuenta</label>
+                            <select class="form-select" id="clase_cuenta" name="clase_cuenta" required>
+                                <option value="N" selected>N - Normal</option>
+                                <option value="J">J - Jurídica</option>
+                                <option value="E">E - Extranjera</option>
+                                <option value="V">V - VIP</option>
+                                <option value="P">P - Premium</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="saldo_inicial" class="form-label required-field">Saldo Inicial</label>
+                            <input type="number" step="0.01" class="form-control" id="saldo_inicial" 
+                                   name="saldo_inicial" value="0.00" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="disponible" class="form-label required-field">Disponible</label>
+                            <input type="number" step="0.01" class="form-control" id="disponible" 
+                                   name="disponible" value="0.00" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="estado" class="form-label required-field">Estado</label>
+                            <select class="form-select" id="estado" name="estado" required>
+                                <option value="A" selected>Activo</option>
+                                <option value="I">Inactivo</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha_apertura" class="form-label required-field">Fecha de Apertura</label>
+                            <input type="date" class="form-control" id="fecha_apertura" name="fecha_apertura" 
+                                   value="<?= date('Y-m-d') ?>" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <a href="listar.php" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Guardar Cuenta
+                </button>
+            </div>
+        </form>
     </main>
 
     <script src="<?= BASE_URL ?>assets/js/bootstrap.bundle.min.js"></script>
