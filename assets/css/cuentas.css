@@ -1,4 +1,4 @@
-/* assets/css/cuentas.css - Estilos completos con campos de filtro reducidos */
+/* assets/css/cuentas.css - Estilos completos con campos de filtro compactos */
 /* Paleta principal: Azul oscuro #005883, Naranja #F7941D, Verde #00A859 */
 
 /* ============ ESTILOS GENERALES ============ */
@@ -11,14 +11,14 @@ body {
 
 main.container {
     margin-left: 250px;
-    padding: 25px;
+    padding: 20px;
     transition: margin-left 0.3s ease;
 }
 
 @media (max-width: 992px) {
     main.container {
         margin-left: 0;
-        padding: 20px;
+        padding: 15px;
     }
 }
 
@@ -32,8 +32,8 @@ h2 {
     color: #005883;
     font-weight: 600;
     text-align: center;
-    margin-bottom: 30px;
-    font-size: 1.8rem;
+    margin-bottom: 25px;
+    font-size: 1.7rem;
 }
 
 /* ============ TARJETAS ============ */
@@ -43,11 +43,11 @@ h2 {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
-/* ============ FILTROS CON CAMPOS REDUCIDOS ============ */
+/* ============ FILTROS COMPACTOS ============ */
 .filtros-card {
     background-color: white;
-    padding: 20px;
-    margin-bottom: 25px;
+    padding: 15px;
+    margin-bottom: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
     border: 1px solid rgba(0, 88, 131, 0.15);
@@ -57,8 +57,8 @@ h2 {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
     border-bottom: 1px solid #e9ecef;
 }
 
@@ -66,104 +66,104 @@ h2 {
     font-weight: 700;
     color: #005883;
     margin: 0;
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .filtros-title i {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     color: #005883;
 }
 
 .filtros-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-    margin-bottom: 15px;
+    gap: 12px;
+    margin-bottom: 10px;
 }
 
 .form-group {
     margin-bottom: 0;
     display: flex;
     flex-direction: column;
-    padding: 15px;
+    padding: 12px;
     background-color: #f8fafc;
     border-radius: 6px;
     border: 1px solid #e2e8f0;
     transition: all 0.3s ease;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-    max-width: 250px;
+    max-width: 220px;
 }
 
 .form-group:hover {
     border-color: #005883;
-    box-shadow: 0 2px 12px rgba(0, 88, 131, 0.12);
+    box-shadow: 0 2px 8px rgba(0, 88, 131, 0.12);
 }
 
 .form-label {
     display: block;
     font-weight: 600;
     color: #4a5568;
-    font-size: 0.95rem;
-    margin-bottom: 10px;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
 }
 
 .form-control, .form-select {
     width: 100%;
-    min-height: 40px;
+    min-height: 36px;
     border: 1px solid #ced4da;
     border-radius: 4px;
-    padding: 8px 12px;
-    font-size: 0.9rem;
+    padding: 6px 10px;
+    font-size: 0.85rem;
     transition: all 0.25s ease;
     background-color: #fff;
 }
 
 .form-control:focus, .form-select:focus {
     border-color: #005883;
-    box-shadow: 0 0 0 0.25rem rgba(0, 88, 131, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(0, 88, 131, 0.25);
     outline: none;
 }
 
 .filtros-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 15px;
-    margin-top: 20px;
-    padding-top: 20px;
+    gap: 12px;
+    margin-top: 15px;
+    padding-top: 15px;
     border-top: 1px solid #e9ecef;
     grid-column: 1 / -1;
 }
 
 /* ============ BOTONES ============ */
 .btn {
-    min-width: 100px;
-    padding: 10px 16px;
+    min-width: 90px;
+    padding: 8px 12px;
     border-radius: 4px;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     transition: all 0.3s ease;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
     border: 1px solid transparent;
 }
 
 .btn-lg {
-    padding: 12px 24px;
-    font-size: 1rem;
+    padding: 10px 20px;
+    font-size: 0.95rem;
 }
 
 .btn-sm {
     min-width: auto;
-    padding: 6px 12px;
-    font-size: 0.8rem;
+    padding: 5px 10px;
+    font-size: 0.75rem;
 }
 
 .btn-primary {
@@ -230,7 +230,7 @@ h2 {
 }
 
 .btn i {
-    font-size: 1.1em;
+    font-size: 1em;
 }
 
 /* ============ TABLA ============ */
@@ -238,8 +238,8 @@ h2 {
     background-color: white;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-    padding: 25px;
-    margin-bottom: 30px;
+    padding: 20px;
+    margin-bottom: 25px;
     border: 1px solid rgba(0, 88, 131, 0.15);
 }
 
@@ -250,7 +250,7 @@ h2 {
 .table {
     width: 100%;
     margin-bottom: 0;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: #4a5568;
     border-collapse: separate;
     border-spacing: 0;
@@ -261,7 +261,7 @@ h2 {
     color: white;
     font-weight: 500;
     border-bottom: none;
-    padding: 14px 16px;
+    padding: 12px 15px;
     vertical-align: middle;
     text-align: left;
     position: sticky;
@@ -285,14 +285,14 @@ h2 {
 }
 
 .table td {
-    padding: 14px 16px;
+    padding: 12px 15px;
     vertical-align: middle;
     border-top: 1px solid #e9ecef;
 }
 
 .table td .btn {
-    margin-right: 8px;
-    margin-bottom: 5px;
+    margin-right: 6px;
+    margin-bottom: 4px;
 }
 
 .table td .btn:last-child {
@@ -301,9 +301,9 @@ h2 {
 
 /* ============ BADGES ============ */
 .badge {
-    padding: 8px 14px;
+    padding: 6px 12px;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     border-radius: 20px;
     letter-spacing: 0.3px;
     display: inline-flex;
@@ -322,16 +322,18 @@ h2 {
 /* ============ ALERTAS ============ */
 .alert {
     border-radius: 4px;
-    padding: 14px 16px;
-    margin-bottom: 20px;
+    padding: 12px 15px;
+    margin-bottom: 18px;
     position: relative;
+    font-size: 0.9rem;
 }
 
 .alert-dismissible .btn-close {
     position: absolute;
     top: 50%;
-    right: 15px;
+    right: 12px;
     transform: translateY(-50%);
+    padding: 0.5rem;
 }
 
 .alert-success {
@@ -357,7 +359,7 @@ h2 {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 25px;
+    margin-top: 20px;
 }
 
 .pagination {
@@ -373,15 +375,16 @@ h2 {
 .page-link {
     color: #005883;
     border: 1px solid #e9ecef;
-    margin: 0 5px;
+    margin: 0 4px;
     border-radius: 4px;
-    padding: 8px 15px;
+    padding: 6px 12px;
     font-weight: 600;
+    font-size: 0.85rem;
     transition: all 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 40px;
+    min-width: 36px;
 }
 
 .page-link:hover {
@@ -438,18 +441,19 @@ h2 {
 /* ============ RESPONSIVE ============ */
 @media (min-width: 1200px) {
     .form-group {
-        max-width: 220px;
+        max-width: 200px;
     }
 }
 
 @media (max-width: 992px) {
     .filtros-grid {
         grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
+        gap: 10px;
     }
     
     .form-group {
         max-width: 100%;
+        padding: 10px;
     }
     
     .filtros-grid .form-group:last-child {
@@ -460,7 +464,7 @@ h2 {
 @media (max-width: 768px) {
     .filtros-grid {
         grid-template-columns: 1fr;
-        gap: 10px;
+        gap: 8px;
     }
     
     .filtros-grid .form-group:last-child {
@@ -468,53 +472,24 @@ h2 {
     }
     
     .form-group {
-        padding: 12px;
+        padding: 10px 8px;
     }
     
-    .form-group:not(:last-child) {
-        border-bottom: 1px solid #e2e8f0;
-        padding-bottom: 15px;
-        margin-bottom: 5px;
-    }
-    
-    .table-container {
-        padding: 16px;
-    }
-    
-    .table thead {
-        display: none;
-    }
-    
-    .table tbody tr {
-        display: block;
-        margin-bottom: 15px;
-        border: 1px solid #e9ecef;
-        border-radius: 4px;
-        padding: 10px;
-    }
-    
-    .table tbody td {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-top: none;
-        border-bottom: 1px solid #e9ecef;
-        padding: 12px 10px;
-    }
-    
-    .table tbody td::before {
-        content: attr(data-label);
-        font-weight: 600;
-        margin-right: 15px;
-        color: #7f8c8d;
-        font-size: 0.9rem;
+    .form-control, .form-select {
+        min-height: 34px;
+        padding: 5px 8px;
     }
 }
 
 @media (max-width: 576px) {
+    h2 {
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+    }
+    
     .filtros-actions {
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
     }
     
     .filtros-actions .btn {
@@ -523,7 +498,7 @@ h2 {
     
     .btn {
         width: 100%;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
     }
     
     .table td .btn {
@@ -532,6 +507,14 @@ h2 {
     
     .pagination-container {
         flex-direction: column;
-        gap: 15px;
+        gap: 12px;
+    }
+    
+    .table-container {
+        padding: 15px;
+    }
+    
+    .table td, .table th {
+        padding: 10px 12px;
     }
 }
