@@ -184,14 +184,13 @@ h2 {
     margin-bottom: 10px;
 }
 
-/* CAMBIO SOLICITADO: Eliminado el cuadro gris de los filtros */
+/* CORRECCIÓN APLICADA: Se eliminó 'min-height: auto' */
 .filtros-grid .form-group {
     background-color: transparent;
     border: none;
     padding: 0;
     margin: 0;
     box-shadow: none;
-    min-height: auto;
 }
 
 .filtros-grid .form-group:hover {
