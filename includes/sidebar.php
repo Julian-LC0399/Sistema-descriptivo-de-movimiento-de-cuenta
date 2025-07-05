@@ -37,6 +37,13 @@ if (!defined('BASE_URL')) {
             </li>
             
             <li class="nav-item">
+                <a class="nav-link" href="<?= BASE_URL ?>cuentas/listar.php">
+                    <i class="fas fa-wallet"></i>
+                    <span>Cuentas</span>
+                </a>
+            </li>
+            
+            <li class="nav-item">
                 <a class="nav-link" href="<?= BASE_URL ?>transacciones/mes.php">
                     <i class="fas fa-calendar-week"></i>
                     <span>Consulta por mes</span>
