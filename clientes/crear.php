@@ -48,6 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Si no hay errores, proceder con la inserción
         if (empty($errores)) {
+            $pdo = getPDO();
             // Generar el nuevo ID de cliente
             $stmt = $pdo->query("SELECT MAX(cuscun) as max_id FROM cumst");
             $maxId = (int)$stmt->fetch()['max_id'];
@@ -95,13 +96,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($tituloPagina) ?> - Sistema Bancario</title>
-    <!-- Bootstrap CSS -->
+    <title><?= htmlspecialchars($tituloPagina) ?> - Banco Caroni</title>
     <link href="<?= BASE_URL ?>assets/css/bootstrap.min.css" rel="stylesheet">
-    <!-- CSS personalizado -->
-    <link href="<?= BASE_URL ?>assets/css/registros.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link href="<?= BASE_URL ?>assets/css/registros.css" rel="stylesheet">
 </head>
 <body>
     <?php include __DIR__ . '/../includes/sidebar.php'; ?>
@@ -117,7 +115,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
         
         <form method="post" class="form-container">
-            <div class="card mb-4">
+            <!-- Sección Información Básica -->
+            <div class="card mb-4 form-section">
                 <div class="card-header">
                     <h5 class="mb-0">Información Básica</h5>
                 </div>
@@ -153,7 +152,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
 
-            <div class="card mb-4">
+            <!-- Sección Información de Contacto -->
+            <div class="card mb-4 form-section">
                 <div class="card-header">
                     <h5 class="mb-0">Información de Contacto</h5>
                 </div>
@@ -190,7 +190,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <script src="<?= BASE_URL ?>assets/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Cerrar automáticamente alertas después de 5 segundos
+        // Validar teléfono (solo números)
+        document.getElementById('telefono').addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+        // Cerrar alertas automáticamente
         setTimeout(() => {
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(alert => {

@@ -6,58 +6,51 @@ requireLogin();
 
 $tituloPagina = "Editar Cliente";
 
-// Inicializar variables
-$valoresFormulario = [
-    'id' => '',
-    'nombre' => '',
-    'direccion' => '',
-    'ciudad' => '',
-    'email' => '',
-    'telefono' => ''
-];
-
-$errores = [];
-
 // Obtener ID del cliente a editar
-$idCliente = $_GET['id'] ?? null;
+$clienteId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
-// Verificar si el cliente existe
-if ($idCliente) {
-    $stmt = $pdo->prepare("SELECT * FROM cumst WHERE cuscun = :id");
-    $stmt->execute([':id' => $idCliente]);
-    $cliente = $stmt->fetch();
-
-    if ($cliente) {
-        $valoresFormulario = [
-            'id' => $cliente['cuscun'],
-            'nombre' => $cliente['cusna1'],
-            'direccion' => $cliente['cusna2'],
-            'ciudad' => $cliente['cuscty'],
-            'email' => $cliente['cuseml'],
-            'telefono' => $cliente['cusphn']
-        ];
-    } else {
-        $_SESSION['mensaje'] = [
-            'tipo' => 'danger',
-            'texto' => "Cliente no encontrado"
-        ];
-        header("Location: lista.php");
-        exit();
-    }
-} else {
-    $_SESSION['mensaje'] = [
-        'tipo' => 'danger',
-        'texto' => "ID de cliente no proporcionado"
-    ];
-    header("Location: lista.php");
+if ($clienteId <= 0) {
+    header('Location: lista.php');
     exit();
 }
+
+// Obtener datos actuales del cliente
+try {
+    $pdo = getPDO();
+    $stmt = $pdo->prepare("SELECT * FROM cumst WHERE cuscun = :id");
+    $stmt->execute([':id' => $clienteId]);
+    $cliente = $stmt->fetch();
+
+    if (!$cliente) {
+        $_SESSION['mensaje'] = [
+            'tipo' => 'danger',
+            'texto' => 'Cliente no encontrado'
+        ];
+        header('Location: lista.php');
+        exit();
+    }
+
+    // Inicializar valores del formulario con datos actuales
+    $valoresFormulario = [
+        'nombre' => $cliente['cusna1'],
+        'direccion' => $cliente['cusna2'],
+        'ciudad' => $cliente['cuscty'],
+        'email' => $cliente['cuseml'],
+        'telefono' => $cliente['cusphn']
+    ];
+
+} catch (PDOException $e) {
+    error_log("Error al obtener cliente: " . $e->getMessage());
+    header('Location: lista.php');
+    exit();
+}
+
+$errores = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         // Obtener y sanitizar datos del formulario
         $valoresFormulario = [
-            'id' => $idCliente,
             'nombre' => trim($_POST['nombre'] ?? ''),
             'direccion' => trim($_POST['direccion'] ?? ''),
             'ciudad' => trim($_POST['ciudad'] ?? ''),
@@ -98,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ");
             
             $stmt->execute([
-                ':id' => $valoresFormulario['id'],
+                ':id' => $clienteId,
                 ':nombre' => $valoresFormulario['nombre'],
                 ':direccion' => $valoresFormulario['direccion'],
                 ':ciudad' => $valoresFormulario['ciudad'],
@@ -128,13 +121,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($tituloPagina) ?> - Sistema Bancario</title>
-    <!-- Bootstrap CSS -->
+    <title><?= htmlspecialchars($tituloPagina) ?> - Banco Caroni</title>
     <link href="<?= BASE_URL ?>assets/css/bootstrap.min.css" rel="stylesheet">
-    <!-- CSS personalizado -->
-    <link href="<?= BASE_URL ?>assets/css/registros.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link href="<?= BASE_URL ?>assets/css/registros.css" rel="stylesheet">
 </head>
 <body>
     <?php include __DIR__ . '/../includes/sidebar.php'; ?>
@@ -150,9 +140,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
         
         <form method="post" class="form-container">
-            <input type="hidden" name="id" value="<?= htmlspecialchars($valoresFormulario['id']) ?>">
-            
-            <div class="card mb-4">
+            <!-- Sección Información Básica -->
+            <div class="card mb-4 form-section">
                 <div class="card-header">
                     <h5 class="mb-0">Información Básica</h5>
                 </div>
@@ -188,7 +177,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
 
-            <div class="card mb-4">
+            <!-- Sección Información de Contacto -->
+            <div class="card mb-4 form-section">
                 <div class="card-header">
                     <h5 class="mb-0">Información de Contacto</h5>
                 </div>
@@ -225,7 +215,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <script src="<?= BASE_URL ?>assets/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Cerrar automáticamente alertas después de 5 segundos
+        // Validar teléfono (solo números)
+        document.getElementById('telefono').addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+        // Cerrar alertas automáticamente
         setTimeout(() => {
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(alert => {
