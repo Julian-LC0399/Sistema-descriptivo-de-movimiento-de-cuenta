@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception("El cliente seleccionado no existe");
         }
         
-        // Insertar en la base de datos - acmlsb siempre será 0 para nuevas cuentas
+        // Insertar en la base de datos
         $sql = "INSERT INTO acmst 
                 (acmacc, acmcun, acmbrn, acmccy, acmprd, acmtyp, acmcls, acmlsb, acmbal, acmavl, acmsta, acmopn) 
                 VALUES 
@@ -106,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crear Nueva Cuenta - Sistema Bancario</title>
+    <title>Crear Nueva Cuenta - Banco Caroni</title>
     <link href="<?= BASE_URL ?>assets/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <link href="<?= BASE_URL ?>assets/css/registros.css" rel="stylesheet">
@@ -122,28 +122,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
         
         <form method="post" class="form-container">
-            <div class="card mb-4">
+            <!-- Sección Información de la Cuenta -->
+            <div class="card mb-4 form-section">
                 <div class="card-header">
                     <h5 class="mb-0">Información de la Cuenta</h5>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <label for="numero_cuenta" class="form-label required-field">Número de Cuenta</label>
-                        <input type="text" class="form-control" id="numero_cuenta" name="numero_cuenta" 
-                               required pattern="[0-9]{20}" title="Debe ser un número de 20 dígitos">
-                        <small class="form-text text-muted">Ejemplo: 01280001180101104262</small>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="cliente_id" class="form-label required-field">Cliente</label>
-                        <select class="form-select" id="cliente_id" name="cliente_id" required>
-                            <option value="">Seleccione un cliente</option>
-                            <?php foreach ($clientes as $cliente): ?>
-                                <option value="<?= htmlspecialchars($cliente['cuscun']) ?>">
-                                    <?= htmlspecialchars($cliente['nombre']) ?> (ID: <?= htmlspecialchars($cliente['cuscun']) ?>)
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="numero_cuenta" class="form-label required-field">Número de Cuenta</label>
+                            <input type="text" class="form-control" id="numero_cuenta" name="numero_cuenta" 
+                                   required pattern="[0-9]{20}" title="Debe ser un número de 20 dígitos">
+                            <small class="form-text text-muted">Ejemplo: 01280001180101104262</small>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="cliente_id" class="form-label required-field">Cliente</label>
+                            <select class="form-select" id="cliente_id" name="cliente_id" required>
+                                <option value="">Seleccione un cliente</option>
+                                <?php foreach ($clientes as $cliente): ?>
+                                    <option value="<?= htmlspecialchars($cliente['cuscun']) ?>">
+                                        <?= htmlspecialchars($cliente['nombre']) ?> (ID: <?= htmlspecialchars($cliente['cuscun']) ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
                     
                     <div class="row">
@@ -173,7 +176,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
 
-            <div class="card mb-4">
+            <!-- Sección Configuración de la Cuenta -->
+            <div class="card mb-4 form-section">
                 <div class="card-header">
                     <h5 class="mb-0">Configuración de la Cuenta</h5>
                 </div>
@@ -243,7 +247,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <script src="<?= BASE_URL ?>assets/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Validación básica del número de cuenta
+        // Validación del número de cuenta
         document.getElementById('numero_cuenta').addEventListener('input', function() {
             this.value = this.value.replace(/[^0-9]/g, '');
             if (this.value.length > 20) {
@@ -254,6 +258,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Sincronizar saldo inicial con disponible
         document.getElementById('saldo_inicial').addEventListener('change', function() {
             document.getElementById('disponible').value = this.value;
+        });
+
+        // Mejorar experiencia de fecha
+        document.getElementById('fecha_apertura').addEventListener('focus', function() {
+            this.type = 'date';
         });
     </script>
 </body>

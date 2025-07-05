@@ -33,7 +33,30 @@ h2 {
     font-size: 1.7rem;
 }
 
-/* ============ FORMULARIOS (NUEVO) ============ */
+/* ============ ENCABEZADO DEL BANCO (NUEVO) ============ */
+.bank-header {
+    background-color: #005883;
+    color: white;
+    padding: 15px 0;
+    margin-bottom: 30px;
+    text-align: center;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 88, 131, 0.2);
+}
+
+.bank-header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+.bank-header .bi {
+    margin-right: 10px;
+    font-size: 1.2em;
+    vertical-align: middle;
+}
+
+/* ============ FORMULARIOS ============ */
 .form-container {
     background-color: white;
     border-radius: 8px;
@@ -55,6 +78,7 @@ h2 {
 
 .form-section:hover {
     box-shadow: 0 5px 15px rgba(0, 88, 131, 0.1);
+    transform: translateY(-2px);
 }
 
 .form-section .card-header {
@@ -118,22 +142,32 @@ h2 {
     display: block;
 }
 
-.form-actions {
+/* ============ INPUT GROUPS (NUEVO) ============ */
+.input-group {
     display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-    margin-top: 1.5rem;
-    padding-top: 1rem;
-    border-top: 1px solid #e9ecef;
+    align-items: stretch;
 }
 
-.btn-form {
-    min-width: 100px;
-    padding: 0.65rem 1.25rem;
+.input-group-text {
+    background-color: #e9ecef;
+    color: #495057;
     font-weight: 600;
-    border-radius: 6px;
+    border: 1px solid #ced4da;
     transition: all 0.3s ease;
-    font-size: 0.9rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 4px 0 0 4px;
+}
+
+.input-group .form-control {
+    border-radius: 0 4px 4px 0;
+    margin-left: -1px;
+}
+
+.input-group:focus-within .input-group-text {
+    border-color: #005883;
+    background-color: #e6f0f5;
+    color: #005883;
+    z-index: 3;
 }
 
 /* ============ TARJETAS ============ */
@@ -143,7 +177,7 @@ h2 {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
-/* ============ FILTROS COMPACTOS (MODIFICADO) ============ */
+/* ============ FILTROS COMPACTOS ============ */
 .filtros-card {
     background-color: white;
     padding: 15px;
@@ -184,28 +218,12 @@ h2 {
     margin-bottom: 10px;
 }
 
-/* CORRECCIÓN APLICADA: Se eliminó 'min-height: auto' */
 .filtros-grid .form-group {
     background-color: transparent;
     border: none;
     padding: 0;
     margin: 0;
     box-shadow: none;
-}
-
-.filtros-grid .form-group:hover {
-    background-color: transparent;
-    border: none;
-    box-shadow: none;
-}
-
-.form-select {
-    appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 0.5rem center;
-    background-size: 1em;
-    padding-right: 1.5rem;
 }
 
 .filtros-actions {
@@ -520,6 +538,22 @@ h2 {
     padding-bottom: 0.5rem;
 }
 
+/* ============ ICONOS (NUEVO) ============ */
+.bi {
+    font-size: 1.1em;
+    vertical-align: middle;
+}
+
+/* ============ FORM ACTIONS ============ */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e9ecef;
+}
+
 /* ============ RESPONSIVE ============ */
 @media (min-width: 1200px) {
     .form-group {
@@ -544,13 +578,17 @@ h2 {
 }
 
 @media (max-width: 768px) {
+    .bank-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    h2 {
+        font-size: 1.4rem;
+    }
+    
     .filtros-grid {
         grid-template-columns: 1fr;
         gap: 8px;
-    }
-    
-    .filtros-grid .form-group:last-child {
-        grid-column: span 1;
     }
     
     .form-group {
@@ -578,38 +616,27 @@ h2 {
         flex-direction: column;
     }
     
-    .btn-form {
+    .btn {
         width: 100%;
     }
 }
 
 @media (max-width: 576px) {
+    .bank-header {
+        padding: 10px 0;
+    }
+    
+    .bank-header h1 {
+        font-size: 1.3rem;
+    }
+    
     h2 {
-        font-size: 1.5rem;
-        margin-bottom: 20px;
+        font-size: 1.2rem;
     }
     
     .filtros-actions {
         flex-direction: column;
         gap: 8px;
-    }
-    
-    .filtros-actions .btn {
-        width: 100%;
-    }
-    
-    .btn {
-        width: 100%;
-        margin-bottom: 8px;
-    }
-    
-    .table td .btn {
-        margin-right: 0;
-    }
-    
-    .pagination-container {
-        flex-direction: column;
-        gap: 12px;
     }
     
     .table-container {
@@ -630,7 +657,7 @@ h2 {
     }
 }
 
-/* ============ CORRECCIONES ESPECÍFICAS PARA FILTROS ============ */
+/* ============ CORRECCIONES ESPECÍFICAS ============ */
 .form-control::placeholder {
     color: #a0aec0;
     opacity: 1;
