@@ -32,10 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo = getPDO();
         
         // Validar y sanitizar datos
-        $numeroCuenta = trim($_POST['numero_cuenta']);
         $clienteId = (int)$_POST['cliente_id'];
-        $saldoInicial = (float)$_POST['saldo_inicial'];
-        $disponible = (float)$_POST['disponible'];
         $estado = $_POST['estado'] === 'A' ? 'A' : 'I';
         $fechaApertura = $_POST['fecha_apertura'];
         $sucursal = (int)$_POST['sucursal'];
@@ -44,19 +41,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $claseCuenta = substr(trim($_POST['clase_cuenta']), 0, 1);
         
         // Validaciones básicas
-        if (empty($numeroCuenta) || empty($clienteId) || empty($sucursal) || empty($productoBancario)) {
+        if (empty($clienteId) || empty($sucursal) || empty($productoBancario)) {
             throw new Exception("Todos los campos obligatorios deben ser completados");
-        }
-        
-        if (!preg_match('/^[0-9]{20}$/', $numeroCuenta)) {
-            throw new Exception("El número de cuenta debe tener exactamente 20 dígitos");
-        }
-        
-        // Verificar si el número de cuenta ya existe
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM acmst WHERE acmacc = :cuenta");
-        $stmt->execute([':cuenta' => $numeroCuenta]);
-        if ($stmt->fetchColumn() > 0) {
-            throw new Exception("El número de cuenta ya existe");
         }
         
         // Verificar si el cliente existe
@@ -66,11 +52,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception("El cliente seleccionado no existe");
         }
         
+        // Generar número de cuenta automático según formato del Banco Caroni
+        // Formato: 0128 (banco) + 000 (ceros) + 1 (tipo) + 18 (sucursal) + 0101104262 (ID cliente)
+        $numeroCuenta = sprintf(
+            "0128%03d%d%02d%010d",
+            0, // ceros (podría ser otro valor según reglas del banco)
+            $productoBancario, // tipo de producto
+            $sucursal, // número de sucursal
+            $clienteId // ID del cliente
+        );
+        
+        // Verificar si el número de cuenta generado ya existe (por si acaso)
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM acmst WHERE acmacc = :cuenta");
+        $stmt->execute([':cuenta' => $numeroCuenta]);
+        if ($stmt->fetchColumn() > 0) {
+            throw new Exception("Error al generar número de cuenta único. Por favor intente nuevamente.");
+        }
+        
         // Insertar en la base de datos
         $sql = "INSERT INTO acmst 
                 (acmacc, acmcun, acmbrn, acmccy, acmprd, acmtyp, acmcls, acmlsb, acmbal, acmavl, acmsta, acmopn) 
                 VALUES 
-                (:cuenta, :cliente, :sucursal, 'VES', :producto, :tipo, :clase, 0, :saldo, :disponible, :estado, :fecha)";
+                (:cuenta, :cliente, :sucursal, 'VES', :producto, :tipo, :clase, 0, 0, 0, :estado, :fecha)";
         
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
@@ -80,8 +83,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':producto' => $productoBancario,
             ':tipo' => $tipoCuenta,
             ':clase' => $claseCuenta,
-            ':saldo' => $saldoInicial,
-            ':disponible' => $disponible,
             ':estado' => $estado,
             ':fecha' => $fechaApertura
         ]);
@@ -89,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Redirigir al listado con mensaje de éxito
         $_SESSION['mensaje'] = [
             'tipo' => 'success',
-            'texto' => "Cuenta creada exitosamente"
+            'texto' => "Cuenta creada exitosamente. Número de cuenta generado: $numeroCuenta"
         ];
         header('Location: listar.php');
         exit;
@@ -130,10 +131,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="numero_cuenta" class="form-label required-field">Número de Cuenta</label>
-                            <input type="text" class="form-control" id="numero_cuenta" name="numero_cuenta" 
-                                   required pattern="[0-9]{20}" title="Debe ser un número de 20 dígitos">
-                            <small class="form-text text-muted">Ejemplo: 01280001180101104262</small>
+                            <label class="form-label">Número de Cuenta</label>
+                            <div class="form-control-plaintext bg-light p-2 rounded">
+                                <i class="bi bi-info-circle"></i> Se generará automáticamente al guardar
+                            </div>
                         </div>
                         
                         <div class="col-md-6 mb-3">
@@ -206,19 +207,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="saldo_inicial" class="form-label required-field">Saldo Inicial</label>
-                            <input type="number" step="0.01" class="form-control" id="saldo_inicial" 
-                                   name="saldo_inicial" value="0.00" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="disponible" class="form-label required-field">Disponible</label>
-                            <input type="number" step="0.01" class="form-control" id="disponible" 
-                                   name="disponible" value="0.00" required>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
                             <label for="estado" class="form-label required-field">Estado</label>
                             <select class="form-select" id="estado" name="estado" required>
                                 <option value="A" selected>Activo</option>
@@ -247,19 +235,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <script src="<?= BASE_URL ?>assets/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Validación del número de cuenta
-        document.getElementById('numero_cuenta').addEventListener('input', function() {
-            this.value = this.value.replace(/[^0-9]/g, '');
-            if (this.value.length > 20) {
-                this.value = this.value.substring(0, 20);
-            }
-        });
-
-        // Sincronizar saldo inicial con disponible
-        document.getElementById('saldo_inicial').addEventListener('change', function() {
-            document.getElementById('disponible').value = this.value;
-        });
-
         // Mejorar experiencia de fecha
         document.getElementById('fecha_apertura').addEventListener('focus', function() {
             this.type = 'date';

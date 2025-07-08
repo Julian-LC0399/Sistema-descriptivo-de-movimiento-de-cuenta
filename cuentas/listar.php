@@ -26,8 +26,7 @@ try {
     // Construir consulta base
     $sql = "SELECT 
                 a.acmacc AS cuenta, 
-                a.acmbal AS saldo, 
-                a.acmavl AS disponible, 
+                a.acmbrn AS sucursal,
                 a.acmsta AS estado, 
                 a.acmopn AS fecha_apertura,
                 c.cuscun AS id_cliente,
@@ -109,8 +108,6 @@ try {
     <link href="<?= BASE_URL ?>assets/css/registros.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
-    <!-- Fuente para montos -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
     <?php include __DIR__ . '/../includes/sidebar.php'; ?>
@@ -172,8 +169,7 @@ try {
                         <tr>
                             <th>Número de Cuenta</th>
                             <th>Cliente</th>
-                            <th class="text-end">Saldo</th>
-                            <th class="text-end">Disponible</th>
+                            <th>Sucursal</th>
                             <th>Estado</th>
                             <th>Fecha Apertura</th>
                             <?php if ($isAdminOrGerente): ?>
@@ -184,7 +180,7 @@ try {
                     <tbody>
                         <?php if (empty($cuentas)): ?>
                             <tr>
-                                <td colspan="<?= $isAdminOrGerente ? '7' : '6' ?>" class="text-center py-4">
+                                <td colspan="<?= $isAdminOrGerente ? '6' : '5' ?>" class="text-center py-4">
                                     <i class="bi bi-exclamation-circle fs-4"></i>
                                     <p class="mt-2">No se encontraron cuentas</p>
                                 </td>
@@ -194,8 +190,7 @@ try {
                                 <tr>
                                     <td><?= htmlspecialchars($cuenta['cuenta']) ?></td>
                                     <td><?= htmlspecialchars($cuenta['nombre_cliente']) ?></td>
-                                    <td class="text-end font-monospace"><?= number_format($cuenta['saldo'], 2, ',', '.') ?></td>
-                                    <td class="text-end font-monospace"><?= number_format($cuenta['disponible'], 2, ',', '.') ?></td>
+                                    <td><?= htmlspecialchars($cuenta['sucursal']) ?></td>
                                     <td>
                                         <span class="badge <?= $cuenta['estado'] === 'A' ? 'bg-success' : 'bg-secondary' ?>">
                                             <?= $cuenta['estado'] === 'A' ? 'Activo' : 'Inactivo' ?>
