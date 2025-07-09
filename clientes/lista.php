@@ -91,8 +91,8 @@ $camposBusqueda = [
         <h2 class="mb-4"><?= htmlspecialchars($tituloPagina) ?></h2>
         
         <?php if (isset($_SESSION['mensaje'])): ?>
-            <div class="alert alert-success alert-dismissible fade show">
-                <?= htmlspecialchars($_SESSION['mensaje']) ?>
+            <div class="alert alert-<?= isset($_SESSION['mensaje']['tipo']) ? htmlspecialchars($_SESSION['mensaje']['tipo']) : 'success' ?> alert-dismissible fade show">
+                <?= isset($_SESSION['mensaje']['texto']) ? htmlspecialchars($_SESSION['mensaje']['texto']) : htmlspecialchars($_SESSION['mensaje']) ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
             <?php unset($_SESSION['mensaje']); ?>

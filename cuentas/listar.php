@@ -30,7 +30,7 @@ try {
                 a.acmsta AS estado, 
                 a.acmopn AS fecha_apertura,
                 c.cuscun AS id_cliente,
-                c.cusna1 AS nombre_cliente
+                CONCAT(c.cusna1, ' ', c.cusna2) AS nombre_cliente
             FROM acmst a
             JOIN cumst c ON a.acmcun = c.cuscun";
     
@@ -46,7 +46,7 @@ try {
     
     // Aplicar filtros
     if ($filtroCliente !== '') {
-        $where[] = "(c.cusna1 LIKE :cliente OR c.cuscun = :cliente_num)";
+        $where[] = "(CONCAT(c.cusna1, ' ', c.cusna2) LIKE :cliente OR c.cuscun = :cliente_num)";
         $params[':cliente'] = "%$filtroCliente%";
         $params[':cliente_num'] = $filtroCliente;
     }
@@ -89,7 +89,7 @@ try {
     }
     
     $stmt->execute();
-    $cuentas = $stmt->fetchAll();
+    $cuentas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 } catch (PDOException $e) {
     error_log("Error al listar cuentas: " . $e->getMessage());
@@ -102,11 +102,8 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Listado de Cuentas Bancarias</title>
-    <!-- Bootstrap CSS -->
-    <link href="<?= BASE_URL ?>assets/css/bootstrap.min.css" rel="stylesheet">
-    <!-- CSS personalizado -->
-    <link href="<?= BASE_URL ?>assets/css/registros.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
+    <link href="<?php echo BASE_URL; ?>assets/css/bootstrap.min.css" rel="stylesheet">
+    <link href="<?php echo BASE_URL; ?>assets/css/registros.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
 </head>
 <body>
@@ -126,19 +123,19 @@ try {
                 <div class="form-group">
                     <label for="cliente" class="form-label">Cliente</label>
                     <input type="text" class="form-control" id="cliente" name="cliente" 
-                           value="<?= htmlspecialchars($filtroCliente) ?>" placeholder="Nombre o ID">
+                           value="<?php echo htmlspecialchars($filtroCliente); ?>" placeholder="Nombre o ID">
                 </div>
                 <div class="form-group">
                     <label for="cuenta" class="form-label">Número de Cuenta</label>
                     <input type="text" class="form-control" id="cuenta" name="cuenta" 
-                           value="<?= htmlspecialchars($filtroCuenta) ?>" placeholder="Número de cuenta">
+                           value="<?php echo htmlspecialchars($filtroCuenta); ?>" placeholder="Número de cuenta">
                 </div>
                 <div class="form-group">
                     <label for="estado" class="form-label">Estado</label>
                     <select class="form-select" id="estado" name="estado">
                         <option value="">Todos</option>
-                        <option value="A" <?= $filtroEstado === 'A' ? 'selected' : '' ?>>Activo</option>
-                        <option value="I" <?= $filtroEstado === 'I' ? 'selected' : '' ?>>Inactivo</option>
+                        <option value="A" <?php echo $filtroEstado === 'A' ? 'selected' : ''; ?>>Activo</option>
+                        <option value="I" <?php echo $filtroEstado === 'I' ? 'selected' : ''; ?>>Inactivo</option>
                     </select>
                 </div>
                 <div class="filtros-actions">
@@ -154,8 +151,8 @@ try {
         
         <!-- Mensajes -->
         <?php if (isset($_SESSION['mensaje'])): ?>
-            <div class="alert alert-success alert-dismissible fade show">
-                <?= htmlspecialchars($_SESSION['mensaje']) ?>
+            <div class="alert alert-<?php echo htmlspecialchars($_SESSION['mensaje']['tipo']); ?> alert-dismissible fade show">
+                <?php echo htmlspecialchars($_SESSION['mensaje']['texto']); ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
             <?php unset($_SESSION['mensaje']); ?>
@@ -180,7 +177,7 @@ try {
                     <tbody>
                         <?php if (empty($cuentas)): ?>
                             <tr>
-                                <td colspan="<?= $isAdminOrGerente ? '6' : '5' ?>" class="text-center py-4">
+                                <td colspan="<?php echo $isAdminOrGerente ? 6 : 5; ?>" class="text-center py-4">
                                     <i class="bi bi-exclamation-circle fs-4"></i>
                                     <p class="mt-2">No se encontraron cuentas</p>
                                 </td>
@@ -188,26 +185,26 @@ try {
                         <?php else: ?>
                             <?php foreach ($cuentas as $cuenta): ?>
                                 <tr>
-                                    <td><?= htmlspecialchars($cuenta['cuenta']) ?></td>
-                                    <td><?= htmlspecialchars($cuenta['nombre_cliente']) ?></td>
-                                    <td><?= htmlspecialchars($cuenta['sucursal']) ?></td>
+                                    <td><?php echo htmlspecialchars($cuenta['cuenta']); ?></td>
+                                    <td><?php echo htmlspecialchars($cuenta['nombre_cliente']); ?></td>
+                                    <td><?php echo htmlspecialchars($cuenta['sucursal']); ?></td>
                                     <td>
-                                        <span class="badge <?= $cuenta['estado'] === 'A' ? 'bg-success' : 'bg-secondary' ?>">
-                                            <?= $cuenta['estado'] === 'A' ? 'Activo' : 'Inactivo' ?>
+                                        <span class="badge <?php echo $cuenta['estado'] === 'A' ? 'bg-success' : 'bg-secondary'; ?>">
+                                            <?php echo $cuenta['estado'] === 'A' ? 'Activo' : 'Inactivo'; ?>
                                         </span>
                                     </td>
-                                    <td><?= date('d/m/Y', strtotime($cuenta['fecha_apertura'])) ?></td>
+                                    <td><?php echo date('d/m/Y', strtotime($cuenta['fecha_apertura'])); ?></td>
                                     <?php if ($isAdminOrGerente): ?>
                                         <td>
                                             <div class="d-flex gap-2">
-                                                <a href="editar.php?id=<?= urlencode($cuenta['cuenta']) ?>" 
+                                                <a href="editar.php?id=<?php echo urlencode($cuenta['cuenta']); ?>" 
                                                    class="btn btn-sm btn-warning btn-action"
                                                    title="Editar cuenta">
                                                     <i class="bi bi-pencil-square"></i>
                                                 </a>
                                                 <button class="btn btn-sm btn-danger btn-action btn-borrar" 
-                                                        data-cuenta="<?= htmlspecialchars($cuenta['cuenta']) ?>" 
-                                                        data-nombre="<?= htmlspecialchars($cuenta['nombre_cliente']) ?>"
+                                                        data-cuenta="<?php echo htmlspecialchars($cuenta['cuenta']); ?>" 
+                                                        data-nombre="<?php echo htmlspecialchars($cuenta['nombre_cliente']); ?>"
                                                         title="Eliminar cuenta">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
@@ -224,7 +221,7 @@ try {
             <!-- Resumen y paginación -->
             <div class="d-flex justify-content-between align-items-center mt-3">
                 <div class="alert alert-info mb-0 py-2">
-                    Mostrando <?= count($cuentas) ?> de <?= $totalRegistros ?> cuentas
+                    Mostrando <?php echo count($cuentas); ?> de <?php echo $totalRegistros; ?> cuentas
                 </div>
                 
                 <?php if ($totalPaginas > 1): ?>
@@ -232,23 +229,23 @@ try {
                         <ul class="pagination mb-0">
                             <?php if ($pagina > 1): ?>
                                 <li class="page-item">
-                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $pagina - 1])) ?>">
+                                    <a class="page-link" href="?<?php echo http_build_query(array_merge($_GET, ['pagina' => $pagina - 1])); ?>">
                                         <i class="bi bi-chevron-left"></i>
                                     </a>
                                 </li>
                             <?php endif; ?>
                             
                             <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
-                                <li class="page-item <?= $i === $pagina ? 'active' : '' ?>">
-                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $i])) ?>">
-                                        <?= $i ?>
+                                <li class="page-item <?php echo $i === $pagina ? 'active' : ''; ?>">
+                                    <a class="page-link" href="?<?php echo http_build_query(array_merge($_GET, ['pagina' => $i])); ?>">
+                                        <?php echo $i; ?>
                                     </a>
                                 </li>
                             <?php endfor; ?>
                             
                             <?php if ($pagina < $totalPaginas): ?>
                                 <li class="page-item">
-                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $pagina + 1])) ?>">
+                                    <a class="page-link" href="?<?php echo http_build_query(array_merge($_GET, ['pagina' => $pagina + 1])); ?>">
                                         <i class="bi bi-chevron-right"></i>
                                     </a>
                                 </li>
@@ -270,7 +267,7 @@ try {
     </main>
 
     <!-- Bootstrap JS Bundle con Popper -->
-    <script src="<?= BASE_URL ?>assets/js/bootstrap.bundle.min.js"></script>
+    <script src="<?php echo BASE_URL; ?>assets/js/bootstrap.bundle.min.js"></script>
     
     <!-- Script para confirmar borrado -->
     <script>
