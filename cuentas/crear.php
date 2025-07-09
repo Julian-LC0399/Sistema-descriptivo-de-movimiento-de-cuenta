@@ -45,6 +45,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception("Todos los campos obligatorios deben ser completados");
         }
         
+        // Validar que los valores no excedan los límites para el formato de cuenta
+        if ($productoBancario > 9) {
+            throw new Exception("El producto bancario no puede tener más de 1 dígito");
+        }
+        if ($sucursal > 99) {
+            throw new Exception("El número de sucursal no puede tener más de 2 dígitos");
+        }
+        if ($clienteId > 9999999999) {
+            throw new Exception("El ID de cliente no puede tener más de 10 dígitos");
+        }
+        
         // Verificar si el cliente existe
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM cumst WHERE cuscun = :cliente");
         $stmt->execute([':cliente' => $clienteId]);
@@ -52,17 +63,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception("El cliente seleccionado no existe");
         }
         
-        // Generar número de cuenta automático según formato del Banco Caroni
-        // Formato: 0128 (banco) + 000 (ceros) + 1 (tipo) + 18 (sucursal) + 0101104262 (ID cliente)
+        // Generar número de cuenta automático con formato exacto de 20 caracteres
         $numeroCuenta = sprintf(
-            "0128%03d%d%02d%010d",
-            0, // ceros (podría ser otro valor según reglas del banco)
-            $productoBancario, // tipo de producto
-            $sucursal, // número de sucursal
-            $clienteId // ID del cliente
+            "0128%03d%01d%02d%010d",  // Estructura fija: 4+3+1+2+10 = 20 caracteres
+            0,              // 3 dígitos de relleno (ceros)
+            $productoBancario, // 1 dígito para producto
+            $sucursal,      // 2 dígitos para sucursal
+            $clienteId      // 10 dígitos para ID cliente
         );
         
-        // Verificar si el número de cuenta generado ya existe (por si acaso)
+        // Verificar si el número de cuenta generado ya existe
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM acmst WHERE acmacc = :cuenta");
         $stmt->execute([':cuenta' => $numeroCuenta]);
         if ($stmt->fetchColumn() > 0) {
@@ -133,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Número de Cuenta</label>
                             <div class="form-control-plaintext bg-light p-2 rounded">
-                                <i class="bi bi-info-circle"></i> Se generará automáticamente al guardar
+                                <i class="bi bi-info-circle"></i> Se generará automáticamente (20 caracteres)
                             </div>
                         </div>
                         
