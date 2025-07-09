@@ -23,14 +23,14 @@ $filtroEstado = isset($_GET['estado']) ? $_GET['estado'] : '';
 try {
     $pdo = getPDO();
     
-    // Construir consulta base
+    // Construir consulta base (MODIFICADO: ahora solo muestra cusna1 como nombre_cliente)
     $sql = "SELECT 
                 a.acmacc AS cuenta, 
                 a.acmbrn AS sucursal,
                 a.acmsta AS estado, 
                 a.acmopn AS fecha_apertura,
                 c.cuscun AS id_cliente,
-                CONCAT(c.cusna1, ' ', c.cusna2) AS nombre_cliente
+                c.cusna1 AS nombre_cliente
             FROM acmst a
             JOIN cumst c ON a.acmcun = c.cuscun";
     
@@ -44,9 +44,9 @@ try {
         $params[':user_id'] = $_SESSION['user_id'];
     }
     
-    // Aplicar filtros
+    // Aplicar filtros de búsqueda (MODIFICADO: ahora solo busca en cusna1)
     if ($filtroCliente !== '') {
-        $where[] = "(CONCAT(c.cusna1, ' ', c.cusna2) LIKE :cliente OR c.cuscun = :cliente_num)";
+        $where[] = "(c.cusna1 LIKE :cliente OR c.cuscun = :cliente_num)";
         $params[':cliente'] = "%$filtroCliente%";
         $params[':cliente_num'] = $filtroCliente;
     }

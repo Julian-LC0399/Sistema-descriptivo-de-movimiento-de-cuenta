@@ -13,10 +13,10 @@ if (!in_array($_SESSION['role'], $allowedRoles)) {
     exit;
 }
 
-// Obtener lista de clientes, sucursales y productos bancarios
+// Obtener lista de clientes, sucursales y productos bancarios (MODIFICADO: ahora solo cusna1)
 try {
     $pdo = getPDO();
-    $clientes = $pdo->query("SELECT cuscun, CONCAT(cusna1, ' ', cusna2) AS nombre FROM cumst ORDER BY nombre")->fetchAll();
+    $clientes = $pdo->query("SELECT cuscun, cusna1 AS nombre FROM cumst WHERE cussts = 'A' ORDER BY cusna1")->fetchAll();
     $sucursales = $pdo->query("SELECT DISTINCT acmbrn FROM acmst ORDER BY acmbrn")->fetchAll();
     $productos = $pdo->query("SELECT DISTINCT acmprd FROM acmst ORDER BY acmprd")->fetchAll();
 } catch (PDOException $e) {
@@ -57,10 +57,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         // Verificar si el cliente existe
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM cumst WHERE cuscun = :cliente");
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM cumst WHERE cuscun = :cliente AND cussts = 'A'");
         $stmt->execute([':cliente' => $clienteId]);
         if ($stmt->fetchColumn() === 0) {
-            throw new Exception("El cliente seleccionado no existe");
+            throw new Exception("El cliente seleccionado no existe o está inactivo");
         }
         
         // Generación del número de cuenta con verificación de unicidad
