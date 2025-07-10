@@ -23,12 +23,15 @@ $filtroEstado = isset($_GET['estado']) ? $_GET['estado'] : '';
 try {
     $pdo = getPDO();
     
-    // Construir consulta base (MODIFICADO: ahora solo muestra cusna1 como nombre_cliente)
+    // Construir consulta base con los nuevos campos
     $sql = "SELECT 
                 a.acmacc AS cuenta, 
                 a.acmbrn AS sucursal,
                 a.acmsta AS estado, 
                 a.acmopn AS fecha_apertura,
+                a.acmprd AS producto,
+                a.acmtyp AS tipo_cuenta,
+                a.acmccy AS moneda,
                 c.cuscun AS id_cliente,
                 c.cusna1 AS nombre_cliente
             FROM acmst a
@@ -44,7 +47,7 @@ try {
         $params[':user_id'] = $_SESSION['user_id'];
     }
     
-    // Aplicar filtros de búsqueda (MODIFICADO: ahora solo busca en cusna1)
+    // Aplicar filtros de búsqueda
     if ($filtroCliente !== '') {
         $where[] = "(c.cusna1 LIKE :cliente OR c.cuscun = :cliente_num)";
         $params[':cliente'] = "%$filtroCliente%";
@@ -112,7 +115,7 @@ try {
     <main class="container mt-4">
         <h2 class="mb-4">Listado de Cuentas Bancarias</h2>
         
-        <!-- Filtros -->
+        <!-- Filtros (se mantiene igual) -->
         <div class="filtros-card mb-4">
             <div class="filtros-header">
                 <h3 class="filtros-title">
@@ -149,7 +152,7 @@ try {
             </form>
         </div>
         
-        <!-- Mensajes -->
+        <!-- Mensajes (se mantiene igual) -->
         <?php if (isset($_SESSION['mensaje'])): ?>
             <div class="alert alert-<?php echo htmlspecialchars($_SESSION['mensaje']['tipo']); ?> alert-dismissible fade show">
                 <?php echo htmlspecialchars($_SESSION['mensaje']['texto']); ?>
@@ -158,7 +161,7 @@ try {
             <?php unset($_SESSION['mensaje']); ?>
         <?php endif; ?>
         
-        <!-- Tabla de cuentas -->
+        <!-- Tabla de cuentas (modificada) -->
         <div class="table-container">
             <div class="table-responsive">
                 <table class="table table-hover">
@@ -166,6 +169,9 @@ try {
                         <tr>
                             <th>Número de Cuenta</th>
                             <th>Cliente</th>
+                            <th>Producto</th>
+                            <th>Tipo de Cuenta</th>
+                            <th>Moneda</th>
                             <th>Sucursal</th>
                             <th>Estado</th>
                             <th>Fecha Apertura</th>
@@ -177,7 +183,7 @@ try {
                     <tbody>
                         <?php if (empty($cuentas)): ?>
                             <tr>
-                                <td colspan="<?php echo $isAdminOrGerente ? 6 : 5; ?>" class="text-center py-4">
+                                <td colspan="<?php echo $isAdminOrGerente ? 9 : 8; ?>" class="text-center py-4">
                                     <i class="bi bi-exclamation-circle fs-4"></i>
                                     <p class="mt-2">No se encontraron cuentas</p>
                                 </td>
@@ -187,6 +193,9 @@ try {
                                 <tr>
                                     <td><?php echo htmlspecialchars($cuenta['cuenta']); ?></td>
                                     <td><?php echo htmlspecialchars($cuenta['nombre_cliente']); ?></td>
+                                    <td><?php echo htmlspecialchars($cuenta['producto']); ?></td>
+                                    <td><?php echo htmlspecialchars($cuenta['tipo_cuenta']); ?></td>
+                                    <td><?php echo htmlspecialchars($cuenta['moneda']); ?></td>
                                     <td><?php echo htmlspecialchars($cuenta['sucursal']); ?></td>
                                     <td>
                                         <span class="badge <?php echo $cuenta['estado'] === 'A' ? 'bg-success' : 'bg-secondary'; ?>">
@@ -218,7 +227,7 @@ try {
                 </table>
             </div>
             
-            <!-- Resumen y paginación -->
+            <!-- Resumen y paginación (se mantiene igual) -->
             <div class="d-flex justify-content-between align-items-center mt-3">
                 <div class="alert alert-info mb-0 py-2">
                     Mostrando <?php echo count($cuentas); ?> de <?php echo $totalRegistros; ?> cuentas
@@ -256,7 +265,7 @@ try {
             </div>
         </div>
 
-        <!-- Botón para agregar nueva cuenta -->
+        <!-- Botón para agregar nueva cuenta (se mantiene igual) -->
         <?php if ($isAdminOrGerente): ?>
             <div class="text-end mt-4">
                 <a href="crear.php" class="btn btn-success btn-lg">
@@ -266,10 +275,10 @@ try {
         <?php endif; ?>
     </main>
 
-    <!-- Bootstrap JS Bundle con Popper -->
+    <!-- Bootstrap JS Bundle con Popper (se mantiene igual) -->
     <script src="<?php echo BASE_URL; ?>assets/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Script para confirmar borrado -->
+    <!-- Script para confirmar borrado (se mantiene igual) -->
     <script>
     document.querySelectorAll('.btn-borrar').forEach(btn => {
         btn.addEventListener('click', function() {
