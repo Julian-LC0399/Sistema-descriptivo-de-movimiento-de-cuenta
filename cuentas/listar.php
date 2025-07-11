@@ -25,6 +25,7 @@ try {
     
     // Construir consulta base con los nuevos campos
     $sql = "SELECT 
+                c.cuscun AS id_cliente,
                 a.acmacc AS cuenta, 
                 a.acmbrn AS sucursal,
                 a.acmsta AS estado, 
@@ -32,7 +33,7 @@ try {
                 a.acmprd AS producto,
                 a.acmtyp AS tipo_cuenta,
                 a.acmccy AS moneda,
-                c.cuscun AS id_cliente,
+                a.acmidn AS cedula,
                 c.cusna1 AS nombre_cliente
             FROM acmst a
             JOIN cumst c ON a.acmcun = c.cuscun";
@@ -115,7 +116,7 @@ try {
     <main class="container mt-4">
         <h2 class="mb-4">Listado de Cuentas Bancarias</h2>
         
-        <!-- Filtros (se mantiene igual) -->
+        <!-- Filtros -->
         <div class="filtros-card mb-4">
             <div class="filtros-header">
                 <h3 class="filtros-title">
@@ -152,7 +153,7 @@ try {
             </form>
         </div>
         
-        <!-- Mensajes (se mantiene igual) -->
+        <!-- Mensajes -->
         <?php if (isset($_SESSION['mensaje'])): ?>
             <div class="alert alert-<?php echo htmlspecialchars($_SESSION['mensaje']['tipo']); ?> alert-dismissible fade show">
                 <?php echo htmlspecialchars($_SESSION['mensaje']['texto']); ?>
@@ -161,14 +162,16 @@ try {
             <?php unset($_SESSION['mensaje']); ?>
         <?php endif; ?>
         
-        <!-- Tabla de cuentas (modificada) -->
+        <!-- Tabla de cuentas -->
         <div class="table-container">
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead>
                         <tr>
+                            <th>ID Cliente</th>
                             <th>Número de Cuenta</th>
                             <th>Cliente</th>
+                            <th>Cédula</th>
                             <th>Producto</th>
                             <th>Tipo de Cuenta</th>
                             <th>Moneda</th>
@@ -183,7 +186,7 @@ try {
                     <tbody>
                         <?php if (empty($cuentas)): ?>
                             <tr>
-                                <td colspan="<?php echo $isAdminOrGerente ? 9 : 8; ?>" class="text-center py-4">
+                                <td colspan="<?php echo $isAdminOrGerente ? 11 : 10; ?>" class="text-center py-4">
                                     <i class="bi bi-exclamation-circle fs-4"></i>
                                     <p class="mt-2">No se encontraron cuentas</p>
                                 </td>
@@ -191,8 +194,10 @@ try {
                         <?php else: ?>
                             <?php foreach ($cuentas as $cuenta): ?>
                                 <tr>
+                                    <td><?php echo htmlspecialchars($cuenta['id_cliente']); ?></td>
                                     <td><?php echo htmlspecialchars($cuenta['cuenta']); ?></td>
                                     <td><?php echo htmlspecialchars($cuenta['nombre_cliente']); ?></td>
+                                    <td><?php echo htmlspecialchars($cuenta['cedula']); ?></td>
                                     <td><?php echo htmlspecialchars($cuenta['producto']); ?></td>
                                     <td><?php echo htmlspecialchars($cuenta['tipo_cuenta']); ?></td>
                                     <td><?php echo htmlspecialchars($cuenta['moneda']); ?></td>
@@ -227,7 +232,7 @@ try {
                 </table>
             </div>
             
-            <!-- Resumen y paginación (se mantiene igual) -->
+            <!-- Resumen y paginación -->
             <div class="d-flex justify-content-between align-items-center mt-3">
                 <div class="alert alert-info mb-0 py-2">
                     Mostrando <?php echo count($cuentas); ?> de <?php echo $totalRegistros; ?> cuentas
@@ -265,7 +270,7 @@ try {
             </div>
         </div>
 
-        <!-- Botón para agregar nueva cuenta (se mantiene igual) -->
+        <!-- Botón para agregar nueva cuenta -->
         <?php if ($isAdminOrGerente): ?>
             <div class="text-end mt-4">
                 <a href="crear.php" class="btn btn-success btn-lg">
@@ -275,10 +280,10 @@ try {
         <?php endif; ?>
     </main>
 
-    <!-- Bootstrap JS Bundle con Popper (se mantiene igual) -->
+    <!-- Bootstrap JS Bundle con Popper -->
     <script src="<?php echo BASE_URL; ?>assets/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Script para confirmar borrado (se mantiene igual) -->
+    <!-- Script para confirmar borrado -->
     <script>
     document.querySelectorAll('.btn-borrar').forEach(btn => {
         btn.addEventListener('click', function() {

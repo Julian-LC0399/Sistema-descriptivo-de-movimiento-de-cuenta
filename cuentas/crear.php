@@ -20,11 +20,13 @@ try {
     $sucursales = $pdo->query("SELECT DISTINCT acmbrn FROM acmst ORDER BY acmbrn")->fetchAll();
     $productos = $pdo->query("SELECT DISTINCT acmprd FROM acmst ORDER BY acmprd")->fetchAll();
     
-    // Monedas disponibles
+    // Monedas disponibles (BS en lugar de VES, más COP y BRL)
     $monedas = [
-        ['codigo' => 'VES', 'nombre' => 'Bolívar'],
+        ['codigo' => 'BS', 'nombre' => 'Bolívar'],
         ['codigo' => 'USD', 'nombre' => 'Dólar Estadounidense'],
-        ['codigo' => 'EUR', 'nombre' => 'Euro']
+        ['codigo' => 'EUR', 'nombre' => 'Euro'],
+        ['codigo' => 'COP', 'nombre' => 'Peso Colombiano'],
+        ['codigo' => 'BRL', 'nombre' => 'Real Brasileño']
     ];
 } catch (PDOException $e) {
     $clientes = [];
@@ -47,10 +49,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $productoBancario = (int)$_POST['producto_bancario'];
         $tipoCuenta = substr(trim($_POST['tipo_cuenta']), 0, 2);
         $claseCuenta = substr(trim($_POST['clase_cuenta']), 0, 1);
-        $moneda = in_array($_POST['moneda'], ['VES', 'USD', 'EUR']) ? $_POST['moneda'] : 'VES';
+        $moneda = in_array($_POST['moneda'], ['BS', 'USD', 'EUR', 'COP', 'BRL']) ? $_POST['moneda'] : 'BS';
+        $cedula = substr(trim($_POST['cedula']), 0, 20);
         
         // Validaciones básicas
-        if (empty($clienteId) || empty($sucursal) || empty($productoBancario)) {
+        if (empty($clienteId) || empty($sucursal) || empty($productoBancario) || empty($cedula)) {
             throw new Exception("Todos los campos obligatorios deben ser completados");
         }
         
@@ -101,14 +104,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Insertar en la base de datos
         $sql = "INSERT INTO acmst 
-                (acmacc, acmcun, acmbrn, acmccy, acmprd, acmtyp, acmcls, acmlsb, acmbal, acmavl, acmsta, acmopn) 
+                (acmacc, acmcun, acmidn, acmbrn, acmccy, acmprd, acmtyp, acmcls, acmlsb, acmbal, acmavl, acmsta, acmopn) 
                 VALUES 
-                (:cuenta, :cliente, :sucursal, :moneda, :producto, :tipo, :clase, 0, 0, 0, :estado, :fecha)";
+                (:cuenta, :cliente, :cedula, :sucursal, :moneda, :producto, :tipo, :clase, 0, 0, 0, :estado, :fecha)";
         
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
             ':cuenta' => $numeroCuenta,
             ':cliente' => $clienteIdOriginal,
+            ':cedula' => $cedula,
             ':sucursal' => $sucursal,
             ':moneda' => $moneda,
             ':producto' => $productoBancario,
@@ -186,6 +190,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <div class="row">
                         <div class="col-md-4 mb-3">
+                            <label for="cedula" class="form-label required-field">Cédula</label>
+                            <input type="text" class="form-control" id="cedula" name="cedula" 
+                                   value="<?php echo isset($_POST['cedula']) ? htmlspecialchars($_POST['cedula']) : ''; ?>" 
+                                   required maxlength="20" placeholder="Ej: V12345678">
+                        </div>
+                        <div class="col-md-4 mb-3">
                             <label for="sucursal" class="form-label required-field">Sucursal</label>
                             <select class="form-select" id="sucursal" name="sucursal" required>
                                 <option value="">Seleccione sucursal</option>
@@ -209,6 +219,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <?php endforeach; ?>
                             </select>
                         </div>
+                    </div>
+                    
+                    <div class="row">
                         <div class="col-md-4 mb-3">
                             <label for="moneda" class="form-label required-field">Moneda</label>
                             <select class="form-select" id="moneda" name="moneda" required>
