@@ -15,7 +15,7 @@ $total_general_debitos = 0;
 $total_general_creditos = 0;
 $total_count_debitos = 0;
 $total_count_creditos = 0;
-$moneda = 'VES';
+$moneda = 'BS'; // Cambiado de VES a BS
 $direccion1 = $direccion2 = $ciudad = '';
 
 function getMesEspanol($fecha) {
@@ -93,7 +93,7 @@ if (!empty($cuenta)) {
             $stmt_saldo_cuenta->execute([':cuenta' => $cuenta]);
             if ($resultado = $stmt_saldo_cuenta->fetch(PDO::FETCH_ASSOC)) {
                 $saldo_inicial = $resultado['acmbal'];
-                $moneda = $resultado['acmccy'] ?? 'VES';
+                $moneda = $resultado['acmccy'] ?? 'BS'; // Cambiado de VES a BS
             }
         }
 
@@ -189,7 +189,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         protected $moneda;
         protected $direccion;
         
-        public function __construct($orientation, $unit, $format, $unicode, $encoding, $diskcache, $pdfa, $cuenta = '', $nombre_cliente = '', $fecha_inicio = '', $fecha_fin = '', $moneda = 'VES', $direccion = '') {
+        public function __construct($orientation, $unit, $format, $unicode, $encoding, $diskcache, $pdfa, $cuenta = '', $nombre_cliente = '', $fecha_inicio = '', $fecha_fin = '', $moneda = 'BS', $direccion = '') { // Cambiado de VES a BS
             parent::__construct($orientation, $unit, $format, $unicode, $encoding, $diskcache, $pdfa);
             $this->cuenta = $cuenta;
             $this->nombre_cliente = $nombre_cliente;
@@ -202,7 +202,6 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         public function Header() {
             $logo_path = realpath(__DIR__ . '/../assets/images/logo-banco.jpg');
             if (file_exists($logo_path)) {
-                // Cambio realizado aquí: tamaño del logo aumentado de 20 a 30 mm
                 $this->Image($logo_path, 10, 8, 30, 0, 'JPG', '', 'T', false, 300, '', false, false, 0, false, false, false);
             }
             
@@ -224,7 +223,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             $this->Cell(20, 4, 'CUENTA:', 0, 0, 'L');
             $this->SetFont('helvetica', '', 7);
             $formatted_account = formatAccountNumber($this->cuenta);
-            $this->Cell(0, 4, $formatted_account.' | '.$this->moneda, 0, 1, 'L');
+            $this->Cell(0, 4, $formatted_account, 0, 1, 'L'); // Se quitó la moneda del encabezado
             
             $this->SetFont('helvetica', 'B', 7);
             $this->Cell(20, 4, 'DIRECCIÓN:', 0, 0, 'L');
@@ -577,7 +576,7 @@ ob_end_flush();
                         <div class="account-info">
                             <p><strong><i class="fas fa-user"></i> Cliente:</strong> <?= htmlspecialchars($nombre_cliente_web) ?></p>
                             <p><strong><i class="fas fa-wallet"></i> Número de Cuenta:</strong> <?= htmlspecialchars(formatAccountNumber($cuenta)) ?></p>
-                            <p><strong><i class="fas fa-coins"></i> Saldo Inicial:</strong> <?= number_format($saldo_mes['saldo_inicial'], 2, ',', '.') ?></p>
+                            <p><strong><i class="fas fa-coins"></i> Saldo Inicial:</strong> <?= number_format($saldo_mes['saldo_inicial'], 2, ',', '.') ?> BS</p>
                         </div>
                     <?php endif; ?>
                     
@@ -610,7 +609,7 @@ ob_end_flush();
                                         <td class="debit" style="text-align: right;"><?= $trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '' ?></td>
                                         <td class="credit" style="text-align: right;"><?= $trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '' ?></td>
                                         <?php if (!empty($cuenta)): ?>
-                                            <td class="balance" style="text-align: right; color: <?= getSaldoColor($trans['saldo']) ?>"><?= number_format($trans['saldo'], 2, ',', '.') ?></td>
+                                            <td class="balance" style="text-align: right; color: <?= getSaldoColor($trans['saldo']) ?>"><?= number_format($trans['saldo'], 2, ',', '.') ?> BS</td>
                                         <?php endif; ?>
                                     </tr>
                                 <?php endforeach; ?>
@@ -621,18 +620,18 @@ ob_end_flush();
                     <div class="month-totals">
                         <div class="total-box">
                             <div class="total-label"><i class="fas fa-arrow-down"></i> Total Débitos</div>
-                            <div class="total-value"><?= number_format($saldo_mes['total_debitos'], 2, ',', '.') ?></div>
+                            <div class="total-value"><?= number_format($saldo_mes['total_debitos'], 2, ',', '.') ?> BS</div>
                             <div class="total-count"><?= $saldo_mes['count_debitos'] ?> movimientos</div>
                         </div>
                         <div class="total-box">
                             <div class="total-label"><i class="fas fa-arrow-up"></i> Total Créditos</div>
-                            <div class="total-value"><?= number_format($saldo_mes['total_creditos'], 2, ',', '.') ?></div>
+                            <div class="total-value"><?= number_format($saldo_mes['total_creditos'], 2, ',', '.') ?> BS</div>
                             <div class="total-count"><?= $saldo_mes['count_creditos'] ?> movimientos</div>
                         </div>
                         <?php if (!empty($cuenta)): ?>
                             <div class="total-box">
                                 <div class="total-label"><i class="fas fa-coins"></i> Saldo Final</div>
-                                <div class="total-value" style="color: <?= getSaldoColor($saldo_mes['saldo_final']) ?>"><?= number_format($saldo_mes['saldo_final'], 2, ',', '.') ?></div>
+                                <div class="total-value" style="color: <?= getSaldoColor($saldo_mes['saldo_final']) ?>"><?= number_format($saldo_mes['saldo_final'], 2, ',', '.') ?> BS</div>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -644,22 +643,22 @@ ob_end_flush();
                 <div class="totals-grid">
                     <div class="total-box">
                         <div class="total-label"><i class="fas fa-coins"></i> Saldo Inicial</div>
-                        <div class="total-value"><?= number_format($saldo_inicial, 2, ',', '.') ?></div>
+                        <div class="total-value"><?= number_format($saldo_inicial, 2, ',', '.') ?> BS</div>
                     </div>
                     <div class="total-box">
                         <div class="total-label"><i class="fas fa-arrow-down"></i> Total Débitos</div>
-                        <div class="total-value"><?= number_format($total_general_debitos, 2, ',', '.') ?></div>
+                        <div class="total-value"><?= number_format($total_general_debitos, 2, ',', '.') ?> BS</div>
                         <div class="total-count"><?= $total_count_debitos ?> movimientos</div>
                     </div>
                     <div class="total-box">
                         <div class="total-label"><i class="fas fa-arrow-up"></i> Total Créditos</div>
-                        <div class="total-value"><?= number_format($total_general_creditos, 2, ',', '.') ?></div>
+                        <div class="total-value"><?= number_format($total_general_creditos, 2, ',', '.') ?> BS</div>
                         <div class="total-count"><?= $total_count_creditos ?> movimientos</div>
                     </div>
                     <?php if (!empty($cuenta)): ?>
                         <div class="total-box">
                             <div class="total-label"><i class="fas fa-wallet"></i> Saldo Final</div>
-                            <div class="total-value" style="color: <?= getSaldoColor($saldo_final) ?>"><?= number_format($saldo_final, 2, ',', '.') ?></div>
+                            <div class="total-value" style="color: <?= getSaldoColor($saldo_final) ?>"><?= number_format($saldo_final, 2, ',', '.') ?> BS</div>
                         </div>
                     <?php endif; ?>
                 </div>
