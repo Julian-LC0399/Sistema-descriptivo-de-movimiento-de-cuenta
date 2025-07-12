@@ -16,11 +16,11 @@ if (!in_array($_SESSION['role'], $allowedRoles)) {
 // Obtener lista de clientes, sucursales y productos bancarios
 try {
     $pdo = getPDO();
-    $clientes = $pdo->query("SELECT cuscun, cusna1 AS nombre FROM cumst WHERE cussts = 'A' ORDER BY cusna1")->fetchAll();
-    $sucursales = $pdo->query("SELECT DISTINCT acmbrn FROM acmst ORDER BY acmbrn")->fetchAll();
-    $productos = $pdo->query("SELECT DISTINCT acmprd FROM acmst ORDER BY acmprd")->fetchAll();
+    $clientes = $pdo->query("SELECT cuscun, cusna1 AS nombre FROM cumst WHERE cussts = 'A' ORDER BY cusna1")->fetchAll(PDO::FETCH_ASSOC);
+    $sucursales = $pdo->query("SELECT DISTINCT acmbrn FROM acmst ORDER BY acmbrn")->fetchAll(PDO::FETCH_ASSOC);
+    $productos = $pdo->query("SELECT DISTINCT acmprd FROM acmst ORDER BY acmprd")->fetchAll(PDO::FETCH_ASSOC);
     
-    // Monedas disponibles (BS en lugar de VES, más COP y BRL)
+    // Monedas disponibles
     $monedas = [
         ['codigo' => 'BS', 'nombre' => 'Bolívar'],
         ['codigo' => 'USD', 'nombre' => 'Dólar Estadounidense'],
@@ -29,89 +29,93 @@ try {
         ['codigo' => 'BRL', 'nombre' => 'Real Brasileño']
     ];
 } catch (PDOException $e) {
-    $clientes = [];
-    $sucursales = [];
-    $productos = [];
-    $monedas = [];
-    error_log("Error al obtener datos: " . $e->getMessage());
+    $error = "Error al obtener datos: " . $e->getMessage();
+    error_log($error);
+}
+
+// Función para generar número de cuenta único
+function generarNumeroCuenta($pdo, $producto, $sucursal, $clienteId) {
+    $intentos = 0;
+    $clienteOriginal = $clienteId;
+    
+    do {
+        $numeroCuenta = sprintf("0128%02d%02d%02d%010d", 0, $producto, $sucursal, $clienteId);
+        
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM acmst WHERE acmacc = :cuenta");
+        $stmt->bindValue(':cuenta', $numeroCuenta);
+        $stmt->execute();
+        
+        if ($stmt->fetchColumn() == 0) {
+            return $numeroCuenta;
+        }
+        
+        $clienteId = $clienteOriginal + ++$intentos;
+        if ($clienteId > 9999999999) $clienteId = $clienteOriginal;
+        
+    } while ($intentos < 5);
+
+    // Si no se encontró después de 5 intentos, generar uno único
+    $numeroCuenta = sprintf("0128%02d%02d%02d%010d", 0, $producto, $sucursal, substr(uniqid(), -10));
+    
+    $stmt->execute([':cuenta' => $numeroCuenta]);
+    if ($stmt->fetchColumn() > 0) {
+        throw new Exception("No se pudo generar un número de cuenta único. Contacte al administrador.");
+    }
+    
+    return $numeroCuenta;
 }
 
 // Procesar el formulario cuando se envía
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $pdo = getPDO();
-        
+        $pdo->beginTransaction();
+
         // Validar y sanitizar datos
-        $clienteId = (int)$_POST['cliente_id'];
-        $estado = $_POST['estado'] === 'A' ? 'A' : 'I';
-        $fechaApertura = $_POST['fecha_apertura'];
-        $sucursal = (int)$_POST['sucursal'];
-        $productoBancario = (int)$_POST['producto_bancario'];
-        $tipoCuenta = substr(trim($_POST['tipo_cuenta']), 0, 2);
-        $claseCuenta = substr(trim($_POST['clase_cuenta']), 0, 1);
-        $moneda = in_array($_POST['moneda'], ['BS', 'USD', 'EUR', 'COP', 'BRL']) ? $_POST['moneda'] : 'BS';
-        $cedula = substr(trim($_POST['cedula']), 0, 20);
-        
+        $clienteId = filter_input(INPUT_POST, 'cliente_id', FILTER_VALIDATE_INT);
+        $estado = ($_POST['estado'] === 'A') ? 'A' : 'I';
+        $fechaApertura = $_POST['fecha_apertura'] ?? date('Y-m-d');
+        $sucursal = filter_input(INPUT_POST, 'sucursal', FILTER_VALIDATE_INT);
+        $productoBancario = filter_input(INPUT_POST, 'producto_bancario', FILTER_VALIDATE_INT);
+        $tipoCuenta = substr(trim($_POST['tipo_cuenta'] ?? ''), 0, 2);
+        $claseCuenta = substr(trim($_POST['clase_cuenta'] ?? ''), 0, 1);
+        $moneda = in_array($_POST['moneda'] ?? '', ['BS', 'USD', 'EUR', 'COP', 'BRL']) ? $_POST['moneda'] : 'BS';
+        $cedula = substr(trim($_POST['cedula'] ?? ''), 0, 20);
+
         // Validaciones básicas
-        if (empty($clienteId) || empty($sucursal) || empty($productoBancario) || empty($cedula)) {
+        if (!$clienteId || !$sucursal || !$productoBancario || empty($cedula)) {
             throw new Exception("Todos los campos obligatorios deben ser completados");
         }
-        
-        // Validar rangos numéricos
+
         if ($productoBancario < 1 || $productoBancario > 99) {
             throw new Exception("El producto bancario debe ser entre 1 y 99");
         }
+
         if ($sucursal < 1 || $sucursal > 99) {
             throw new Exception("El número de sucursal debe ser entre 1 y 99");
         }
-        if ($clienteId < 1 || $clienteId > 9999999999) {
-            throw new Exception("ID de cliente inválido (máximo 10 dígitos)");
-        }
-        
-        // Verificar si el cliente existe
+
+        // Verificar cliente existe
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM cumst WHERE cuscun = :cliente AND cussts = 'A'");
-        $stmt->execute([':cliente' => $clienteId]);
+        $stmt->bindParam(':cliente', $clienteId, PDO::PARAM_INT);
+        $stmt->execute();
+        
         if ($stmt->fetchColumn() === 0) {
             throw new Exception("El cliente seleccionado no existe o está inactivo");
         }
-        
-        // Generación del número de cuenta
-        $intentos = 0;
-        $numeroCuenta = '';
-        $cuentaExistente = true;
-        $clienteIdOriginal = $clienteId;
 
-        while ($cuentaExistente && $intentos < 5) {
-            $numeroCuenta = sprintf("0128%02d%02d%02d%010d", 0, $productoBancario, $sucursal, $clienteId);
-            
-            $stmt = $pdo->prepare("SELECT COUNT(*) FROM acmst WHERE acmacc = :cuenta");
-            $stmt->execute([':cuenta' => $numeroCuenta]);
-            $cuentaExistente = $stmt->fetchColumn() > 0;
-            
-            if ($cuentaExistente) {
-                $clienteId = $clienteIdOriginal + ++$intentos;
-                if ($clienteId > 9999999999) $clienteId = $clienteIdOriginal;
-            }
-        }
+        // Generar número de cuenta único
+        $numeroCuenta = generarNumeroCuenta($pdo, $productoBancario, $sucursal, $clienteId);
 
-        if ($cuentaExistente) {
-            $numeroCuenta = sprintf("0128%02d%02d%02d%010d", 0, $productoBancario, $sucursal, substr(uniqid(), -10));
-            $stmt->execute([':cuenta' => $numeroCuenta]);
-            if ($stmt->fetchColumn() > 0) {
-                throw new Exception("No se pudo generar un número de cuenta único. Contacte al administrador.");
-            }
-        }
+        // Insertar cuenta principal
+        $sqlCuenta = "INSERT INTO acmst 
+                     (acmacc, acmcun, acmidn, acmbrn, acmccy, acmprd, acmtyp, acmcls, acmlsb, acmbal, acmavl, acmsta, acmopn) 
+                     VALUES 
+                     (:cuenta, :cliente, :cedula, :sucursal, :moneda, :producto, :tipo, :clase, 0, 0, 0, :estado, :fecha)";
         
-        // Insertar en la base de datos
-        $sql = "INSERT INTO acmst 
-                (acmacc, acmcun, acmidn, acmbrn, acmccy, acmprd, acmtyp, acmcls, acmlsb, acmbal, acmavl, acmsta, acmopn) 
-                VALUES 
-                (:cuenta, :cliente, :cedula, :sucursal, :moneda, :producto, :tipo, :clase, 0, 0, 0, :estado, :fecha)";
-        
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
+        $paramsCuenta = [
             ':cuenta' => $numeroCuenta,
-            ':cliente' => $clienteIdOriginal,
+            ':cliente' => $clienteId,
             ':cedula' => $cedula,
             ':sucursal' => $sucursal,
             ':moneda' => $moneda,
@@ -120,19 +124,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':clase' => $claseCuenta,
             ':estado' => $estado,
             ':fecha' => $fechaApertura
-        ]);
+        ];
         
+        $stmt = $pdo->prepare($sqlCuenta);
+        if (!$stmt->execute($paramsCuenta)) {
+            throw new Exception("Error al crear la cuenta: " . implode(" ", $stmt->errorInfo()));
+        }
+
+        // Insertar referencia de cuenta
+        $sqlReferencia = "INSERT INTO acref 
+                         (acrnac, acrcun, acrrac, acrtyp, acrsts) 
+                         VALUES 
+                         (:cuenta, :cliente, :cuenta_ref, 'O', 'A')";
+        
+        $paramsRef = [
+            ':cuenta' => $numeroCuenta,
+            ':cliente' => $clienteId,
+            ':cuenta_ref' => $numeroCuenta
+        ];
+        
+        $stmtRef = $pdo->prepare($sqlReferencia);
+        if (!$stmtRef->execute($paramsRef)) {
+            throw new Exception("Error al crear la referencia: " . implode(" ", $stmtRef->errorInfo()));
+        }
+
+        $pdo->commit();
+
         $_SESSION['mensaje'] = [
             'tipo' => 'success',
-            'texto' => "Cuenta creada exitosamente. Número: $numeroCuenta | Moneda: $moneda"
+            'texto' => "Cuenta $numeroCuenta creada exitosamente con su referencia correspondiente"
         ];
+        
         header('Location: listar.php');
         exit;
-        
+
     } catch (PDOException $e) {
-        $error = "Error al crear la cuenta: " . $e->getMessage();
+        if (isset($pdo) && $pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        $error = "Error en la base de datos: " . $e->getMessage();
+        error_log($error);
     } catch (Exception $e) {
+        if (isset($pdo) && $pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         $error = $e->getMessage();
+        error_log($error);
     }
 }
 ?>
@@ -202,7 +239,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <?php foreach ($sucursales as $suc): ?>
                                     <option value="<?php echo htmlspecialchars($suc['acmbrn']); ?>"
                                         <?php echo (isset($_POST['sucursal']) && $_POST['sucursal'] == $suc['acmbrn']) ? 'selected' : ''; ?>>
-                                        Sucursal <?php echo htmlspecialchars($suc['acmbrn']); ?>
+                                        Sucursal <?php echo htmlspecialchars($suc['acmbrn']); ?>)
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -214,7 +251,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <?php foreach ($productos as $prod): ?>
                                     <option value="<?php echo htmlspecialchars($prod['acmprd']); ?>"
                                         <?php echo (isset($_POST['producto_bancario']) && $_POST['producto_bancario'] == $prod['acmprd']) ? 'selected' : ''; ?>>
-                                        Producto <?php echo htmlspecialchars($prod['acmprd']); ?>
+                                        Producto <?php echo htmlspecialchars($prod['acmprd']); ?>)
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -228,7 +265,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <?php foreach ($monedas as $m): ?>
                                     <option value="<?php echo htmlspecialchars($m['codigo']); ?>"
                                         <?php echo (isset($_POST['moneda']) && $_POST['moneda'] == $m['codigo']) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($m['codigo']); ?> - <?php echo htmlspecialchars($m['nombre']); ?>
+                                        <?php echo htmlspecialchars($m['codigo']); ?> - <?php echo htmlspecialchars($m['nombre']); ?>)
                                     </option>
                                 <?php endforeach; ?>
                             </select>
