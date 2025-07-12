@@ -15,15 +15,15 @@ $numeroCuenta = $_GET['id'];
 try {
     $pdo = getPDO();
     
-    // Marcamos la cuenta como inactiva en lugar de borrarla físicamente
-    $sql = "UPDATE acmst SET acmsta = 'I' WHERE acmacc = :cuenta";
+    // Eliminar físicamente la cuenta (¡ATENCIÓN: Esto no se puede deshacer!)
+    $sql = "DELETE FROM acmst WHERE acmacc = :cuenta";
     $stmt = $pdo->prepare($sql);
     $stmt->bindParam(':cuenta', $numeroCuenta, PDO::PARAM_STR);
     $stmt->execute();
     
     $_SESSION['mensaje'] = [
         'tipo' => 'success',
-        'texto' => "Cuenta $numeroCuenta desactivada correctamente"
+        'texto' => "Cuenta $numeroCuenta eliminada permanentemente"
     ];
     header("Location: listar.php");
     exit();
@@ -31,7 +31,7 @@ try {
 } catch (PDOException $e) {
     $_SESSION['mensaje'] = [
         'tipo' => 'danger',
-        'texto' => "Error al desactivar la cuenta: " . $e->getMessage()
+        'texto' => "Error al eliminar la cuenta: " . $e->getMessage()
     ];
     header("Location: listar.php");
     exit();
