@@ -29,6 +29,7 @@ if (!empty($busqueda)) {
 
 // Contar total de clientes
 try {
+    $pdo = getPDO();
     $stmt = $pdo->prepare($contarSql);
     $stmt->execute($params);
     $totalClientes = $stmt->fetch()['total'];
@@ -75,13 +76,9 @@ $camposBusqueda = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($tituloPagina) ?> - Sistema Bancario</title>
-    <!-- Bootstrap CSS -->
     <link href="<?= BASE_URL ?>assets/css/bootstrap.min.css" rel="stylesheet">
-    <!-- CSS personalizado -->
     <link href="<?= BASE_URL ?>assets/css/registros.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
-    <!-- Fuente para montos -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -91,21 +88,25 @@ $camposBusqueda = [
         <h2 class="mb-4"><?= htmlspecialchars($tituloPagina) ?></h2>
         
         <?php if (isset($_SESSION['mensaje'])): ?>
-            <div class="alert alert-<?= isset($_SESSION['mensaje']['tipo']) ? htmlspecialchars($_SESSION['mensaje']['tipo']) : 'success' ?> alert-dismissible fade show">
-                <?= isset($_SESSION['mensaje']['texto']) ? htmlspecialchars($_SESSION['mensaje']['texto']) : htmlspecialchars($_SESSION['mensaje']) ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <div class="mensaje-flotante mensaje-exito">
+                <div class="contenido-mensaje">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span><?= htmlspecialchars($_SESSION['mensaje']['texto'] ?? $_SESSION['mensaje']) ?></span>
+                </div>
             </div>
             <?php unset($_SESSION['mensaje']); ?>
         <?php endif; ?>
         
         <?php if (isset($_SESSION['error'])): ?>
-            <div class="alert alert-danger alert-dismissible fade show">
-                <?= htmlspecialchars($_SESSION['error']) ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <div class="mensaje-flotante mensaje-error">
+                <div class="contenido-mensaje">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span><?= htmlspecialchars($_SESSION['error']) ?></span>
+                </div>
             </div>
             <?php unset($_SESSION['error']); ?>
         <?php endif; ?>
-        
+
         <!-- Filtros -->
         <div class="filtros-card mb-4">
             <div class="filtros-header">
@@ -239,10 +240,8 @@ $camposBusqueda = [
         </div>
     </main>
 
-    <!-- Bootstrap JS Bundle con Popper -->
     <script src="<?= BASE_URL ?>assets/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Script para confirmar borrado -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Manejar el clic en botones de borrar
@@ -257,13 +256,23 @@ $camposBusqueda = [
             });
         });
         
-        // Cerrar automáticamente alertas después de 5 segundos
+        // Cerrar mensajes automáticamente
         setTimeout(() => {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(alert => {
-                new bootstrap.Alert(alert).close();
+            const mensajes = document.querySelectorAll('.mensaje-flotante');
+            mensajes.forEach(mensaje => {
+                mensaje.classList.add('cerrando');
+                setTimeout(() => mensaje.remove(), 300);
             });
         }, 5000);
+
+        // Permitir cerrar al hacer click
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.mensaje-flotante')) {
+                const mensaje = e.target.closest('.mensaje-flotante');
+                mensaje.classList.add('cerrando');
+                setTimeout(() => mensaje.remove(), 300);
+            }
+        });
     });
     </script>
 </body>
