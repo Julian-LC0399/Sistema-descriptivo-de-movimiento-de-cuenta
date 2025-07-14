@@ -97,7 +97,7 @@ try {
 
 } catch (PDOException $e) {
     error_log("Error al listar cuentas: " . $e->getMessage());
-    die("Ocurrió un error al recuperar las cuentas. Por favor intente más tarde.");
+    $_SESSION['error'] = "Ocurrió un error al recuperar las cuentas. Por favor intente más tarde.";
 }
 ?>
 <!DOCTYPE html>
@@ -109,6 +109,7 @@ try {
     <link href="<?php echo BASE_URL; ?>assets/css/bootstrap.min.css" rel="stylesheet">
     <link href="<?php echo BASE_URL; ?>assets/css/registros.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
     <?php include __DIR__ . '/../includes/sidebar.php'; ?>
@@ -116,6 +117,27 @@ try {
     <main class="container mt-4">
         <h2 class="mb-4">Listado de Cuentas Bancarias</h2>
         
+        <!-- Mensajes flotantes (igual que lista.php) -->
+        <?php if (isset($_SESSION['mensaje'])): ?>
+            <div class="mensaje-flotante mensaje-exito">
+                <div class="contenido-mensaje">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span><?= htmlspecialchars($_SESSION['mensaje']['texto'] ?? $_SESSION['mensaje']) ?></span>
+                </div>
+            </div>
+            <?php unset($_SESSION['mensaje']); ?>
+        <?php endif; ?>
+        
+        <?php if (isset($_SESSION['error'])): ?>
+            <div class="mensaje-flotante mensaje-error">
+                <div class="contenido-mensaje">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span><?= htmlspecialchars($_SESSION['error']) ?></span>
+                </div>
+            </div>
+            <?php unset($_SESSION['error']); ?>
+        <?php endif; ?>
+
         <!-- Filtros -->
         <div class="filtros-card mb-4">
             <div class="filtros-header">
@@ -152,15 +174,6 @@ try {
                 </div>
             </form>
         </div>
-        
-        <!-- Mensajes -->
-        <?php if (isset($_SESSION['mensaje'])): ?>
-            <div class="alert alert-<?php echo htmlspecialchars($_SESSION['mensaje']['tipo']); ?> alert-dismissible fade show">
-                <?php echo htmlspecialchars($_SESSION['mensaje']['texto']); ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-            <?php unset($_SESSION['mensaje']); ?>
-        <?php endif; ?>
         
         <!-- Tabla de cuentas -->
         <div class="table-container">
@@ -296,13 +309,23 @@ try {
         });
     });
     
-    // Cerrar automáticamente alertas después de 5 segundos
+    // Cerrar mensajes automáticamente (como en lista.php)
     setTimeout(() => {
-        const alerts = document.querySelectorAll('.alert');
-        alerts.forEach(alert => {
-            new bootstrap.Alert(alert).close();
+        const mensajes = document.querySelectorAll('.mensaje-flotante');
+        mensajes.forEach(mensaje => {
+            mensaje.classList.add('cerrando');
+            setTimeout(() => mensaje.remove(), 300);
         });
     }, 5000);
+
+    // Permitir cerrar al hacer clic
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.mensaje-flotante')) {
+            const mensaje = e.target.closest('.mensaje-flotante');
+            mensaje.classList.add('cerrando');
+            setTimeout(() => mensaje.remove(), 300);
+        }
+    });
     </script>
 </body>
 </html>
