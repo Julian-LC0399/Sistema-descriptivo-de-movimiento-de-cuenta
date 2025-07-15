@@ -207,25 +207,25 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             
             // Fecha de emisión debajo del logo
             $this->SetFont('helvetica', '', 7);
-            $this->SetY(18); // Posición debajo del logo
+            $this->SetY(18);
             $this->Cell(0, 4, 'Emisión: '.date('d/m/Y H:i'), 0, 1, 'L');
             
             // Información del cliente a la derecha
-            $this->SetY(15); // Misma altura que el logo
-            $this->SetX(120); // Posición a la derecha
+            $this->SetY(15); // Posición vertical igual que el logo
+            $this->SetX(120); // Posición horizontal a la derecha
             
-            // Nombre del cliente (en negrita y tamaño más grande)
+            // Nombre del cliente (más grande y en negrita)
             $this->SetFont('helvetica', 'B', 10);
             $this->Cell(0, 6, strtoupper($this->nombre_cliente), 0, 1, 'L');
-            $this->SetY($this->GetY()+2); // Pequeño espacio después del nombre
             
-            // Dirección (formato más compacto)
+            // Dirección (debajo del nombre)
             $this->SetFont('helvetica', '', 8);
-            $direccion_completa = strtoupper($this->direccion);
-            $this->MultiCell(0, 4, $direccion_completa, 0, 'L');
+            $this->SetX(120); // Mantener alineación a la derecha
+            $this->MultiCell(80, 4, strtoupper($this->direccion), 0, 'L');
             
-            // Número de cuenta (formato especial)
+            // Número de cuenta (debajo de la dirección)
             $this->SetFont('helvetica', 'B', 8);
+            $this->SetX(120); // Mantener alineación a la derecha
             $this->Cell(0, 6, 'NUMERO DE CUENTA: '.formatAccountNumber($this->cuenta), 0, 1, 'L');
             
             // Línea separadora
