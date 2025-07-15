@@ -15,7 +15,7 @@ $total_general_debitos = 0;
 $total_general_creditos = 0;
 $total_count_debitos = 0;
 $total_count_creditos = 0;
-$moneda = 'BS'; // Cambiado de VES a BS
+$moneda = 'BS';
 $direccion1 = $direccion2 = $ciudad = '';
 
 function getMesEspanol($fecha) {
@@ -47,7 +47,7 @@ function formatAccountNumber($cuenta) {
     if (strlen($cuenta) == 20) {
         return substr($cuenta, 0, 4) . '-' . 
                substr($cuenta, 4, 4) . '-' . 
-               substr($cuenta, 8, 2) . '-' . 
+               substr($cuenta, 8, 2) . '.' . 
                substr($cuenta, 10, 10);
     }
     
@@ -93,7 +93,7 @@ if (!empty($cuenta)) {
             $stmt_saldo_cuenta->execute([':cuenta' => $cuenta]);
             if ($resultado = $stmt_saldo_cuenta->fetch(PDO::FETCH_ASSOC)) {
                 $saldo_inicial = $resultado['acmbal'];
-                $moneda = $resultado['acmccy'] ?? 'BS'; // Cambiado de VES a BS
+                $moneda = $resultado['acmccy'] ?? 'BS';
             }
         }
 
@@ -189,7 +189,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         protected $moneda;
         protected $direccion;
         
-        public function __construct($orientation, $unit, $format, $unicode, $encoding, $diskcache, $pdfa, $cuenta = '', $nombre_cliente = '', $fecha_inicio = '', $fecha_fin = '', $moneda = 'BS', $direccion = '') { // Cambiado de VES a BS
+        public function __construct($orientation, $unit, $format, $unicode, $encoding, $diskcache, $pdfa, $cuenta = '', $nombre_cliente = '', $fecha_inicio = '', $fecha_fin = '', $moneda = 'BS', $direccion = '') {
             parent::__construct($orientation, $unit, $format, $unicode, $encoding, $diskcache, $pdfa);
             $this->cuenta = $cuenta;
             $this->nombre_cliente = $nombre_cliente;
@@ -205,31 +205,30 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
                 $this->Image($logo_path, 10, 8, 30, 0, 'JPG', '', 'T', false, 300, '', false, false, 0, false, false, false);
             }
             
-            $this->SetFont('helvetica', 'B', 9);
-            $this->SetY(10);
-            $this->Cell(0, 4, 'BANCO CARONI C.A. | RIF: J-12345678-9', 0, 1, 'C');
-            
+            // Fecha de emisión debajo del logo
             $this->SetFont('helvetica', '', 7);
-            $this->Cell(0, 4, 'PERÍODO: '.date('d/m/Y', strtotime($this->fecha_inicio)).' - '.date('d/m/Y', strtotime($this->fecha_fin)).' | Emisión: '.date('d/m/Y H:i'), 0, 1, 'C');
+            $this->SetY(18); // Posición debajo del logo
+            $this->Cell(0, 4, 'Emisión: '.date('d/m/Y H:i'), 0, 1, 'L');
             
-            $this->SetY(18);
+            // Información del cliente a la derecha
+            $this->SetY(15); // Misma altura que el logo
+            $this->SetX(120); // Posición a la derecha
             
-            $this->SetFont('helvetica', 'B', 7);
-            $this->Cell(20, 4, 'CLIENTE:', 0, 0, 'L');
-            $this->SetFont('helvetica', '', 7);
-            $this->Cell(0, 4, strtoupper($this->nombre_cliente), 0, 1, 'L');
+            // Nombre del cliente (en negrita y tamaño más grande)
+            $this->SetFont('helvetica', 'B', 10);
+            $this->Cell(0, 6, strtoupper($this->nombre_cliente), 0, 1, 'L');
+            $this->SetY($this->GetY()+2); // Pequeño espacio después del nombre
             
-            $this->SetFont('helvetica', 'B', 7);
-            $this->Cell(20, 4, 'CUENTA:', 0, 0, 'L');
-            $this->SetFont('helvetica', '', 7);
-            $formatted_account = formatAccountNumber($this->cuenta);
-            $this->Cell(0, 4, $formatted_account, 0, 1, 'L'); // Se quitó la moneda del encabezado
+            // Dirección (formato más compacto)
+            $this->SetFont('helvetica', '', 8);
+            $direccion_completa = strtoupper($this->direccion);
+            $this->MultiCell(0, 4, $direccion_completa, 0, 'L');
             
-            $this->SetFont('helvetica', 'B', 7);
-            $this->Cell(20, 4, 'DIRECCIÓN:', 0, 0, 'L');
-            $this->SetFont('helvetica', '', 7);
-            $this->Cell(0, 4, strtoupper($this->direccion), 0, 1, 'L');
+            // Número de cuenta (formato especial)
+            $this->SetFont('helvetica', 'B', 8);
+            $this->Cell(0, 6, 'NUMERO DE CUENTA: '.formatAccountNumber($this->cuenta), 0, 1, 'L');
             
+            // Línea separadora
             $this->SetLineWidth(0.1);
             $this->Line(10, $this->GetY()+2, $this->getPageWidth()-10, $this->GetY()+2);
             $this->SetY($this->GetY()+5);
