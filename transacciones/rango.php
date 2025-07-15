@@ -201,37 +201,36 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         
         public function Header() {
             $logo_path = realpath(__DIR__ . '/../assets/images/logo-banco.jpg');
+            
+            // Logo con posición ajustada (15mm desde arriba)
             if (file_exists($logo_path)) {
-                $this->Image($logo_path, 10, 8, 30, 0, 'JPG', '', 'T', false, 300, '', false, false, 0, false, false, false);
+                $this->Image($logo_path, 10, 15, 30, 0, 'JPG', '', 'T', false, 300, '', false, false, 0, false, false, false);
             }
             
-            // Fecha de emisión debajo del logo
+            // Fecha de emisión con posición ajustada (25mm desde arriba)
             $this->SetFont('helvetica', '', 7);
-            $this->SetY(18);
+            $this->SetY(25);
             $this->Cell(0, 4, 'Emisión: '.date('d/m/Y H:i'), 0, 1, 'L');
             
-            // Información del cliente a la derecha
-            $this->SetY(15);
+            // Información del cliente con posición ajustada (22mm desde arriba)
+            $this->SetY(22);
             $this->SetX(120);
-            
-            // Nombre del cliente (en negrita)
             $this->SetFont('helvetica', 'B', 10);
             $this->Cell(0, 6, strtoupper($this->nombre_cliente), 0, 1, 'L');
             
-            // Dirección
             $this->SetFont('helvetica', '', 8);
             $this->SetX(120);
             $this->MultiCell(80, 4, strtoupper($this->direccion), 0, 'L');
             
-            // Número de cuenta (sin negrita)
-            $this->SetFont('helvetica', '', 8); // Cambiado de 'B' a '' para quitar negrita
+            $this->SetFont('helvetica', '', 8);
             $this->SetX(120);
             $this->Cell(0, 6, 'NUMERO DE CUENTA: '.formatAccountNumber($this->cuenta), 0, 1, 'L');
             
-            // Línea separadora
+            // Línea divisoria con más espacio (8mm de separación)
             $this->SetLineWidth(0.1);
-            $this->Line(10, $this->GetY()+2, $this->getPageWidth()-10, $this->GetY()+2);
-            $this->SetY($this->GetY()+5);
+            $current_y = $this->GetY() + 8;
+            $this->Line(10, $current_y, $this->getPageWidth()-10, $current_y);
+            $this->SetY($current_y + 5);
         }
         
         public function Footer() {
@@ -242,15 +241,16 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     }
 
     $direccion_completa = trim(implode(' ', array_filter([$direccion1, $direccion2, $ciudad])));
-    $pdf = new MYPDF('P', 'mm', 'A4', true, 'UTF-8', false, false, $cuenta, $nombre_cliente, $fecha_inicio, $fecha_fin, $moneda, $direccion_completa);
     
+    // Configuración del PDF con márgenes ajustados
+    $pdf = new MYPDF('P', 'mm', 'A4', true, 'UTF-8', false, false, $cuenta, $nombre_cliente, $fecha_inicio, $fecha_fin, $moneda, $direccion_completa);
     $pdf->SetCreator('Banco Caroni');
     $pdf->SetAuthor('Sistema Bancario');
     $pdf->SetTitle('Estado de Cuenta '.$fecha_inicio.' al '.$fecha_fin);
     $pdf->setPrintHeader(true);
     $pdf->setPrintFooter(true);
-    $pdf->SetMargins(10, 35, 10);
-    $pdf->SetHeaderMargin(5);
+    $pdf->SetMargins(10, 40, 10); // Margen superior aumentado a 40mm
+    $pdf->SetHeaderMargin(10); // Header margin aumentado a 10mm
     $pdf->SetFooterMargin(5);
     $pdf->SetAutoPageBreak(TRUE, 15);
     $pdf->AddPage();
