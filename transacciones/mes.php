@@ -29,7 +29,7 @@ function formatAccountNumber($cuenta) {
     if (strlen($cuenta) == 20) {
         return substr($cuenta, 0, 4) . '-' . 
                substr($cuenta, 4, 4) . '-' . 
-               substr($cuenta, 8, 2) . '-' . 
+               substr($cuenta, 8, 2) . '.' . 
                substr($cuenta, 10, 10);
     }
     
@@ -181,39 +181,42 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         }
         
         public function Header() {
+            // Configuración del logo sin marco
             $logo_path = realpath(__DIR__ . '/../assets/images/logo-banco.jpg');
             if (file_exists($logo_path)) {
-                $this->Image($logo_path, 10, 8, 30, 0, 'JPG', '', 'T', false, 300, '', false, false, 0, false, false, false);
+                $this->Image($logo_path, 10, 8, 35, 0, 'JPG', '', 'T', false, 300, '', false, false, 0, false, false, false);
             }
             
-            $this->SetFont('helvetica', 'B', 9);
-            $this->SetY(10);
-            $this->Cell(0, 4, 'BANCO CARONI C.A. | RIF: J-12345678-9', 0, 1, 'C');
+            // Fecha de emisión
+            $this->SetFont('helvetica', 'B', 8);
+            $this->SetTextColor(80, 80, 80);
+            $this->SetFillColor(245, 245, 245);
+            $this->SetY(30);
+            $this->Cell(35, 6, 'EMITIDO: '.date('d/m/Y H:i'), 0, 1, 'C', 1);
             
-            $this->SetFont('helvetica', '', 7);
-            $this->Cell(0, 4, 'Emisión: '.date('d/m/Y H:i'), 0, 1, 'C');
+            // Línea separadora
+            $this->SetLineWidth(0.5);
+            $this->SetDrawColor(0, 51, 102);
+            $this->Line(10, 38, $this->getPageWidth()-10, 38);
             
-            $this->SetY(18);
+            // Información del cliente
+            $this->SetY(15);
+            $this->SetX(120);
+            $this->SetFont('helvetica', 'B', 10);
+            $this->Cell(0, 6, strtoupper($this->nombre_cliente), 0, 1, 'L');
             
-            $this->SetFont('helvetica', 'B', 7);
-            $this->Cell(20, 4, 'CLIENTE:', 0, 0, 'L');
-            $this->SetFont('helvetica', '', 7);
-            $this->Cell(0, 4, strtoupper($this->nombre_cliente), 0, 1, 'L');
+            // Dirección
+            $this->SetFont('helvetica', '', 8);
+            $this->SetX(120);
+            $this->MultiCell(80, 4, strtoupper($this->direccion), 0, 'L');
             
-            $this->SetFont('helvetica', 'B', 7);
-            $this->Cell(20, 4, 'CUENTA:', 0, 0, 'L');
-            $this->SetFont('helvetica', '', 7);
-            $formatted_account = formatAccountNumber($this->cuenta);
-            $this->Cell(0, 4, $formatted_account, 0, 1, 'L');
+            // Número de cuenta
+            $this->SetFont('helvetica', 'B', 8);
+            $this->SetX(120);
+            $this->Cell(0, 6, 'CUENTA: '.formatAccountNumber($this->cuenta), 0, 1, 'L');
             
-            $this->SetFont('helvetica', 'B', 7);
-            $this->Cell(20, 4, 'DIRECCIÓN:', 0, 0, 'L');
-            $this->SetFont('helvetica', '', 7);
-            $this->Cell(0, 4, strtoupper($this->direccion), 0, 1, 'L');
-            
-            $this->SetLineWidth(0.1);
-            $this->Line(10, $this->GetY()+2, $this->getPageWidth()-10, $this->GetY()+2);
-            $this->SetY($this->GetY()+5);
+            // Espacio después del encabezado
+            $this->SetY(42);
         }
         
         public function Footer() {
@@ -234,7 +237,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     $pdf->SetTitle('Estado de Cuenta '.$meses_espanol[$mes].' '.$anio);
     $pdf->setPrintHeader(true);
     $pdf->setPrintFooter(true);
-    $pdf->SetMargins(10, 35, 10);
+    $pdf->SetMargins(10, 45, 10);
     $pdf->SetHeaderMargin(5);
     $pdf->SetFooterMargin(5);
     $pdf->SetAutoPageBreak(TRUE, 15);
@@ -243,6 +246,26 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     
     $html = '
     <style>
+        .logo-container {
+            position: relative;
+            border: 1px solid #e0e0e0;
+            border-radius: 3px;
+            padding: 2px;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+        
+        .issue-date {
+            font-family: "Courier New", monospace;
+            font-size: 7.5pt;
+            font-weight: bold;
+            color: #003366;
+            background-color: #f8f8f8;
+            padding: 2px 5px;
+            border-radius: 3px;
+            border-left: 3px solid #003366;
+        }
+        
         .month-header {
             background-color: #f5f5f5;
             font-weight: bold;
@@ -253,6 +276,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             page-break-after: avoid;
             text-align: center;
         }
+        
         .saldo-inicial-mejorado {
             text-align: right;
             font-size: 7pt;
@@ -261,24 +285,29 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             border-bottom: 0.5px solid #e0e0e0;
             padding-bottom: 3px;
         }
+        
         .saldo-inicial-mejorado .label {
             font-weight: bold;
             color: #003366;
         }
+        
         .saldo-inicial-mejorado .value {
             font-weight: bold;
         }
+        
         .saldo-inicial-mejorado .fecha {
             color: #666666;
             font-size: 6pt;
             margin-left: 5px;
         }
+        
         .transaction-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 6pt;
             margin: 0 0 1mm 0;
         }
+        
         .transaction-table th {
             background-color: #003366;
             color: white;
@@ -287,11 +316,13 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             font-weight: bold;
             border: 0.1mm solid #003366;
         }
+        
         .transaction-table td {
             padding: 1.5mm;
             border: 0.1mm solid #e0e0e0;
             vertical-align: middle;
         }
+        
         .date-col { width: 10%; text-align: center; }
         .ref-col { width: 12%; text-align: center; font-size: 5.5pt; }
         .desc-col { width: 38%; font-size: 6pt; }
@@ -299,10 +330,12 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         .balance-col { width: 10%; text-align: right; }
         .debit { color: #cc0000; }
         .credit { color: #009900; }
+        
         .summary-section {
             page-break-before: avoid;
             margin-top: 5mm;
         }
+        
         .summary-header {
             background-color: #003366;
             color: white;
@@ -311,15 +344,18 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             font-size: 7pt;
             text-align: center;
         }
+        
         .summary-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 7pt;
         }
+        
         .summary-table td {
             padding: 1.5mm;
             border: 0.1mm solid #e0e0e0;
         }
+        
         .footer-note {
             font-size: 5.5pt;
             text-align: center;
@@ -328,13 +364,14 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             padding-top: 3mm;
             border-top: 0.2mm solid #f0f0f0;
         }
+        
         .account-number {
             font-family: "Courier New", monospace;
             letter-spacing: 0.5px;
             font-size: 6.5pt;
         }
     </style>
-    
+
     <div style="margin-bottom: 5px;">
         <div class="month-header">'.strtoupper($meses_espanol[$mes].' '.$anio).'</div>
         '.(!empty($cuenta) ? '
@@ -346,7 +383,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             <span class="fecha">(al '.date('d/m/Y', strtotime($fecha_inicio)).')</span>
         </div>' : '').'
     </div>
-    
+
     <table class="transaction-table">
         <thead>
             <tr>
@@ -365,7 +402,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             </tr>
         </thead>
         <tbody>';
-    
+
     if (!empty($transacciones)) {
         foreach ($transacciones as $trans) {
             $html .= '
@@ -391,7 +428,36 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
     $html .= '
         </tbody>
     </table>
-    
+
+    <div style="margin: 2mm 0 4mm 0; page-break-inside: avoid;">
+        <table style="width: 100%; border-collapse: separate; border-spacing: 1mm; font-size: 7pt;">
+            <tr>
+                <td style="width: 32%; text-align: center; padding: 1.5mm; background-color: #fff8f8; border: 0.3mm solid #ffdddd; border-radius: 1mm;">
+                    <div style="font-weight: bold; margin-bottom: 0.5mm; color: #990000;">DÉBITOS</div>
+                    <div style="font-size: 8pt; font-weight: bold; color: #cc0000;">'.number_format($total_debitos, 2, ',', '.').' '.$moneda.'</div>
+                    <div style="font-size: 5pt; color: #666; margin-top: 0.5mm;">'.count(array_filter($transacciones, function($t) { return $t['tipo'] == 'D'; })).' Movimientos ▼</div>
+                </td>
+                
+                <td style="width: 32%; text-align: center; padding: 1.5mm; background-color: #f8fff8; border: 0.3mm solid #ddffdd; border-radius: 1mm;">
+                    <div style="font-weight: bold; margin-bottom: 0.5mm; color: #009900;">CRÉDITOS</div>
+                    <div style="font-size: 8pt; font-weight: bold; color: #009900;">'.number_format($total_creditos, 2, ',', '.').' '.$moneda.'</div>
+                    <div style="font-size: 5pt; color: #666; margin-top: 0.5mm;">'.count(array_filter($transacciones, function($t) { return $t['tipo'] == 'C'; })).' Movimientos ▲</div>
+                </td>';
+                
+    if (!empty($cuenta)) {
+        $html .= '
+                <td style="width: 36%; text-align: center; padding: 1.5mm; background-color: #f8f8ff; border: 0.3mm solid '.getSaldoColor($saldo_final).'; border-radius: 1mm;">
+                    <div style="font-weight: bold; margin-bottom: 0.5mm; color: #003366;">SALDO FINAL</div>
+                    <div style="font-size: 9pt; font-weight: bold; color: '.getSaldoColor($saldo_final).';">'.number_format($saldo_final, 2, ',', '.').' '.$moneda.'</div>
+                    <div style="font-size: 5pt; color: #666; margin-top: 0.5mm;">'.date('d/m/Y', strtotime(end($transacciones)['fecha'])).'</div>
+                </td>';
+    }
+
+    $html .= '
+            </tr>
+        </table>
+    </div>
+
     <div class="summary-section">
         <div class="summary-header">
             RESUMEN GENERAL
