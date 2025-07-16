@@ -12,17 +12,37 @@ if (!isset($_GET['id'])) {
 $idCliente = $_GET['id'];
 
 try {
-    // En lugar de borrar físicamente, marcamos como inactivo
-    $sql = "UPDATE cumst SET cussts = 'I' WHERE cuscun = :id";
-    $stmt = $pdo->prepare($sql);
-    $stmt->bindParam(':id', $idCliente, PDO::PARAM_INT);
-    $stmt->execute();
+    $pdo = getPDO();
+    $pdo->beginTransaction();
+
+    // 1. Primero eliminamos las cuentas asociadas al cliente
+    $sqlCuentas = "DELETE FROM acmst WHERE acmcun = :id";
+    $stmtCuentas = $pdo->prepare($sqlCuentas);
+    $stmtCuentas->bindParam(':id', $idCliente, PDO::PARAM_INT);
+    $stmtCuentas->execute();
+
+    // 2. Eliminamos las transacciones relacionadas (opcional, según necesidades)
+    // Esto podría omitirse si se quiere mantener historial financiero
     
-    $_SESSION['mensaje'] = "Cliente desactivado correctamente";
+    // 3. Finalmente eliminamos el cliente
+    $sqlCliente = "DELETE FROM cumst WHERE cuscun = :id";
+    $stmtCliente = $pdo->prepare($sqlCliente);
+    $stmtCliente->bindParam(':id', $idCliente, PDO::PARAM_INT);
+    $stmtCliente->execute();
+
+    $pdo->commit();
+    
+    $_SESSION['mensaje'] = [
+        'tipo' => 'success',
+        'texto' => "Cliente y datos relacionados eliminados correctamente"
+    ];
     header("Location: lista.php");
     exit();
 } catch (PDOException $e) {
-    $_SESSION['error'] = "Error al desactivar el cliente: " . $e->getMessage();
+    if (isset($pdo)) {
+        $pdo->rollBack();
+    }
+    $_SESSION['error'] = "Error al eliminar el cliente: " . $e->getMessage();
     header("Location: lista.php");
     exit();
 }
