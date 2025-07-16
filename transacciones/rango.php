@@ -16,7 +16,7 @@ $total_general_creditos = 0;
 $total_count_debitos = 0;
 $total_count_creditos = 0;
 $moneda = 'BS';
-$direccion1 = $direccion2 = $ciudad = '';
+$direccion1 = $direccion2 = $direccion3 = $ciudad = '';
 
 function getMesEspanol($fecha) {
     $meses = [
@@ -47,7 +47,7 @@ function formatAccountNumber($cuenta) {
     if (strlen($cuenta) == 20) {
         return substr($cuenta, 0, 4) . '-' . 
                substr($cuenta, 4, 4) . '-' . 
-               substr($cuenta, 8, 2) . '.' . 
+               substr($cuenta, 8, 2) . '-' . 
                substr($cuenta, 10, 10);
     }
     
@@ -97,9 +97,14 @@ if (!empty($cuenta)) {
             }
         }
 
-        $stmt_cliente = $pdo->prepare("SELECT c.cusna1 AS nombre_completo, c.cusna2 AS direccion1, 
-                                      c.cusna3 AS direccion2, c.cuscty AS ciudad
-                                      FROM cumst c JOIN acmst a ON c.cuscun = a.acmcun
+        $stmt_cliente = $pdo->prepare("SELECT 
+                                      CONCAT(c.cusna1, ' ', IFNULL(c.cusna2, ''), ' ', c.cusln1, ' ', IFNULL(c.cusln2, '')) AS nombre_completo,
+                                      c.cusdir1 AS direccion1, 
+                                      c.cusdir2 AS direccion2, 
+                                      c.cusdir3 AS direccion3,
+                                      c.cuscty AS ciudad
+                                      FROM cumst c 
+                                      JOIN acmst a ON c.cuscun = a.acmcun
                                       WHERE a.acmacc = :cuenta");
         $stmt_cliente->execute([':cuenta' => $cuenta]);
         $cliente_info = $stmt_cliente->fetch(PDO::FETCH_ASSOC) ?? [];
@@ -107,6 +112,7 @@ if (!empty($cuenta)) {
         $nombre_cliente = $cliente_info['nombre_completo'] ?? 'CLIENTE NO ENCONTRADO';
         $direccion1 = $cliente_info['direccion1'] ?? '';
         $direccion2 = $cliente_info['direccion2'] ?? '';
+        $direccion3 = $cliente_info['direccion3'] ?? '';
         $ciudad = $cliente_info['ciudad'] ?? '';
         $nombre_cliente_web = $nombre_cliente;
     } catch(PDOException $e) {
@@ -246,7 +252,12 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         }
     }
 
-    $direccion_completa = trim(implode(' ', array_filter([$direccion1, $direccion2, $ciudad])));
+    $direccion_completa = trim(implode(', ', array_filter([
+        $cliente_info['direccion1'] ?? '',
+        $cliente_info['direccion2'] ?? '',
+        $cliente_info['direccion3'] ?? '',
+        $cliente_info['ciudad'] ?? ''
+    ])));
     $pdf = new MYPDF('P', 'mm', 'A4', true, 'UTF-8', false, false, $cuenta, $nombre_cliente, $fecha_inicio, $fecha_fin, $moneda, $direccion_completa);
     
     $pdf->SetCreator('Banco Caroni');
