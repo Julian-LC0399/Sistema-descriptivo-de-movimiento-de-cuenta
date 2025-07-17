@@ -6,6 +6,11 @@ require_once __DIR__ . '/../includes/database.php';
 // Verificar autenticación y permisos
 requireLogin();
 
+// Inicializar variables
+$cuentas = []; // Inicializar como array vacío para evitar errores
+$totalRegistros = 0;
+$totalPaginas = 1;
+
 // Solo administradores y gerentes pueden ver todas las cuentas
 $allowedRoles = ['admin', 'gerente'];
 $isAdminOrGerente = in_array($_SESSION['role'], $allowedRoles);
@@ -15,26 +20,22 @@ $porPagina = 10;
 $pagina = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
 $offset = ($pagina - 1) * $porPagina;
 
-// Filtros
+// Filtros (solo cliente y estado)
 $filtroCliente = isset($_GET['cliente']) ? trim($_GET['cliente']) : '';
-$filtroCuenta = isset($_GET['cuenta']) ? trim($_GET['cuenta']) : '';
 $filtroEstado = isset($_GET['estado']) ? $_GET['estado'] : '';
 
 try {
     $pdo = getPDO();
     
-    // Construir consulta base con los nuevos campos
+    // Construir consulta base
     $sql = "SELECT 
-                c.cuscun AS id_cliente,
-                a.acmacc AS cuenta, 
+                a.acmacc AS cuenta,
+                CONCAT(c.cusna1, ' ', c.cusln1) AS nombre_cliente,
                 a.acmbrn AS sucursal,
-                a.acmsta AS estado, 
-                a.acmopn AS fecha_apertura,
-                a.acmprd AS producto,
-                a.acmtyp AS tipo_cuenta,
                 a.acmccy AS moneda,
-                a.acmidn AS cedula,
-                c.cusna1 AS nombre_cliente
+                a.acmtyp AS tipo_cuenta,
+                a.acmprd AS producto,
+                a.acmsta AS estado
             FROM acmst a
             JOIN cumst c ON a.acmcun = c.cuscun";
     
@@ -48,19 +49,14 @@ try {
         $params[':user_id'] = $_SESSION['user_id'];
     }
     
-    // Aplicar filtros de búsqueda
+    // Aplicar filtros de búsqueda (versión corregida)
     if ($filtroCliente !== '') {
-        $where[] = "(c.cusna1 LIKE :cliente OR c.cuscun = :cliente_num)";
+        $where[] = "(CONCAT(c.cusna1, ' ', c.cusln1) LIKE :cliente OR c.cuscun = :cliente_num)";
         $params[':cliente'] = "%$filtroCliente%";
         $params[':cliente_num'] = $filtroCliente;
     }
     
-    if ($filtroCuenta !== '') {
-        $where[] = "a.acmacc LIKE :cuenta";
-        $params[':cuenta'] = "%$filtroCuenta%";
-    }
-    
-    if ($filtroEstado !== '' && in_array($filtroEstado, ['A', 'I'])) {
+    if ($filtroEstado !== '') {
         $where[] = "a.acmsta = :estado";
         $params[':estado'] = $filtroEstado;
     }
@@ -98,6 +94,7 @@ try {
 } catch (PDOException $e) {
     error_log("Error al listar cuentas: " . $e->getMessage());
     $_SESSION['error'] = "Ocurrió un error al recuperar las cuentas. Por favor intente más tarde.";
+    $cuentas = []; // Asegurar que $cuentas es un array
 }
 ?>
 <!DOCTYPE html>
@@ -117,7 +114,7 @@ try {
     <main class="container mt-4">
         <h2 class="mb-4">Listado de Cuentas Bancarias</h2>
         
-        <!-- Mensajes flotantes (igual que lista.php) -->
+        <!-- Mensajes flotantes -->
         <?php if (isset($_SESSION['mensaje'])): ?>
             <div class="mensaje-flotante mensaje-exito">
                 <div class="contenido-mensaje">
@@ -138,7 +135,7 @@ try {
             <?php unset($_SESSION['error']); ?>
         <?php endif; ?>
 
-        <!-- Filtros -->
+        <!-- Filtros simplificados -->
         <div class="filtros-card mb-4">
             <div class="filtros-header">
                 <h3 class="filtros-title">
@@ -149,19 +146,15 @@ try {
                 <div class="form-group">
                     <label for="cliente" class="form-label">Cliente</label>
                     <input type="text" class="form-control" id="cliente" name="cliente" 
-                           value="<?php echo htmlspecialchars($filtroCliente); ?>" placeholder="Nombre o ID">
-                </div>
-                <div class="form-group">
-                    <label for="cuenta" class="form-label">Número de Cuenta</label>
-                    <input type="text" class="form-control" id="cuenta" name="cuenta" 
-                           value="<?php echo htmlspecialchars($filtroCuenta); ?>" placeholder="Número de cuenta">
+                           value="<?php echo htmlspecialchars($filtroCliente); ?>" 
+                           placeholder="Nombre, apellido o ID de cliente">
                 </div>
                 <div class="form-group">
                     <label for="estado" class="form-label">Estado</label>
                     <select class="form-select" id="estado" name="estado">
                         <option value="">Todos</option>
-                        <option value="A" <?php echo $filtroEstado === 'A' ? 'selected' : ''; ?>>Activo</option>
-                        <option value="I" <?php echo $filtroEstado === 'I' ? 'selected' : ''; ?>>Inactivo</option>
+                        <option value="A" <?= $filtroEstado === 'A' ? 'selected' : '' ?>>Activo</option>
+                        <option value="I" <?= $filtroEstado === 'I' ? 'selected' : '' ?>>Inactivo</option>
                     </select>
                 </div>
                 <div class="filtros-actions">
@@ -181,16 +174,13 @@ try {
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>ID Cliente</th>
                             <th>Número de Cuenta</th>
                             <th>Cliente</th>
-                            <th>Cédula</th>
-                            <th>Producto</th>
-                            <th>Tipo de Cuenta</th>
-                            <th>Moneda</th>
                             <th>Sucursal</th>
+                            <th>Moneda</th>
+                            <th>Tipo de Cuenta</th>
+                            <th>Producto</th>
                             <th>Estado</th>
-                            <th>Fecha Apertura</th>
                             <?php if ($isAdminOrGerente): ?>
                                 <th>Acciones</th>
                             <?php endif; ?>
@@ -199,7 +189,7 @@ try {
                     <tbody>
                         <?php if (empty($cuentas)): ?>
                             <tr>
-                                <td colspan="<?php echo $isAdminOrGerente ? 11 : 10; ?>" class="text-center py-4">
+                                <td colspan="<?php echo $isAdminOrGerente ? 8 : 7; ?>" class="text-center py-4">
                                     <i class="bi bi-exclamation-circle fs-4"></i>
                                     <p class="mt-2">No se encontraron cuentas</p>
                                 </td>
@@ -207,20 +197,17 @@ try {
                         <?php else: ?>
                             <?php foreach ($cuentas as $cuenta): ?>
                                 <tr>
-                                    <td><?php echo htmlspecialchars($cuenta['id_cliente']); ?></td>
                                     <td><?php echo htmlspecialchars($cuenta['cuenta']); ?></td>
                                     <td><?php echo htmlspecialchars($cuenta['nombre_cliente']); ?></td>
-                                    <td><?php echo htmlspecialchars($cuenta['cedula']); ?></td>
-                                    <td><?php echo htmlspecialchars($cuenta['producto']); ?></td>
-                                    <td><?php echo htmlspecialchars($cuenta['tipo_cuenta']); ?></td>
-                                    <td><?php echo htmlspecialchars($cuenta['moneda']); ?></td>
                                     <td><?php echo htmlspecialchars($cuenta['sucursal']); ?></td>
+                                    <td><?php echo htmlspecialchars($cuenta['moneda']); ?></td>
+                                    <td><?php echo htmlspecialchars($cuenta['tipo_cuenta']); ?></td>
+                                    <td><?php echo htmlspecialchars($cuenta['producto']); ?></td>
                                     <td>
                                         <span class="badge <?php echo $cuenta['estado'] === 'A' ? 'bg-success' : 'bg-secondary'; ?>">
                                             <?php echo $cuenta['estado'] === 'A' ? 'Activo' : 'Inactivo'; ?>
                                         </span>
                                     </td>
-                                    <td><?php echo date('d/m/Y', strtotime($cuenta['fecha_apertura'])); ?></td>
                                     <?php if ($isAdminOrGerente): ?>
                                         <td>
                                             <div class="d-flex gap-2">
@@ -231,7 +218,6 @@ try {
                                                 </a>
                                                 <button class="btn btn-sm btn-danger btn-action btn-borrar" 
                                                         data-cuenta="<?php echo htmlspecialchars($cuenta['cuenta']); ?>" 
-                                                        data-nombre="<?php echo htmlspecialchars($cuenta['nombre_cliente']); ?>"
                                                         title="Eliminar cuenta">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
@@ -301,15 +287,14 @@ try {
     document.querySelectorAll('.btn-borrar').forEach(btn => {
         btn.addEventListener('click', function() {
             const cuenta = this.getAttribute('data-cuenta');
-            const nombre = this.getAttribute('data-nombre');
             
-            if (confirm(`¿Está seguro que desea borrar la cuenta ${cuenta} del cliente ${nombre}?\n\nEsta acción no se puede deshacer.`)) {
+            if (confirm(`¿Está seguro que desea borrar la cuenta ${cuenta}?\n\nEsta acción no se puede deshacer.`)) {
                 window.location.href = `borrar.php?id=${encodeURIComponent(cuenta)}`;
             }
         });
     });
     
-    // Cerrar mensajes automáticamente (como en lista.php)
+    // Cerrar mensajes automáticamente
     setTimeout(() => {
         const mensajes = document.querySelectorAll('.mensaje-flotante');
         mensajes.forEach(mensaje => {

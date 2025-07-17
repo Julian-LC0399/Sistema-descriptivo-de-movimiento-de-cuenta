@@ -11,31 +11,40 @@ $clientesPorPagina = 10;
 $paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
 $offset = ($paginaActual - 1) * $clientesPorPagina;
 
-// Parámetros de búsqueda
+// Parámetro de búsqueda general
 $busqueda = isset($_GET['busqueda']) ? trim($_GET['busqueda']) : '';
-$campoBusqueda = isset($_GET['campo']) ? $_GET['campo'] : 'cusna1';
 
-// Consulta base
-$sql = "SELECT cuscun, cusna1, cusna2, cuscty, cuseml, cusphn FROM cumst WHERE cussts = 'A'";
+// Consulta base (incluyendo cusphh - teléfono de habitación)
+$sql = "SELECT cuscun, cusidn, cusna1, cusna2, cusln1, cusln2, cuscty, cuseml, cusphn, cusphh, cusemp, cusjob FROM cumst WHERE cussts = 'A'";
 $params = [];
 $contarSql = "SELECT COUNT(*) as total FROM cumst WHERE cussts = 'A'";
 
 // Aplicar filtros de búsqueda
 if (!empty($busqueda)) {
-    $sql .= " AND $campoBusqueda LIKE :busqueda";
-    $contarSql .= " AND $campoBusqueda LIKE :busqueda";
-    $params[':busqueda'] = "%$busqueda%";
+    $searchTerm = "%$busqueda%";
+    $sql .= " AND (cusna1 LIKE :busqueda_nombre OR cusln1 LIKE :busqueda_apellido OR cusidn LIKE :busqueda_cedula)";
+    $contarSql .= " AND (cusna1 LIKE :busqueda_nombre OR cusln1 LIKE :busqueda_apellido OR cusidn LIKE :busqueda_cedula)";
+    $params[':busqueda_nombre'] = $searchTerm;
+    $params[':busqueda_apellido'] = $searchTerm;
+    $params[':busqueda_cedula'] = $searchTerm;
 }
+
+// Obtener conexión PDO
+$pdo = getPDO();
 
 // Contar total de clientes
 try {
-    $pdo = getPDO();
     $stmt = $pdo->prepare($contarSql);
-    $stmt->execute($params);
-    $totalClientes = $stmt->fetch()['total'];
+    foreach ($params as $key => $value) {
+        $stmt->bindValue($key, $value);
+    }
+    $stmt->execute();
+    $totalClientes = $stmt->fetchColumn();
     $totalPaginas = ceil($totalClientes / $clientesPorPagina);
 } catch (PDOException $e) {
     $_SESSION['error'] = "Error al contar clientes: " . $e->getMessage();
+    $totalClientes = 0;
+    $totalPaginas = 1;
 }
 
 // Consulta para obtener clientes con paginación
@@ -45,29 +54,19 @@ $params[':offset'] = $offset;
 
 try {
     $stmt = $pdo->prepare($sql);
-    foreach ($params as $key => &$val) {
+    foreach ($params as $key => $value) {
         if ($key === ':limit' || $key === ':offset') {
-            $stmt->bindParam($key, $val, PDO::PARAM_INT);
+            $stmt->bindValue($key, $value, PDO::PARAM_INT);
         } else {
-            $stmt->bindParam($key, $val);
+            $stmt->bindValue($key, $value);
         }
     }
     $stmt->execute();
-    $clientes = $stmt->fetchAll();
+    $clientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $_SESSION['error'] = "Error al obtener clientes: " . $e->getMessage();
     $clientes = [];
 }
-
-// Campos disponibles para búsqueda
-$camposBusqueda = [
-    'cusna1' => 'Nombre',
-    'cusna2' => 'Dirección',
-    'cuscty' => 'Ciudad',
-    'cuseml' => 'Email',
-    'cusphn' => 'Teléfono',
-    'cuscun' => 'ID Cliente'
-];
 ?>
 
 <!DOCTYPE html>
@@ -107,32 +106,22 @@ $camposBusqueda = [
             <?php unset($_SESSION['error']); ?>
         <?php endif; ?>
 
-        <!-- Filtros -->
+        <!-- Filtros simplificados -->
         <div class="filtros-card mb-4">
             <div class="filtros-header">
                 <h3 class="filtros-title">
-                    <i class="bi bi-funnel"></i> Filtros de Búsqueda
+                    <i class="bi bi-funnel"></i> Buscar Clientes
                 </h3>
             </div>
             <form method="get" class="filtros-grid">
                 <div class="form-group">
-                    <label for="busqueda" class="form-label">Buscar</label>
+                    <label for="busqueda" class="form-label">Buscar por nombre, apellido o cédula</label>
                     <input type="text" class="form-control" id="busqueda" name="busqueda" 
-                           value="<?= htmlspecialchars($busqueda) ?>" placeholder="Término de búsqueda">
-                </div>
-                <div class="form-group">
-                    <label for="campo" class="form-label">Campo</label>
-                    <select name="campo" class="form-select" id="campo">
-                        <?php foreach ($camposBusqueda as $valor => $texto): ?>
-                            <option value="<?= htmlspecialchars($valor) ?>" <?= $campoBusqueda == $valor ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($texto) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+                           value="<?= htmlspecialchars($busqueda) ?>" placeholder="Ingrese nombre, apellido o cédula">
                 </div>
                 <div class="filtros-actions">
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-search"></i> Filtrar
+                        <i class="bi bi-search"></i> Buscar
                     </button>
                     <a href="lista.php" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-counterclockwise"></i> Limpiar
@@ -141,25 +130,28 @@ $camposBusqueda = [
             </form>
         </div>
         
-        <!-- Tabla de clientes -->
+        <!-- Tabla de clientes (con teléfono de habitación) -->
         <div class="table-container">
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead>
                         <tr>
                             <th>ID Cliente</th>
-                            <th>Nombre</th>
-                            <th>Dirección</th>
+                            <th>Cédula</th>
+                            <th>Nombre Completo</th>
+                            <th>Empresa</th>
+                            <th>Cargo</th>
                             <th>Ciudad</th>
                             <th>Email</th>
-                            <th>Teléfono</th>
+                            <th>Teléfono Móvil</th>
+                            <th>Teléfono Habitación</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($clientes)): ?>
                             <tr>
-                                <td colspan="7" class="text-center py-4">
+                                <td colspan="10" class="text-center py-4">
                                     <i class="bi bi-exclamation-circle fs-4"></i>
                                     <p class="mt-2">No se encontraron clientes</p>
                                 </td>
@@ -168,11 +160,21 @@ $camposBusqueda = [
                             <?php foreach ($clientes as $cliente): ?>
                                 <tr>
                                     <td><?= htmlspecialchars($cliente['cuscun']) ?></td>
-                                    <td><?= htmlspecialchars($cliente['cusna1']) ?></td>
-                                    <td><?= htmlspecialchars($cliente['cusna2']) ?></td>
+                                    <td><?= htmlspecialchars($cliente['cusidn']) ?></td>
+                                    <td>
+                                        <?= htmlspecialchars(
+                                            $cliente['cusna1'] . ' ' . 
+                                            ($cliente['cusna2'] ? $cliente['cusna2'] . ' ' : '') . 
+                                            $cliente['cusln1'] . ' ' . 
+                                            ($cliente['cusln2'] ? $cliente['cusln2'] : '')
+                                        ) ?>
+                                    </td>
+                                    <td><?= htmlspecialchars($cliente['cusemp'] ?? 'N/A') ?></td>
+                                    <td><?= htmlspecialchars($cliente['cusjob'] ?? 'N/A') ?></td>
                                     <td><?= htmlspecialchars($cliente['cuscty']) ?></td>
                                     <td><?= htmlspecialchars($cliente['cuseml']) ?></td>
                                     <td><?= htmlspecialchars($cliente['cusphn']) ?></td>
+                                    <td><?= htmlspecialchars($cliente['cusphh'] ?? 'N/A') ?></td>
                                     <td>
                                         <div class="d-flex gap-2">
                                             <a href="editar.php?id=<?= urlencode($cliente['cuscun']) ?>" 
