@@ -4,45 +4,39 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/database.php';
 requireLogin();
 
+// Verificar que se recibió el ID del cliente
 if (!isset($_GET['id'])) {
-    header("Location: lista.php?error=ID+de+cliente+no+proporcionado");
-    exit();
+    $_SESSION['error'] = "No se especificó el cliente a desactivar";
+    header('Location: lista.php');
+    exit;
 }
 
 $idCliente = $_GET['id'];
 
+// Obtener conexión PDO
+$pdo = getPDO();
+
 try {
-    $pdo = getPDO();
-    $pdo->beginTransaction();
+    // Actualizar el estado del cliente a 'I' (Inactivo) en lugar de borrarlo
+    $sql = "UPDATE cumst SET cussts = 'I' WHERE cuscun = :id";
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindParam(':id', $idCliente, PDO::PARAM_STR);
+    $stmt->execute();
 
-    // 1. Primero eliminamos las cuentas asociadas al cliente
-    $sqlCuentas = "DELETE FROM acmst WHERE acmcun = :id";
-    $stmtCuentas = $pdo->prepare($sqlCuentas);
-    $stmtCuentas->bindParam(':id', $idCliente, PDO::PARAM_INT);
-    $stmtCuentas->execute();
-
-    // 2. Eliminamos las transacciones relacionadas (opcional, según necesidades)
-    // Esto podría omitirse si se quiere mantener historial financiero
-    
-    // 3. Finalmente eliminamos el cliente
-    $sqlCliente = "DELETE FROM cumst WHERE cuscun = :id";
-    $stmtCliente = $pdo->prepare($sqlCliente);
-    $stmtCliente->bindParam(':id', $idCliente, PDO::PARAM_INT);
-    $stmtCliente->execute();
-
-    $pdo->commit();
-    
-    $_SESSION['mensaje'] = [
-        'tipo' => 'success',
-        'texto' => "Cliente y datos relacionados eliminados correctamente"
-    ];
-    header("Location: lista.php");
-    exit();
-} catch (PDOException $e) {
-    if (isset($pdo)) {
-        $pdo->rollBack();
+    // Verificar si se actualizó algún registro
+    if ($stmt->rowCount() > 0) {
+        $_SESSION['mensaje'] = [
+            'texto' => 'Cliente desactivado correctamente',
+            'tipo' => 'exito'
+        ];
+    } else {
+        $_SESSION['error'] = "No se encontró el cliente o ya estaba desactivado";
     }
-    $_SESSION['error'] = "Error al eliminar el cliente: " . $e->getMessage();
-    header("Location: lista.php");
-    exit();
+} catch (PDOException $e) {
+    $_SESSION['error'] = "Error al desactivar el cliente: " . $e->getMessage();
 }
+
+// Redirigir de vuelta a la lista de clientes
+header('Location: lista.php');
+exit;
+?>
