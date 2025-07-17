@@ -13,21 +13,11 @@ if (!in_array($_SESSION['role'], $allowedRoles)) {
     exit;
 }
 
-// Obtener lista de clientes, sucursales y productos bancarios
+// Obtener lista de clientes activos y sucursales
 try {
     $pdo = getPDO();
-    $clientes = $pdo->query("SELECT cuscun, cusna1 AS nombre FROM cumst WHERE cussts = 'A' ORDER BY cusna1")->fetchAll(PDO::FETCH_ASSOC);
+    $clientes = $pdo->query("SELECT cuscun, CONCAT(cusna1, ' ', cusln1) AS nombre FROM cumst WHERE cussts = 'A' ORDER BY cusna1")->fetchAll(PDO::FETCH_ASSOC);
     $sucursales = $pdo->query("SELECT DISTINCT acmbrn FROM acmst ORDER BY acmbrn")->fetchAll(PDO::FETCH_ASSOC);
-    $productos = $pdo->query("SELECT DISTINCT acmprd FROM acmst ORDER BY acmprd")->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Monedas disponibles
-    $monedas = [
-        ['codigo' => 'BS', 'nombre' => 'Bolívar'],
-        ['codigo' => 'USD', 'nombre' => 'Dólar Estadounidense'],
-        ['codigo' => 'EUR', 'nombre' => 'Euro'],
-        ['codigo' => 'COP', 'nombre' => 'Peso Colombiano'],
-        ['codigo' => 'BRL', 'nombre' => 'Real Brasileño']
-    ];
 } catch (PDOException $e) {
     $error = "Error al obtener datos: " . $e->getMessage();
     error_log($error);
@@ -73,17 +63,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Validar y sanitizar datos
         $clienteId = filter_input(INPUT_POST, 'cliente_id', FILTER_VALIDATE_INT);
-        $estado = ($_POST['estado'] === 'A') ? 'A' : 'I';
-        $fechaApertura = $_POST['fecha_apertura'] ?? date('Y-m-d');
         $sucursal = filter_input(INPUT_POST, 'sucursal', FILTER_VALIDATE_INT);
         $productoBancario = filter_input(INPUT_POST, 'producto_bancario', FILTER_VALIDATE_INT);
-        $tipoCuenta = substr(trim($_POST['tipo_cuenta'] ?? ''), 0, 2);
-        $claseCuenta = substr(trim($_POST['clase_cuenta'] ?? ''), 0, 1);
         $moneda = in_array($_POST['moneda'] ?? '', ['BS', 'USD', 'EUR', 'COP', 'BRL']) ? $_POST['moneda'] : 'BS';
-        $cedula = substr(trim($_POST['cedula'] ?? ''), 0, 20);
+        $tipoCuenta = in_array($_POST['tipo_cuenta'] ?? '', ['CA', 'CC']) ? $_POST['tipo_cuenta'] : 'CA';
+        $claseCuenta = in_array($_POST['clase_cuenta'] ?? '', ['N', 'J', 'V']) ? $_POST['clase_cuenta'] : 'N';
+        $estado = ($_POST['estado'] === 'A') ? 'A' : 'I';
+        $fechaApertura = $_POST['fecha_apertura'] ?? date('Y-m-d');
 
         // Validaciones básicas
-        if (!$clienteId || !$sucursal || !$productoBancario || empty($cedula)) {
+        if (!$clienteId || !$sucursal || !$productoBancario) {
             throw new Exception("Todos los campos obligatorios deben ser completados");
         }
 
@@ -109,21 +98,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Insertar cuenta principal
         $sqlCuenta = "INSERT INTO acmst 
-                     (acmacc, acmcun, acmidn, acmbrn, acmccy, acmprd, acmtyp, acmcls, acmlsb, acmbal, acmavl, acmsta, acmopn) 
+                     (acmacc, acmcun, acmbrn, acmccy, acmprd, acmtyp, acmcls, acmlsb, acmbal, acmavl, acmsta, acmopn, acmlau, acmlut) 
                      VALUES 
-                     (:cuenta, :cliente, :cedula, :sucursal, :moneda, :producto, :tipo, :clase, 0, 0, 0, :estado, :fecha)";
+                     (:cuenta, :cliente, :sucursal, :moneda, :producto, :tipo, :clase, 0, 0, 0, :estado, :fecha, :usuario, NOW())";
         
         $paramsCuenta = [
             ':cuenta' => $numeroCuenta,
             ':cliente' => $clienteId,
-            ':cedula' => $cedula,
             ':sucursal' => $sucursal,
             ':moneda' => $moneda,
             ':producto' => $productoBancario,
             ':tipo' => $tipoCuenta,
             ':clase' => $claseCuenta,
             ':estado' => $estado,
-            ':fecha' => $fechaApertura
+            ':fecha' => $fechaApertura,
+            ':usuario' => $_SESSION['username'] ?? 'SISTEMA'
         ];
         
         $stmt = $pdo->prepare($sqlCuenta);
@@ -227,12 +216,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label for="cedula" class="form-label required-field">Cédula</label>
-                            <input type="text" class="form-control" id="cedula" name="cedula" 
-                                   value="<?php echo isset($_POST['cedula']) ? htmlspecialchars($_POST['cedula']) : ''; ?>" 
-                                   required maxlength="20" placeholder="Ej: V12345678">
-                        </div>
-                        <div class="col-md-4 mb-3">
                             <label for="sucursal" class="form-label required-field">Sucursal</label>
                             <select class="form-select" id="sucursal" name="sucursal" required>
                                 <option value="">Seleccione sucursal</option>
@@ -245,29 +228,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
+                            <label for="moneda" class="form-label required-field">Moneda</label>
+                            <select class="form-select" id="moneda" name="moneda" required>
+                                <option value="BS" <?php echo (!isset($_POST['moneda']) || $_POST['moneda'] === 'BS') ? 'selected' : ''; ?>>BS - Bolívar</option>
+                                <option value="USD" <?php echo (isset($_POST['moneda']) && $_POST['moneda'] === 'USD') ? 'selected' : ''; ?>>USD - Dólar</option>
+                                <option value="EUR" <?php echo (isset($_POST['moneda']) && $_POST['moneda'] === 'EUR') ? 'selected' : ''; ?>>EUR - Euro</option>
+                                <option value="COP" <?php echo (isset($_POST['moneda']) && $_POST['moneda'] === 'COP') ? 'selected' : ''; ?>>COP - Peso Colombiano</option>
+                                <option value="BRL" <?php echo (isset($_POST['moneda']) && $_POST['moneda'] === 'BRL') ? 'selected' : ''; ?>>BRL - Real Brasileño</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
                             <label for="producto_bancario" class="form-label required-field">Producto Bancario</label>
                             <select class="form-select" id="producto_bancario" name="producto_bancario" required>
                                 <option value="">Seleccione producto</option>
-                                <?php foreach ($productos as $prod): ?>
-                                    <option value="<?php echo htmlspecialchars($prod['acmprd']); ?>"
-                                        <?php echo (isset($_POST['producto_bancario']) && $_POST['producto_bancario'] == $prod['acmprd']) ? 'selected' : ''; ?>>
-                                        Producto <?php echo htmlspecialchars($prod['acmprd']); ?>)
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label for="moneda" class="form-label required-field">Moneda</label>
-                            <select class="form-select" id="moneda" name="moneda" required>
-                                <?php foreach ($monedas as $m): ?>
-                                    <option value="<?php echo htmlspecialchars($m['codigo']); ?>"
-                                        <?php echo (isset($_POST['moneda']) && $_POST['moneda'] == $m['codigo']) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($m['codigo']); ?> - <?php echo htmlspecialchars($m['nombre']); ?>)
-                                    </option>
-                                <?php endforeach; ?>
+                                <option value="10" <?php echo (isset($_POST['producto_bancario']) && $_POST['producto_bancario'] == '10') ? 'selected' : ''; ?>>10</option>
+                                <option value="20" <?php echo (isset($_POST['producto_bancario']) && $_POST['producto_bancario'] == '20') ? 'selected' : ''; ?>>20</option>
+                                <option value="30" <?php echo (isset($_POST['producto_bancario']) && $_POST['producto_bancario'] == '30') ? 'selected' : ''; ?>>30</option>
+                                <option value="40" <?php echo (isset($_POST['producto_bancario']) && $_POST['producto_bancario'] == '40') ? 'selected' : ''; ?>>40</option>
+                                <option value="50" <?php echo (isset($_POST['producto_bancario']) && $_POST['producto_bancario'] == '50') ? 'selected' : ''; ?>>50</option>
                             </select>
                         </div>
                     </div>
@@ -281,38 +259,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="tipo_cuenta" class="form-label required-field">Tipo de Cuenta</label>
                             <select class="form-select" id="tipo_cuenta" name="tipo_cuenta" required>
                                 <option value="CA" <?php echo (!isset($_POST['tipo_cuenta']) || $_POST['tipo_cuenta'] === 'CA') ? 'selected' : ''; ?>>CA - Ahorros</option>
                                 <option value="CC" <?php echo (isset($_POST['tipo_cuenta']) && $_POST['tipo_cuenta'] === 'CC') ? 'selected' : ''; ?>>CC - Corriente</option>
-                                <option value="PL" <?php echo (isset($_POST['tipo_cuenta']) && $_POST['tipo_cuenta'] === 'PL') ? 'selected' : ''; ?>>PL - Préstamo</option>
-                                <option value="TD" <?php echo (isset($_POST['tipo_cuenta']) && $_POST['tipo_cuenta'] === 'TD') ? 'selected' : ''; ?>>TD - Depósito</option>
                             </select>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="clase_cuenta" class="form-label required-field">Clase de Cuenta</label>
                             <select class="form-select" id="clase_cuenta" name="clase_cuenta" required>
                                 <option value="N" <?php echo (!isset($_POST['clase_cuenta']) || $_POST['clase_cuenta'] === 'N') ? 'selected' : ''; ?>>N - Normal</option>
                                 <option value="J" <?php echo (isset($_POST['clase_cuenta']) && $_POST['clase_cuenta'] === 'J') ? 'selected' : ''; ?>>J - Jurídica</option>
-                                <option value="E" <?php echo (isset($_POST['clase_cuenta']) && $_POST['clase_cuenta'] === 'E') ? 'selected' : ''; ?>>E - Extranjera</option>
                                 <option value="V" <?php echo (isset($_POST['clase_cuenta']) && $_POST['clase_cuenta'] === 'V') ? 'selected' : ''; ?>>V - VIP</option>
                             </select>
                         </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="estado" class="form-label required-field">Estado</label>
                             <select class="form-select" id="estado" name="estado" required>
                                 <option value="A" <?php echo (!isset($_POST['estado']) || $_POST['estado'] === 'A') ? 'selected' : ''; ?>>Activo</option>
                                 <option value="I" <?php echo (isset($_POST['estado']) && $_POST['estado'] === 'I') ? 'selected' : ''; ?>>Inactivo</option>
                             </select>
                         </div>
+                    </div>
+                    
+                    <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="fecha_apertura" class="form-label required-field">Fecha Apertura</label>
                             <input type="date" class="form-control" id="fecha_apertura" name="fecha_apertura" 
                                    value="<?php echo isset($_POST['fecha_apertura']) ? htmlspecialchars($_POST['fecha_apertura']) : date('Y-m-d'); ?>" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Saldo Inicial</label>
+                            <div class="form-control-plaintext bg-light p-2 rounded">
+                                0.00 (Se establecerá automáticamente)
+                            </div>
                         </div>
                     </div>
                 </div>
