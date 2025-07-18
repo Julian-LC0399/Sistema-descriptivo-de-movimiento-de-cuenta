@@ -22,7 +22,7 @@ $offset = ($pagina - 1) * $porPagina;
 
 // Filtros (solo cliente y estado)
 $filtroCliente = isset($_GET['cliente']) ? trim($_GET['cliente']) : '';
-$filtroEstado = isset($_GET['estado']) ? $_GET['estado'] : '';
+$filtroEstado = isset($_GET['estado']) ? $_GET['estado'] : 'A'; // Cambiado a 'A' por defecto
 
 try {
     $pdo = getPDO();
@@ -42,23 +42,25 @@ try {
     $where = [];
     $params = [];
     
-    // Si no es admin/gerente, solo mostrar cuentas del usuario actual
+    // Si no es admin/gerente, solo mostrar cuentas del usuario actual y solo activas
     if (!$isAdminOrGerente) {
         $sql .= " JOIN users u ON c.cuscun = u.cliente_id";
         $where[] = "u.id = :user_id";
         $params[':user_id'] = $_SESSION['user_id'];
+        $where[] = "a.acmsta = 'A'"; // Solo mostrar activas para usuarios normales
+    } else {
+        // Para admin/gerente, aplicar filtro de estado si está seleccionado
+        if ($filtroEstado !== '') {
+            $where[] = "a.acmsta = :estado";
+            $params[':estado'] = $filtroEstado;
+        }
     }
     
-    // Aplicar filtros de búsqueda (versión corregida)
+    // Aplicar filtros de búsqueda
     if ($filtroCliente !== '') {
         $where[] = "(CONCAT(c.cusna1, ' ', c.cusln1) LIKE :cliente OR c.cuscun = :cliente_num)";
         $params[':cliente'] = "%$filtroCliente%";
         $params[':cliente_num'] = $filtroCliente;
-    }
-    
-    if ($filtroEstado !== '') {
-        $where[] = "a.acmsta = :estado";
-        $params[':estado'] = $filtroEstado;
     }
     
     // Combinar condiciones WHERE
@@ -152,9 +154,13 @@ try {
                 <div class="form-group">
                     <label for="estado" class="form-label">Estado</label>
                     <select class="form-select" id="estado" name="estado">
-                        <option value="">Todos</option>
+                        <?php if ($isAdminOrGerente): ?>
+                            <option value="">Todos</option>
+                        <?php endif; ?>
                         <option value="A" <?= $filtroEstado === 'A' ? 'selected' : '' ?>>Activo</option>
-                        <option value="I" <?= $filtroEstado === 'I' ? 'selected' : '' ?>>Inactivo</option>
+                        <?php if ($isAdminOrGerente): ?>
+                            <option value="I" <?= $filtroEstado === 'I' ? 'selected' : '' ?>>Inactivo</option>
+                        <?php endif; ?>
                     </select>
                 </div>
                 <div class="filtros-actions">
@@ -216,11 +222,13 @@ try {
                                                    title="Editar cuenta">
                                                     <i class="bi bi-pencil-square"></i>
                                                 </a>
-                                                <button class="btn btn-sm btn-danger btn-action btn-borrar" 
-                                                        data-cuenta="<?php echo htmlspecialchars($cuenta['cuenta']); ?>" 
-                                                        title="Eliminar cuenta">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
+                                                <?php if ($cuenta['estado'] === 'A'): ?>
+                                                    <button class="btn btn-sm btn-danger btn-action btn-borrar" 
+                                                            data-cuenta="<?php echo htmlspecialchars($cuenta['cuenta']); ?>" 
+                                                            title="Eliminar cuenta">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                <?php endif; ?>
                                             </div>
                                         </td>
                                     <?php endif; ?>
@@ -288,7 +296,7 @@ try {
         btn.addEventListener('click', function() {
             const cuenta = this.getAttribute('data-cuenta');
             
-            if (confirm(`¿Está seguro que desea borrar la cuenta ${cuenta}?\n\nEsta acción no se puede deshacer.`)) {
+            if (confirm(`¿Está seguro que desea marcar como inactiva la cuenta ${cuenta}?\n\nLa cuenta no se eliminará pero dejará de ser visible para la mayoría de usuarios.`)) {
                 window.location.href = `borrar.php?id=${encodeURIComponent(cuenta)}`;
             }
         });
