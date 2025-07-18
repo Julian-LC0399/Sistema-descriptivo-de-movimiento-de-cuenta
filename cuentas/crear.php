@@ -3,6 +3,9 @@
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/database.php';
 
+// Configurar zona horaria para Venezuela
+date_default_timezone_set('America/Caracas');
+
 // Verificar autenticación y permisos
 requireLogin();
 
@@ -68,8 +71,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $moneda = in_array($_POST['moneda'] ?? '', ['BS', 'USD', 'EUR', 'COP', 'BRL']) ? $_POST['moneda'] : 'BS';
         $tipoCuenta = in_array($_POST['tipo_cuenta'] ?? '', ['CA', 'CC']) ? $_POST['tipo_cuenta'] : 'CA';
         $claseCuenta = in_array($_POST['clase_cuenta'] ?? '', ['N', 'J', 'V']) ? $_POST['clase_cuenta'] : 'N';
-        $estado = ($_POST['estado'] === 'A') ? 'A' : 'I';
-        $fechaApertura = $_POST['fecha_apertura'] ?? date('Y-m-d');
+        $estado = 'A'; // Estado siempre activo
+        $fechaApertura = date('Y-m-d'); // Siempre fecha actual de Venezuela
 
         // Validaciones básicas
         if (!$clienteId || !$sucursal || !$productoBancario) {
@@ -222,7 +225,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <?php foreach ($sucursales as $suc): ?>
                                     <option value="<?php echo htmlspecialchars($suc['acmbrn']); ?>"
                                         <?php echo (isset($_POST['sucursal']) && $_POST['sucursal'] == $suc['acmbrn']) ? 'selected' : ''; ?>>
-                                        Sucursal <?php echo htmlspecialchars($suc['acmbrn']); ?>)
+                                        Sucursal <?php echo htmlspecialchars($suc['acmbrn']); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -275,19 +278,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label for="estado" class="form-label required-field">Estado</label>
-                            <select class="form-select" id="estado" name="estado" required>
-                                <option value="A" <?php echo (!isset($_POST['estado']) || $_POST['estado'] === 'A') ? 'selected' : ''; ?>>Activo</option>
-                                <option value="I" <?php echo (isset($_POST['estado']) && $_POST['estado'] === 'I') ? 'selected' : ''; ?>>Inactivo</option>
-                            </select>
+                            <label class="form-label">Estado</label>
+                            <div class="form-control-plaintext bg-light p-2 rounded">
+                                Activo (siempre)
+                            </div>
+                            <input type="hidden" name="estado" value="A">
                         </div>
                     </div>
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="fecha_apertura" class="form-label required-field">Fecha Apertura</label>
-                            <input type="date" class="form-control" id="fecha_apertura" name="fecha_apertura" 
-                                   value="<?php echo isset($_POST['fecha_apertura']) ? htmlspecialchars($_POST['fecha_apertura']) : date('Y-m-d'); ?>" required>
+                            <label class="form-label">Fecha Apertura</label>
+                            <div class="form-control-plaintext bg-light p-2 rounded">
+                                <?php echo date('d/m/Y'); ?> (fecha actual)
+                            </div>
+                            <input type="hidden" name="fecha_apertura" value="<?php echo date('Y-m-d'); ?>">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Saldo Inicial</label>
@@ -312,10 +317,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <script src="<?php echo BASE_URL; ?>assets/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.getElementById('fecha_apertura').addEventListener('focus', function() {
-            this.type = 'date';
-        });
-        
         setTimeout(() => {
             const alert = document.querySelector('.alert');
             if (alert) new bootstrap.Alert(alert).close();

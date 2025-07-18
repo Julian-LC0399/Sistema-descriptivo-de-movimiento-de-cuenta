@@ -6,36 +6,40 @@ requireLogin();
 
 $tituloPagina = "Editar Cliente";
 
-// Verificar si se recibió un ID válido
-if (!isset($_GET['id'])) {
-    $_SESSION['error'] = "No se especificó un cliente para editar";
+// Inicializar variables
+$errores = [];
+$clienteId = $_GET['id'] ?? null;
+
+// Validar ID del cliente
+if (!$clienteId || !is_numeric($clienteId)) {
+    $_SESSION['mensaje'] = [
+        'tipo' => 'danger',
+        'texto' => 'ID de cliente no válido'
+    ];
     header("Location: lista.php");
     exit();
 }
 
-$idCliente = (int)$_GET['id'];
-
-// Obtener datos del cliente
+// Obtener datos actuales del cliente
 $pdo = getPDO();
 $stmt = $pdo->prepare("SELECT * FROM cumst WHERE cuscun = ?");
-$stmt->execute([$idCliente]);
+$stmt->execute([$clienteId]);
 $cliente = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$cliente) {
-    $_SESSION['error'] = "Cliente no encontrado";
+    $_SESSION['mensaje'] = [
+        'tipo' => 'danger',
+        'texto' => 'Cliente no encontrado'
+    ];
     header("Location: lista.php");
     exit();
 }
 
-// Inicializar variables con los datos del cliente
-$valoresFormulario = $cliente;
-$errores = [];
-
+// Procesar formulario de edición
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         // Obtener y sanitizar datos del formulario
         $valoresFormulario = [
-            'cuscun' => $idCliente,
             'cusidn' => trim($_POST['cusidn'] ?? ''),
             'cusna1' => trim($_POST['cusna1'] ?? ''),
             'cusna2' => trim($_POST['cusna2'] ?? ''),
@@ -61,41 +65,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'cusmar' => trim($_POST['cusmar'] ?? ''),
             'cusnac' => trim($_POST['cusnac'] ?? ''),
             'cusweb' => trim($_POST['cusweb'] ?? ''),
-            'cussts' => trim($_POST['cussts'] ?? 'A') // Campo estado ahora editable
+            'cussts' => trim($_POST['cussts'] ?? 'A')
         ];
 
-        // Validaciones (igual que en crear.php)
+        // Validaciones
         if (empty($valoresFormulario['cusidn'])) {
-            $errores['cusidn'] = "La cédula/RIF es obligatoria";
+            $errores['cusidn'] = "La cédula es obligatoria";
         }
-
+        
         if (empty($valoresFormulario['cusna1'])) {
             $errores['cusna1'] = "El primer nombre es obligatorio";
         }
-
+        
         if (empty($valoresFormulario['cusln1'])) {
             $errores['cusln1'] = "El primer apellido es obligatorio";
         }
-
+        
         if (empty($valoresFormulario['cusdir1'])) {
-            $errores['cusdir1'] = "La dirección línea 1 es obligatoria";
+            $errores['cusdir1'] = "La dirección es obligatoria";
         }
-
+        
         if (empty($valoresFormulario['cuscty'])) {
             $errores['cuscty'] = "La ciudad es obligatoria";
         }
 
-        if (!empty($valoresFormulario['cuseml']) && !filter_var($valoresFormulario['cuseml'], FILTER_VALIDATE_EMAIL)) {
-            $errores['cuseml'] = "El email personal no tiene un formato válido";
-        }
-
-        if (!empty($valoresFormulario['cusemw']) && !filter_var($valoresFormulario['cusemw'], FILTER_VALIDATE_EMAIL)) {
-            $errores['cusemw'] = "El email corporativo no tiene un formato válido";
-        }
-
         // Si no hay errores, proceder con la actualización
         if (empty($errores)) {
-            $stmt = $pdo->prepare("
+            $sql = "
                 UPDATE cumst SET
                     cusidn = :cusidn,
                     cusna1 = :cusna1,
@@ -118,34 +114,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     cusfax = :cusfax,
                     cusidc = :cusidc,
                     cusbds = :cusbds,
-                    cussts = :cussts,
                     cusgen = :cusgen,
                     cusmar = :cusmar,
                     cusnac = :cusnac,
                     cusweb = :cusweb,
-                    cuslau = :usuario,
-                    cuslut = NOW()
+                    cussts = :cussts,
+                    cuslut = NOW(),
+                    cuslau = :usuario
                 WHERE cuscun = :cuscun
-            ");
+            ";
+            
+            $stmt = $pdo->prepare($sql);
             
             $params = $valoresFormulario;
+            $params[':cuscun'] = $clienteId;
             $params[':usuario'] = $_SESSION['username'] ?? 'SISTEMA';
             
-            $stmt->execute($params);
-            
-            $_SESSION['mensaje'] = [
-                'tipo' => 'success',
-                'texto' => "Cliente actualizado exitosamente"
-            ];
-            header("Location: lista.php");
-            exit();
+            if ($stmt->execute($params)) {
+                $_SESSION['mensaje'] = [
+                    'tipo' => 'success',
+                    'texto' => "Cliente #$clienteId actualizado exitosamente"
+                ];
+                header("Location: lista.php");
+                exit();
+            } else {
+                throw new Exception("Error al ejecutar la actualización");
+            }
         }
         
     } catch (PDOException $e) {
         $errores['general'] = "Error al actualizar cliente: " . $e->getMessage();
+        error_log("Error al actualizar cliente: " . $e->getMessage());
     } catch (Exception $e) {
         $errores['general'] = $e->getMessage();
+        error_log("Error general al actualizar cliente: " . $e->getMessage());
     }
+} else {
+    // Si no es POST, usar los valores actuales del cliente
+    $valoresFormulario = $cliente;
 }
 ?>
 
@@ -173,6 +179,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
         
         <form method="post" class="form-container">
+            <!-- Sección ID Cliente (no editable) -->
+            <div class="card mb-4 form-section">
+                <div class="card-header">
+                    <h5 class="mb-0">Información Básica</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">ID Cliente</label>
+                            <div class="form-control-plaintext bg-light p-2 rounded">
+                                <?= htmlspecialchars($clienteId) ?>
+                                <input type="hidden" name="cuscun" value="<?= htmlspecialchars($clienteId) ?>">
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cussts" class="form-label">Estado</label>
+                            <select class="form-select" id="cussts" name="cussts">
+                                <option value="A" <?= $valoresFormulario['cussts'] === 'A' ? 'selected' : '' ?>>Activo</option>
+                                <option value="I" <?= $valoresFormulario['cussts'] === 'I' ? 'selected' : '' ?>>Inactivo</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Sección Información de Identificación -->
             <div class="card mb-4 form-section">
                 <div class="card-header">
@@ -416,30 +447,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label for="cusphh" class="form-label">Teléfono Habitación</label>
                             <input type="tel" class="form-control" id="cusphh" name="cusphh" 
                                    value="<?= htmlspecialchars($valoresFormulario['cusphh']) ?>">
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="cuscun" class="form-label">ID Cliente</label>
-                            <input type="text" class="form-control" id="cuscun" name="cuscun" 
-                                   value="<?= htmlspecialchars($valoresFormulario['cuscun']) ?>" readonly>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sección Estado (EDITABLE) -->
-            <div class="card mb-4 form-section">
-                <div class="card-header">
-                    <h5 class="mb-0">Estado del Cliente</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="cussts" class="form-label">Estado</label>
-                            <select class="form-select" id="cussts" name="cussts">
-                                <option value="A" <?= $valoresFormulario['cussts'] === 'A' ? 'selected' : '' ?>>Activo</option>
-                                <option value="I" <?= $valoresFormulario['cussts'] === 'I' ? 'selected' : '' ?>>Inactivo</option>
-                            </select>
                         </div>
                     </div>
                 </div>
