@@ -6,100 +6,36 @@ requireLogin();
 
 $tituloPagina = "Editar Cliente";
 
-// Inicializar variables para mantener los valores del formulario
-$valoresFormulario = [
-    'cuscun' => '',
-    'cusidn' => '',
-    'cusna1' => '',
-    'cusna2' => '',
-    'cusln1' => '',
-    'cusln2' => '',
-    'cusemp' => '',
-    'cusjob' => '',
-    'cusidp' => '',
-    'cusdir1' => '',
-    'cusdir2' => '',
-    'cusdir3' => '',
-    'cuscty' => '',
-    'cuseml' => '',
-    'cusemw' => '',
-    'cusphn' => '',
-    'cusphh' => '',
-    'cusphw' => '',
-    'cuspxt' => '',
-    'cusfax' => '',
-    'cusidc' => 'V',
-    'cusbds' => '',
-    'cusgen' => '',
-    'cusmar' => '',
-    'cusnac' => '',
-    'cusweb' => ''
-];
-
-$errores = [];
-
-// Obtener ID del cliente a editar
-$idCliente = $_GET['id'] ?? null;
-if (!$idCliente) {
+// Verificar si se recibió un ID válido
+if (!isset($_GET['id'])) {
+    $_SESSION['error'] = "No se especificó un cliente para editar";
     header("Location: lista.php");
     exit();
 }
 
-// Cargar datos existentes del cliente
-try {
-    $pdo = getPDO();
-    $stmt = $pdo->prepare("SELECT * FROM cumst WHERE cuscun = ?");
-    $stmt->execute([$idCliente]);
-    $cliente = $stmt->fetch();
+$idCliente = (int)$_GET['id'];
 
-    if (!$cliente) {
-        $_SESSION['mensaje'] = [
-            'tipo' => 'danger',
-            'texto' => "Cliente no encontrado"
-        ];
-        header("Location: lista.php");
-        exit();
-    }
+// Obtener datos del cliente
+$pdo = getPDO();
+$stmt = $pdo->prepare("SELECT * FROM cumst WHERE cuscun = ?");
+$stmt->execute([$idCliente]);
+$cliente = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // Mapear datos de la base de datos al formulario
-    $valoresFormulario = [
-        'cuscun' => $cliente['cuscun'],
-        'cusidn' => $cliente['cusidn'],
-        'cusna1' => $cliente['cusna1'],
-        'cusna2' => $cliente['cusna2'],
-        'cusln1' => $cliente['cusln1'],
-        'cusln2' => $cliente['cusln2'],
-        'cusemp' => $cliente['cusemp'],
-        'cusjob' => $cliente['cusjob'],
-        'cusidp' => $cliente['cusidp'],
-        'cusdir1' => $cliente['cusdir1'],
-        'cusdir2' => $cliente['cusdir2'],
-        'cusdir3' => $cliente['cusdir3'],
-        'cuscty' => $cliente['cuscty'],
-        'cuseml' => $cliente['cuseml'],
-        'cusemw' => $cliente['cusemw'],
-        'cusphn' => $cliente['cusphn'],
-        'cusphh' => $cliente['cusphh'],
-        'cusphw' => $cliente['cusphw'],
-        'cuspxt' => $cliente['cuspxt'],
-        'cusfax' => $cliente['cusfax'],
-        'cusidc' => $cliente['cusidc'],
-        'cusbds' => $cliente['cusbds'],
-        'cusgen' => $cliente['cusgen'],
-        'cusmar' => $cliente['cusmar'],
-        'cusnac' => $cliente['cusnac'],
-        'cusweb' => $cliente['cusweb']
-    ];
-
-} catch (PDOException $e) {
-    $errores['general'] = "Error al cargar cliente: " . $e->getMessage();
+if (!$cliente) {
+    $_SESSION['error'] = "Cliente no encontrado";
+    header("Location: lista.php");
+    exit();
 }
+
+// Inicializar variables con los datos del cliente
+$valoresFormulario = $cliente;
+$errores = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         // Obtener y sanitizar datos del formulario
         $valoresFormulario = [
-            'cuscun' => trim($_POST['cuscun'] ?? ''),
+            'cuscun' => $idCliente,
             'cusidn' => trim($_POST['cusidn'] ?? ''),
             'cusna1' => trim($_POST['cusna1'] ?? ''),
             'cusna2' => trim($_POST['cusna2'] ?? ''),
@@ -124,10 +60,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'cusgen' => trim($_POST['cusgen'] ?? ''),
             'cusmar' => trim($_POST['cusmar'] ?? ''),
             'cusnac' => trim($_POST['cusnac'] ?? ''),
-            'cusweb' => trim($_POST['cusweb'] ?? '')
+            'cusweb' => trim($_POST['cusweb'] ?? ''),
+            'cussts' => trim($_POST['cussts'] ?? 'A') // Campo estado ahora editable
         ];
 
-        // Validar campos obligatorios
+        // Validaciones (igual que en crear.php)
         if (empty($valoresFormulario['cusidn'])) {
             $errores['cusidn'] = "La cédula/RIF es obligatoria";
         }
@@ -148,7 +85,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errores['cuscty'] = "La ciudad es obligatoria";
         }
 
-        // Validar emails si se proporcionaron
         if (!empty($valoresFormulario['cuseml']) && !filter_var($valoresFormulario['cuseml'], FILTER_VALIDATE_EMAIL)) {
             $errores['cuseml'] = "El email personal no tiene un formato válido";
         }
@@ -159,44 +95,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Si no hay errores, proceder con la actualización
         if (empty($errores)) {
-            $pdo = getPDO();
-            
-            // Actualizar los datos del cliente
             $stmt = $pdo->prepare("
                 UPDATE cumst SET
-                    cusidn = :cusidn, 
-                    cusna1 = :cusna1, 
-                    cusna2 = :cusna2, 
-                    cusln1 = :cusln1, 
+                    cusidn = :cusidn,
+                    cusna1 = :cusna1,
+                    cusna2 = :cusna2,
+                    cusln1 = :cusln1,
                     cusln2 = :cusln2,
-                    cusemp = :cusemp, 
-                    cusjob = :cusjob, 
-                    cusidp = :cusidp, 
-                    cusdir1 = :cusdir1, 
-                    cusdir2 = :cusdir2, 
+                    cusemp = :cusemp,
+                    cusjob = :cusjob,
+                    cusidp = :cusidp,
+                    cusdir1 = :cusdir1,
+                    cusdir2 = :cusdir2,
                     cusdir3 = :cusdir3,
-                    cuscty = :cuscty, 
-                    cuseml = :cuseml, 
-                    cusemw = :cusemw, 
-                    cusphn = :cusphn, 
-                    cusphh = :cusphh, 
+                    cuscty = :cuscty,
+                    cuseml = :cuseml,
+                    cusemw = :cusemw,
+                    cusphn = :cusphn,
+                    cusphh = :cusphh,
                     cusphw = :cusphw,
-                    cuspxt = :cuspxt, 
-                    cusfax = :cusfax, 
-                    cusidc = :cusidc, 
-                    cusbds = :cusbds, 
+                    cuspxt = :cuspxt,
+                    cusfax = :cusfax,
+                    cusidc = :cusidc,
+                    cusbds = :cusbds,
+                    cussts = :cussts,
                     cusgen = :cusgen,
-                    cusmar = :cusmar, 
-                    cusnac = :cusnac, 
+                    cusmar = :cusmar,
+                    cusnac = :cusnac,
                     cusweb = :cusweb,
-                    cuslut = NOW(),
-                    cuslau = :usuario
+                    cuslau = :usuario,
+                    cuslut = NOW()
                 WHERE cuscun = :cuscun
             ");
             
             $params = $valoresFormulario;
             $params[':usuario'] = $_SESSION['username'] ?? 'SISTEMA';
-            $params[':cuscun'] = $idCliente;
             
             $stmt->execute($params);
             
@@ -284,7 +217,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
 
-            <!-- Sección Información Personal - REORGANIZADA -->
+            <!-- Sección Información Personal -->
             <div class="card mb-4 form-section">
                 <div class="card-header">
                     <h5 class="mb-0">Información Personal</h5>
@@ -489,6 +422,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label for="cuscun" class="form-label">ID Cliente</label>
                             <input type="text" class="form-control" id="cuscun" name="cuscun" 
                                    value="<?= htmlspecialchars($valoresFormulario['cuscun']) ?>" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección Estado (EDITABLE) -->
+            <div class="card mb-4 form-section">
+                <div class="card-header">
+                    <h5 class="mb-0">Estado del Cliente</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cussts" class="form-label">Estado</label>
+                            <select class="form-select" id="cussts" name="cussts">
+                                <option value="A" <?= $valoresFormulario['cussts'] === 'A' ? 'selected' : '' ?>>Activo</option>
+                                <option value="I" <?= $valoresFormulario['cussts'] === 'I' ? 'selected' : '' ?>>Inactivo</option>
+                            </select>
                         </div>
                     </div>
                 </div>

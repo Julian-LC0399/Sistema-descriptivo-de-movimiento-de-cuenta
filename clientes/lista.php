@@ -11,19 +11,29 @@ $clientesPorPagina = 10;
 $paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
 $offset = ($paginaActual - 1) * $clientesPorPagina;
 
-// Parámetro de búsqueda general
+// Parámetros de búsqueda
 $busqueda = isset($_GET['busqueda']) ? trim($_GET['busqueda']) : '';
+$filtroEstado = isset($_GET['estado']) ? $_GET['estado'] : 'A'; // Por defecto muestra solo activos
 
-// Consulta base (incluyendo cusphh - teléfono de habitación)
-$sql = "SELECT cuscun, cusidn, cusna1, cusna2, cusln1, cusln2, cuscty, cuseml, cusphn, cusphh, cusemp, cusjob FROM cumst WHERE cussts = 'A'";
+// Consulta base
+$sql = "SELECT cuscun, cusidn, cusna1, cusna2, cusln1, cusln2, cuscty, cuseml, cusphn, cusphh, cusemp, cusjob, cussts FROM cumst";
 $params = [];
-$contarSql = "SELECT COUNT(*) as total FROM cumst WHERE cussts = 'A'";
+$contarSql = "SELECT COUNT(*) as total FROM cumst";
+
+// Aplicar filtro de estado
+if ($filtroEstado !== 'T') { // 'T' sería para mostrar Todos
+    $sql .= " WHERE cussts = :estado";
+    $contarSql .= " WHERE cussts = :estado";
+    $params[':estado'] = $filtroEstado;
+}
 
 // Aplicar filtros de búsqueda
 if (!empty($busqueda)) {
     $searchTerm = "%$busqueda%";
-    $sql .= " AND (cusna1 LIKE :busqueda_nombre OR cusln1 LIKE :busqueda_apellido OR cusidn LIKE :busqueda_cedula)";
-    $contarSql .= " AND (cusna1 LIKE :busqueda_nombre OR cusln1 LIKE :busqueda_apellido OR cusidn LIKE :busqueda_cedula)";
+    $whereClause = empty($params) ? " WHERE" : " AND";
+    
+    $sql .= $whereClause . " (cusna1 LIKE :busqueda_nombre OR cusln1 LIKE :busqueda_apellido OR cusidn LIKE :busqueda_cedula)";
+    $contarSql .= $whereClause . " (cusna1 LIKE :busqueda_nombre OR cusln1 LIKE :busqueda_apellido OR cusidn LIKE :busqueda_cedula)";
     $params[':busqueda_nombre'] = $searchTerm;
     $params[':busqueda_apellido'] = $searchTerm;
     $params[':busqueda_cedula'] = $searchTerm;
@@ -106,7 +116,7 @@ try {
             <?php unset($_SESSION['error']); ?>
         <?php endif; ?>
 
-        <!-- Filtros simplificados -->
+        <!-- Filtros -->
         <div class="filtros-card mb-4">
             <div class="filtros-header">
                 <h3 class="filtros-title">
@@ -119,6 +129,14 @@ try {
                     <input type="text" class="form-control" id="busqueda" name="busqueda" 
                            value="<?= htmlspecialchars($busqueda) ?>" placeholder="Ingrese nombre, apellido o cédula">
                 </div>
+                <div class="form-group">
+                    <label for="estado" class="form-label">Estado</label>
+                    <select class="form-select" id="estado" name="estado">
+                        <option value="A" <?= $filtroEstado === 'A' ? 'selected' : '' ?>>Activos</option>
+                        <option value="I" <?= $filtroEstado === 'I' ? 'selected' : '' ?>>Inactivos</option>
+                        <option value="T" <?= $filtroEstado === 'T' ? 'selected' : '' ?>>Todos</option>
+                    </select>
+                </div>
                 <div class="filtros-actions">
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-search"></i> Buscar
@@ -130,7 +148,7 @@ try {
             </form>
         </div>
         
-        <!-- Tabla de clientes (con teléfono de habitación) -->
+        <!-- Tabla de clientes -->
         <div class="table-container">
             <div class="table-responsive">
                 <table class="table table-hover">
@@ -145,13 +163,14 @@ try {
                             <th>Email</th>
                             <th>Teléfono Móvil</th>
                             <th>Teléfono Habitación</th>
+                            <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($clientes)): ?>
                             <tr>
-                                <td colspan="10" class="text-center py-4">
+                                <td colspan="11" class="text-center py-4">
                                     <i class="bi bi-exclamation-circle fs-4"></i>
                                     <p class="mt-2">No se encontraron clientes</p>
                                 </td>
@@ -175,6 +194,11 @@ try {
                                     <td><?= htmlspecialchars($cliente['cuseml']) ?></td>
                                     <td><?= htmlspecialchars($cliente['cusphn']) ?></td>
                                     <td><?= htmlspecialchars($cliente['cusphh'] ?? 'N/A') ?></td>
+                                    <td>
+                                        <span class="badge <?= $cliente['cussts'] == 'A' ? 'bg-success' : 'bg-secondary' ?>">
+                                            <?= $cliente['cussts'] == 'A' ? 'Activo' : 'Inactivo' ?>
+                                        </span>
+                                    </td>
                                     <td>
                                         <div class="d-flex gap-2">
                                             <a href="editar.php?id=<?= urlencode($cliente['cuscun']) ?>" 
@@ -200,6 +224,7 @@ try {
             <div class="d-flex justify-content-between align-items-center mt-3">
                 <div class="alert alert-info mb-0 py-2">
                     Mostrando <?= count($clientes) ?> de <?= $totalClientes ?> clientes
+                    <?= $filtroEstado !== 'T' ? '('.($filtroEstado === 'A' ? 'Activos' : 'Inactivos').')' : '' ?>
                 </div>
                 
                 <?php if ($totalPaginas > 1): ?>
