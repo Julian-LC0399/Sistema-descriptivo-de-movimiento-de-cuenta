@@ -56,11 +56,20 @@ try {
         throw new Exception("Error al marcar la cuenta como inactiva: " . implode(" ", $stmtCuenta->errorInfo()));
     }
 
+    // 4. Marcar también la referencia asociada como inactiva
+    $sqlActualizarReferencia = "UPDATE acref SET acrsts = 'I' WHERE acrnac = :cuenta";
+    $stmtReferencia = $pdo->prepare($sqlActualizarReferencia);
+    $stmtReferencia->bindParam(':cuenta', $numeroCuenta, PDO::PARAM_STR);
+    
+    if (!$stmtReferencia->execute()) {
+        throw new Exception("Error al marcar la referencia como inactiva: " . implode(" ", $stmtReferencia->errorInfo()));
+    }
+
     $pdo->commit();
 
     $_SESSION['mensaje'] = [
         'tipo' => 'success',
-        'texto' => "Cuenta $numeroCuenta marcada como inactiva exitosamente"
+        'texto' => "Cuenta $numeroCuenta y su referencia marcadas como inactivas exitosamente"
     ];
 
 } catch (PDOException $e) {
