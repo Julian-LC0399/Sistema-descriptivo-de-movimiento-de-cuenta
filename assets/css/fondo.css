@@ -1,0 +1,27 @@
+/* Estilos para el fondo y el layout principal */
+body {
+    background-image: url('../images/logo-banco.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+}
+
+.main-content {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    margin-left: 250px; /* Ajustar según el ancho del sidebar */
+    padding: 20px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    min-height: calc(100vh - 120px); /* Ajuste para el footer */
+}
+
+/* Asegurar que el contenido no quede detrás del sidebar */
+@media (max-width: 992px) {
+    .main-content {
+        margin-left: 0;
+        margin-top: 60px; /* Espacio para el header en móvil */
+    }
+}
