@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="login-container">
         <h1 class="bank-header">Banco Caroní</h1>
-        <div class="sec-title">SIDEMOCU - Sistema Descriptivo de Movimiento de Cuenta </div>
+        <div class="sec-title">MRMC - Módulo de Reportes de Movimientos de Cuentas </div>
 
         <?php if ($error): ?>
             <div class="error-message">
