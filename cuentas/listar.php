@@ -155,11 +155,11 @@ try {
                     <label for="estado" class="form-label">Estado</label>
                     <select class="form-select" id="estado" name="estado">
                         <?php if ($isAdminOrGerente): ?>
-                            <option value="">Todos</option>
+                            <option value="">Todas</option>
                         <?php endif; ?>
-                        <option value="A" <?= $filtroEstado === 'A' ? 'selected' : '' ?>>Activo</option>
+                        <option value="A" <?= $filtroEstado === 'A' ? 'selected' : '' ?>>Activa</option>
                         <?php if ($isAdminOrGerente): ?>
-                            <option value="I" <?= $filtroEstado === 'I' ? 'selected' : '' ?>>Inactivo</option>
+                            <option value="I" <?= $filtroEstado === 'I' ? 'selected' : '' ?>>Inactiva</option>
                         <?php endif; ?>
                     </select>
                 </div>
