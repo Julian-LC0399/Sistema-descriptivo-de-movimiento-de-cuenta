@@ -1,4 +1,4 @@
-/* Estructura del sidebar para Banco Caroni */
+/* Main Sidebar Structure */
 .sidebar-universal {
     width: 280px;
     height: 100vh;
@@ -11,30 +11,39 @@
     z-index: 1000;
     transition: all 0.3s;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 .sidebar-content {
-    padding: 20px 0;
+    padding: 15px 0;
     display: flex;
     flex-direction: column;
-    height: 100%;
+    flex-grow: 1;
 }
 
-.sidebar-header {
-    padding: 25px 20px; /* Más espacio interno */
+/* Logo Container Styles */
+.sidebar-logo-container {
+    padding: 25px 30px;
     text-align: center;
     border-bottom: 1px solid #e0e0e0;
-    margin-bottom: 10px; /* Espacio bajo el header */
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 120px;
 }
 
-.sidebar-header h4 {
-    color: #2c3e50;
-    margin: 0;
-    font-size: 1.4rem;
-    font-weight: 600;
+.sidebar-logo {
+    max-width: 100%;
+    max-height: 80px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    transition: all 0.3s ease;
 }
 
-/* Menú de navegación */
+/* Navigation Menu */
 .sidebar-nav {
     list-style: none;
     padding: 0;
@@ -46,19 +55,19 @@
     color: #7f8c8d;
     font-size: 0.8rem;
     text-transform: uppercase;
-    padding: 15px 25px 5px; /* Más padding horizontal */
-    margin-top: 15px; /* Mayor separación entre secciones */
+    padding: 15px 25px 5px;
+    margin-top: 15px;
     letter-spacing: 1px;
 }
 
 .nav-item {
-    margin: 8px 0; /* Más espacio entre ítems */
+    margin: 5px 0;
 }
 
 .nav-link {
     display: flex;
     align-items: center;
-    padding: 12px 25px; /* Padding horizontal aumentado */
+    padding: 12px 25px;
     color: #34495e;
     text-decoration: none;
     transition: all 0.2s;
@@ -71,36 +80,22 @@
     border-left: 3px solid #3498db;
 }
 
-.nav-link.active {
-    background: #f1f9fe;
-    border-left: 3px solid #3498db;
-    color: #3498db;
-}
-
 .nav-link i {
     width: 24px;
     text-align: center;
-    margin-right: 12px; /* Más espacio entre ícono y texto */
+    margin-right: 12px;
     font-size: 1rem;
     color: #7f8c8d;
 }
 
-/* Logout y eslogan */
+/* Logout Section */
 .logout-item {
-    margin-top: 20px; /* Separación adicional */
+    margin-top: auto;
     border-top: 1px solid #e0e0e0;
     padding-top: 15px;
 }
 
-.bank-slogan {
-    padding: 20px;
-    margin-top: 20px; /* Espacio sobre el eslogan */
-    font-style: italic;
-    color: #7f8c8d;
-    border-top: 1px solid #e0e0e0;
-}
-
-/* Responsive */
+/* Responsive Adjustments */
 @media (max-width: 992px) {
     .sidebar-universal {
         transform: translateX(-100%);
@@ -108,4 +103,18 @@
     .sidebar-universal.show {
         transform: translateX(0);
     }
+    
+    .sidebar-logo-container {
+        padding: 20px 15px;
+        min-height: 100px;
+    }
+    
+    .sidebar-logo {
+        max-height: 60px;
+    }
+}
+
+/* Animation for logo hover effect */
+.sidebar-logo:hover {
+    transform: scale(1.05);
 }

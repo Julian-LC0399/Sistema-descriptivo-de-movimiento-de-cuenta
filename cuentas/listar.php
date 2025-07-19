@@ -104,7 +104,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Listado de Cuentas Bancarias</title>
+    <title>Cuentas bancarias-sistema bancario</title>
     <link href="<?php echo BASE_URL; ?>assets/css/bootstrap.min.css" rel="stylesheet">
     <link href="<?php echo BASE_URL; ?>assets/css/registros.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
@@ -114,7 +114,7 @@ try {
     <?php include __DIR__ . '/../includes/sidebar.php'; ?>
     
     <main class="container mt-4">
-        <h2 class="mb-4">Listado de Cuentas Bancarias</h2>
+        <h2 class="mb-4">Cuentas bancarias</h2>
         
         <!-- Mensajes flotantes -->
         <?php if (isset($_SESSION['mensaje'])): ?>

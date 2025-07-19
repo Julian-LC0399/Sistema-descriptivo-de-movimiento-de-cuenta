@@ -1,29 +1,29 @@
 <?php if (isset($_SESSION['user_id'])): ?>
 <?php
-// Inicio seguro de sesión
+// Secure session start
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Solo incluir config.php si BASE_URL no está definida
 if (!defined('BASE_URL')) {
-    require_once __DIR__ . '/config.php';
+    require_once __DIR__ . '/../config.php';
 }
 
-// Verificación de que BASE_URL existe
 if (!defined('BASE_URL')) {
-    die('Error: BASE_URL no está definida. Verifica config.php');
+    die('Error: BASE_URL not defined. Check config.php');
 }
+
+$logoUrl = BASE_URL . 'assets/images/logo-banco.jpg';
 ?>
 <!-- CSS -->
-<link rel="stylesheet" href="<?= BASE_URL ?>assets/css/sidebar.css">
+<link rel="stylesheet" href="<?= BASE_URL ?>assets/css/sidebar.css?v=<?= time() ?>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
 <!-- Sidebar -->
 <div class="sidebar-universal" id="sidebar">
     <div class="sidebar-content">
-        <div class="sidebar-header">
-            <h4>Banco Caroni</h4>
+        <div class="sidebar-logo-container">
+            <img src="<?= $logoUrl ?>" alt="Banco Caroni" class="sidebar-logo">
         </div>
         
         <ul class="sidebar-nav">

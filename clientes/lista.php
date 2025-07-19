@@ -4,7 +4,7 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/database.php';
 requireLogin();
 
-$tituloPagina = "Listado de Clientes";
+$tituloPagina = "Clientes";
 
 // Configuración de paginación
 $clientesPorPagina = 10;
