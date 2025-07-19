@@ -32,13 +32,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- Barra superior con fecha animada -->
     <div class="date-ticker">
         <div class="ticker-content">
-            <span id="current-date"></span> | Bienvenido al Sistema Descriptivo de Movimiento de Cuenta del Banco Caroní
+            <span id="current-date"></span> | Bienvenido al módulo de reportes de movimientos de cuentas del Banco Caroní
         </div>
     </div>
 
     <div class="login-container">
         <h1 class="bank-header">Banco Caroní</h1>
-        <div class="sec-title">SIDEMOCU - Sistema Descriptivo de Movimiento de Cuenta </div>
+        <div class="sec-title">MRMC -   Módulo de Reportes de Movimientos de Cuentas</div>
 
         <?php if ($error): ?>
             <div class="error-message">
