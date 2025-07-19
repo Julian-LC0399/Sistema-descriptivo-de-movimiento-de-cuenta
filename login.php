@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- Barra superior con fecha animada -->
     <div class="date-ticker">
         <div class="ticker-content">
-            <span id="current-date"></span> | Bienvenido al Sistema Descriptivo de Movimiento de Cuenta del Banco Caroní
+            <span id="current-date"></span> | Bienvenido al módulo de reportes de movimientos de cuentas del Banco Caroní
         </div>
     </div>
 
