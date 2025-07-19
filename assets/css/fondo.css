@@ -1,5 +1,5 @@
 body {
-    background-image: url('../images/fondo-banco.png');
+    background-image: url('../images');
     background-size: cover; /* Cubre todo el fondo sin distorsión */
     background-position: center;
     background-repeat: no-repeat;
