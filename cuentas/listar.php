@@ -276,15 +276,6 @@ try {
                 <?php endif; ?>
             </div>
         </div>
-
-        <!-- Botón para agregar nueva cuenta -->
-        <?php if ($isAdminOrGerente): ?>
-            <div class="text-end mt-4">
-                <a href="crear.php" class="btn btn-success btn-lg">
-                    <i class="bi bi-plus-circle"></i> Agregar Nueva Cuenta
-                </a>
-            </div>
-        <?php endif; ?>
     </main>
 
     <!-- Bootstrap JS Bundle con Popper -->
