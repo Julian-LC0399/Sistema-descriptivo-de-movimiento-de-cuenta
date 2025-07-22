@@ -2,7 +2,7 @@
 require_once __DIR__ . '/database.php';
 
 /**
- * Funciones de utilidad general
+ * Funciones de uso general
  */
 
 /**
