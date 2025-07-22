@@ -258,13 +258,6 @@ try {
                 <?php endif; ?>
             </div>
         </div>
-
-        <!-- Botón para agregar nuevo cliente -->
-        <div class="text-end mt-4">
-            <a href="crear.php" class="btn btn-success btn-lg">
-                <i class="bi bi-plus-circle"></i> Agregar Nuevo Cliente
-            </a>
-        </div>
     </main>
 
     <script src="<?= BASE_URL ?>assets/js/bootstrap.bundle.min.js"></script>
