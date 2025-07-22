@@ -53,6 +53,31 @@ function has_permission($permission) {
     return false;
 }
 
+/**
+ * Verifica si el usuario actual es administrador
+ * @return bool True si es admin, False si no
+ */
+function esAdmin() {
+    // Versión 1: Si usamos el campo 'role' de la tabla users
+    if (isset($_SESSION['user_role'])) {
+        return $_SESSION['user_role'] === 'admin';
+    }
+    
+    // Versión 2: Si usamos el sistema de permisos
+    return has_permission('admin');
+}
+
+/**
+ * Redirige si el usuario no es administrador
+ * @param string $redirect_url URL a redirigir (opcional)
+ */
+function requireAdmin($redirect_url = 'login.php') {
+    check_auth();
+    if (!esAdmin()) {
+        header('Location: ' . $redirect_url . '?error=admin_required');
+        exit;
+    }
+}
 
 /**
  * Formatea un número de cuenta para mostrarlo con separaciones
