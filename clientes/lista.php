@@ -12,7 +12,8 @@ $paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
 $offset = ($paginaActual - 1) * $clientesPorPagina;
 
 // Parámetros de búsqueda
-$busqueda = isset($_GET['busqueda']) ? trim($_GET['busqueda']) : '';
+$busquedaCedula = isset($_GET['busqueda_cedula']) ? trim($_GET['busqueda_cedula']) : '';
+$busquedaGeneral = isset($_GET['busqueda_general']) ? trim($_GET['busqueda_general']) : '';
 $filtroEstado = isset($_GET['estado']) ? $_GET['estado'] : 'A'; // Por defecto muestra solo activos
 
 // Consulta base
@@ -28,15 +29,22 @@ if ($filtroEstado !== 'T') { // 'T' sería para mostrar Todos
 }
 
 // Aplicar filtros de búsqueda
-if (!empty($busqueda)) {
-    $searchTerm = "%$busqueda%";
+$conditions = [];
+if (!empty($busquedaCedula)) {
+    $conditions[] = "cusidn LIKE :busqueda_cedula";
+    $params[':busqueda_cedula'] = "%$busquedaCedula%";
+}
+
+if (!empty($busquedaGeneral)) {
+    $conditions[] = "(cusna1 LIKE :busqueda_nombre OR cusln1 LIKE :busqueda_apellido)";
+    $params[':busqueda_nombre'] = "%$busquedaGeneral%";
+    $params[':busqueda_apellido'] = "%$busquedaGeneral%";
+}
+
+if (!empty($conditions)) {
     $whereClause = empty($params) ? " WHERE" : " AND";
-    
-    $sql .= $whereClause . " (cusna1 LIKE :busqueda_nombre OR cusln1 LIKE :busqueda_apellido OR cusidn LIKE :busqueda_cedula)";
-    $contarSql .= $whereClause . " (cusna1 LIKE :busqueda_nombre OR cusln1 LIKE :busqueda_apellido OR cusidn LIKE :busqueda_cedula)";
-    $params[':busqueda_nombre'] = $searchTerm;
-    $params[':busqueda_apellido'] = $searchTerm;
-    $params[':busqueda_cedula'] = $searchTerm;
+    $sql .= $whereClause . " " . implode(" AND ", $conditions);
+    $contarSql .= $whereClause . " " . implode(" AND ", $conditions);
 }
 
 // Obtener conexión PDO
@@ -125,9 +133,14 @@ try {
             </div>
             <form method="get" class="filtros-grid">
                 <div class="form-group">
-                    <label for="busqueda" class="form-label">Buscar por nombre, apellido o cédula</label>
-                    <input type="text" class="form-control" id="busqueda" name="busqueda" 
-                           value="<?= htmlspecialchars($busqueda) ?>" placeholder="Ingrese nombre, apellido o cédula">
+                    <label for="busqueda_cedula" class="form-label">Buscar por cédula</label>
+                    <input type="text" class="form-control" id="busqueda_cedula" name="busqueda_cedula" 
+                           value="<?= htmlspecialchars($busquedaCedula) ?>" placeholder="Ingrese número de cédula">
+                </div>
+                <div class="form-group">
+                    <label for="busqueda_general" class="form-label">Buscar por nombre o apellido</label>
+                    <input type="text" class="form-control" id="busqueda_general" name="busqueda_general" 
+                           value="<?= htmlspecialchars($busquedaGeneral) ?>" placeholder="Ingrese nombre o apellido">
                 </div>
                 <div class="form-group">
                     <label for="estado" class="form-label">Estado</label>
@@ -225,6 +238,8 @@ try {
                 <div class="alert alert-info mb-0 py-2">
                     Mostrando <?= count($clientes) ?> de <?= $totalClientes ?> clientes
                     <?= $filtroEstado !== 'T' ? '('.($filtroEstado === 'A' ? 'Activos' : 'Inactivos').')' : '' ?>
+                    <?= !empty($busquedaCedula) ? '| Cédula: '.htmlspecialchars($busquedaCedula) : '' ?>
+                    <?= !empty($busquedaGeneral) ? '| Nombre/Apellido: '.htmlspecialchars($busquedaGeneral) : '' ?>
                 </div>
                 
                 <?php if ($totalPaginas > 1): ?>
