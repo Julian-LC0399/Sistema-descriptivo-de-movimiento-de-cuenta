@@ -14,6 +14,7 @@ if (!defined('BASE_URL')) {
 }
 
 $logoUrl = BASE_URL . 'assets/images/logo-banco.jpg';
+$isAdmin = ($_SESSION['role'] ?? '') === 'admin';
 ?>
 <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/sidebar.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -26,7 +27,8 @@ $logoUrl = BASE_URL . 'assets/images/logo-banco.jpg';
         </div>
         
         <ul class="sidebar-nav">
-            <li class="menu-section">CONSULTAS</li>
+            <?php if ($isAdmin): ?>
+            <li class="menu-section">ADMINISTRACIÓN</li>
             
             <li class="nav-item has-submenu">
                 <a class="nav-link submenu-parent" href="#">
@@ -63,16 +65,39 @@ $logoUrl = BASE_URL . 'assets/images/logo-banco.jpg';
                             <span>Consulta</span>
                         </a>
                     </li>
-                    <?php if (in_array($_SESSION['role'], ['admin', 'gerente'])): ?>
                     <li class="submenu-item">
                         <a href="<?= BASE_URL ?>cuentas/crear.php">
                             <i class="fas fa-plus-circle"></i>
                             <span>Registro</span>
                         </a>
                     </li>
-                    <?php endif; ?>
                 </ul>
             </li>
+            
+            <li class="nav-item has-submenu">
+                <a class="nav-link submenu-parent" href="#">
+                    <i class="fas fa-user-cog"></i>
+                    <span>Usuarios</span>
+                    <i class="fas fa-chevron-right submenu-toggle"></i>
+                </a>
+                <ul class="submenu" style="display: none;">
+                    <li class="submenu-item">
+                        <a href="<?= BASE_URL ?>usuarios/lista.php">
+                            <i class="fas fa-list"></i>
+                            <span>Lista de Usuarios</span>
+                        </a>
+                    </li>
+                    <li class="submenu-item">
+                        <a href="<?= BASE_URL ?>usuarios/crear.php">
+                            <i class="fas fa-user-plus"></i>
+                            <span>Crear Usuario</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <?php endif; ?>
+            
+            <li class="menu-section">CONSULTAS</li>
             
             <li class="nav-item">
                 <a class="nav-link" href="<?= BASE_URL ?>transacciones/mes.php">
@@ -98,7 +123,7 @@ $logoUrl = BASE_URL . 'assets/images/logo-banco.jpg';
     </div>
 </div>
 
-<!-- Script para manejar el submenú -->
+<!-- Script para manejar el submenú (se mantiene igual) -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const submenuParents = document.querySelectorAll('.submenu-parent');
@@ -109,7 +134,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const submenu = this.nextElementSibling;
             const isOpen = submenu.style.display === 'block';
             
-            // Cerrar todos los submenús primero
             document.querySelectorAll('.submenu').forEach(sm => {
                 if (sm !== submenu) {
                     sm.style.display = 'none';
@@ -118,7 +142,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             
-            // Alternar el submenú actual
             submenu.style.display = isOpen ? 'none' : 'block';
             const toggleIcon = this.querySelector('.submenu-toggle');
             toggleIcon.classList.toggle('fa-chevron-right', isOpen);
@@ -126,7 +149,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Cerrar submenús al hacer clic fuera
     document.addEventListener('click', function(e) {
         if (!e.target.closest('.has-submenu')) {
             document.querySelectorAll('.submenu').forEach(submenu => {
