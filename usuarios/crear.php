@@ -1,27 +1,34 @@
 <?php
-// users/crear.php
+// usuarios/crear.php
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/database.php';
+
+// Configurar zona horaria para Venezuela
+date_default_timezone_set('America/Caracas');
 
 // Verificar autenticación y permisos
 requireLogin();
 
 // Solo administradores pueden crear usuarios
 if ($_SESSION['role'] !== 'admin') {
-    header('Location: ' . BASE_URL . 'index.php');
+    header('Location: lista.php');
     exit;
 }
 
-// Inicializar variables
-$error = '';
-$valores = [
-    'username' => '',
-    'email' => '',
-    'nombre' => '',
-    'apellido' => '',
-    'role' => 'cliente',
-    'activo' => 1
-];
+// Obtener lista de clientes activos con estado de asociación
+try {
+    $pdo = getPDO();
+    $sql = "SELECT c.cuscun, CONCAT(c.cusna1, ' ', c.cusln1) AS nombre, c.cusidn, 
+                   IF(u.id IS NULL, 'Disponible', CONCAT('Asociado a: ', u.username)) AS estado
+            FROM cumst c
+            LEFT JOIN users u ON c.cuscun = u.cuscun
+            WHERE c.cussts = 'A'
+            ORDER BY c.cusna1, c.cusln1";
+    $clientes = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $error = "Error al obtener clientes: " . $e->getMessage();
+    error_log($error);
+}
 
 // Procesar el formulario cuando se envía
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -30,71 +37,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->beginTransaction();
 
         // Validar y sanitizar datos
-        $valores['username'] = trim($_POST['username'] ?? '');
-        $valores['email'] = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
-        $valores['nombre'] = trim($_POST['nombre'] ?? '');
-        $valores['apellido'] = trim($_POST['apellido'] ?? '');
-        $valores['role'] = in_array($_POST['role'] ?? '', ['admin', 'gerente', 'cajero', 'cliente']) ? $_POST['role'] : 'cliente';
-        $valores['activo'] = isset($_POST['activo']) && $_POST['activo'] == '1' ? 1 : 0;
+        $username = trim($_POST['username'] ?? '');
         $password = $_POST['password'] ?? '';
-        $confirm_password = $_POST['confirm_password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+        $role = in_array($_POST['role'] ?? '', ['admin', 'gerente', 'cajero', 'cliente']) ? $_POST['role'] : 'cliente';
+        $clienteId = !empty($_POST['cliente_id']) ? (int)$_POST['cliente_id'] : null;
 
         // Validaciones
-        if (empty($valores['username'])) {
+        if (empty($username)) {
             throw new Exception("El nombre de usuario es obligatorio");
-        }
-
-        if (empty($valores['email']) || !filter_var($valores['email'], FILTER_VALIDATE_EMAIL)) {
-            throw new Exception("Debe proporcionar un email válido");
-        }
-
-        if (empty($password)) {
-            throw new Exception("La contraseña es obligatoria");
-        }
-
-        if ($password !== $confirm_password) {
-            throw new Exception("Las contraseñas no coinciden");
         }
 
         if (strlen($password) < 8) {
             throw new Exception("La contraseña debe tener al menos 8 caracteres");
         }
 
-        // Verificar si el username ya existe
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE username = :username");
-        $stmt->bindParam(':username', $valores['username']);
-        $stmt->execute();
-        
-        if ($stmt->fetchColumn() > 0) {
-            throw new Exception("El nombre de usuario ya está en uso");
+        if ($password !== $confirmPassword) {
+            throw new Exception("Las contraseñas no coinciden");
         }
 
-        // Verificar si el email ya existe
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE email = :email");
-        $stmt->bindParam(':email', $valores['email']);
-        $stmt->execute();
+        // Si es cliente, debe tener asociado un cliente
+        if ($role === 'cliente' && empty($clienteId)) {
+            throw new Exception("Los usuarios con rol cliente deben tener un cliente asociado");
+        }
+
+        // Verificar si el usuario ya existe
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE username = :username");
+        $stmt->execute([':username' => $username]);
         
         if ($stmt->fetchColumn() > 0) {
-            throw new Exception("El email ya está registrado");
+            throw new Exception("El nombre de usuario ya está registrado");
+        }
+
+        // Verificar que el cliente no esté ya asociado a otro usuario
+        if ($clienteId) {
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE cuscun = :cuscun");
+            $stmt->execute([':cuscun' => $clienteId]);
+            
+            if ($stmt->fetchColumn() > 0) {
+                throw new Exception("Este cliente ya está asociado a otro usuario");
+            }
         }
 
         // Hash de la contraseña
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
-        // Insertar usuario
+        // Insertar usuario (siempre activo)
         $sql = "INSERT INTO users 
-                (username, email, nombre, apellido, role, password, activo, creado_en, actualizado_en) 
+                (username, password, role, activo, creado_en, actualizado_en, cuscun) 
                 VALUES 
-                (:username, :email, :nombre, :apellido, :role, :password, :activo, NOW(), NOW())";
+                (:username, :password, :role, 1, NOW(), NOW(), :cuscun)";
         
         $params = [
-            ':username' => $valores['username'],
-            ':email' => $valores['email'],
-            ':nombre' => $valores['nombre'],
-            ':apellido' => $valores['apellido'],
-            ':role' => $valores['role'],
+            ':username' => $username,
             ':password' => $passwordHash,
-            ':activo' => $valores['activo']
+            ':role' => $role,
+            ':cuscun' => $clienteId
         ];
         
         $stmt = $pdo->prepare($sql);
@@ -106,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $_SESSION['mensaje'] = [
             'tipo' => 'success',
-            'texto' => "Usuario {$valores['username']} creado exitosamente"
+            'texto' => "Usuario $username creado exitosamente"
         ];
         
         header('Location: lista.php');
@@ -133,9 +131,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crear Nuevo Usuario - Sistema Bancario</title>
-    <link href="<?php echo BASE_URL; ?>assets/css/bootstrap.min.css" rel="stylesheet">
+    <link href="<?= BASE_URL ?>assets/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
-    <link href="<?php echo BASE_URL; ?>assets/css/registros.css" rel="stylesheet">
+    <link href="<?= BASE_URL ?>assets/css/registros.css" rel="stylesheet">
+    <style>
+        .cliente-disponible {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .cliente-asociado {
+            color: #dc3545;
+            text-decoration: line-through;
+        }
+        .form-select option[disabled] {
+            color: #6c757d;
+            background-color: #f8f9fa;
+        }
+        .selector-clientes {
+            height: 200px;
+            overflow-y: auto;
+        }
+        .badge-estado {
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+        .estado-activo {
+            color: #28a745;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
     <?php include __DIR__ . '/../includes/sidebar.php'; ?>
@@ -145,53 +169,83 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         <?php if (!empty($error)): ?>
             <div class="alert alert-danger alert-dismissible fade show">
-                <?php echo htmlspecialchars($error); ?>
+                <?= htmlspecialchars($error) ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <?php endif; ?>
         
         <form method="post" class="form-container">
-            <!-- Sección Información Básica -->
+            <!-- Sección Cliente Asociado -->
+            <div class="card mb-4 form-section">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-check-fill"></i> Asociar Cliente Existente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="cliente_id" class="form-label">
+                            Seleccionar Cliente
+                            <small class="text-muted">(Obligatorio para rol Cliente)</small>
+                        </label>
+                        
+                        <div class="selector-clientes border rounded p-2 mb-2">
+                            <?php foreach ($clientes as $cliente): ?>
+                                <?php $disponible = ($cliente['estado'] === 'Disponible'); ?>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="cliente_id" 
+                                           id="cliente_<?= $cliente['cuscun'] ?>" 
+                                           value="<?= $cliente['cuscun'] ?>"
+                                           <?= !$disponible ? 'disabled' : '' ?>
+                                           <?= (isset($_POST['cliente_id']) && $_POST['cliente_id'] == $cliente['cuscun']) ? 'checked' : '' ?>>
+                                    <label class="form-check-label <?= $disponible ? 'cliente-disponible' : 'cliente-asociado' ?>" 
+                                           for="cliente_<?= $cliente['cuscun'] ?>">
+                                        <?= htmlspecialchars($cliente['nombre']) ?> 
+                                        (<?= htmlspecialchars($cliente['cusidn']) ?>)
+                                        <span class="badge-estado badge <?= $disponible ? 'bg-success' : 'bg-danger' ?>">
+                                            <?= htmlspecialchars($cliente['estado']) ?>
+                                        </span>
+                                    </label>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <span class="badge bg-success">Disponible</span>
+                            <span class="badge bg-danger">Ya asociado</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección Información de Usuario -->
             <div class="card mb-4 form-section">
                 <div class="card-header">
-                    <h5 class="mb-0">Información Básica</h5>
+                    <h5 class="mb-0">Información del Usuario</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="username" class="form-label required-field">Nombre de Usuario</label>
                             <input type="text" class="form-control" id="username" name="username" 
-                                   value="<?php echo htmlspecialchars($valores['username']); ?>" 
-                                   required placeholder="Nombre de usuario único">
+                                   value="<?= htmlspecialchars($_POST['username'] ?? '') ?>" required>
+                            <small class="form-text text-muted">Mínimo 3 caracteres, sin espacios</small>
                         </div>
                         
                         <div class="col-md-6 mb-3">
-                            <label for="email" class="form-label required-field">Email</label>
-                            <input type="email" class="form-control" id="email" name="email" 
-                                   value="<?php echo htmlspecialchars($valores['email']); ?>" 
-                                   required placeholder="correo@ejemplo.com">
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="nombre" class="form-label">Nombre</label>
-                            <input type="text" class="form-control" id="nombre" name="nombre" 
-                                   value="<?php echo htmlspecialchars($valores['nombre']); ?>" 
-                                   placeholder="Primer nombre">
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="apellido" class="form-label">Apellido</label>
-                            <input type="text" class="form-control" id="apellido" name="apellido" 
-                                   value="<?php echo htmlspecialchars($valores['apellido']); ?>" 
-                                   placeholder="Primer apellido">
+                            <label for="role" class="form-label required-field">Rol</label>
+                            <select class="form-select" id="role" name="role" required>
+                                <option value="admin" <?= (isset($_POST['role']) && $_POST['role'] === 'admin') ? 'selected' : '' ?>>Administrador</option>
+                                <option value="gerente" <?= (isset($_POST['role']) && $_POST['role'] === 'gerente') ? 'selected' : '' ?>>Gerente</option>
+                                <option value="cajero" <?= (isset($_POST['role']) && $_POST['role'] === 'cajero') ? 'selected' : '' ?>>Cajero</option>
+                                <option value="cliente" <?= (!isset($_POST['role']) || $_POST['role'] === 'cliente') ? 'selected' : '' ?>>Cliente</option>
+                            </select>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Sección Seguridad -->
+            <!-- Sección Contraseña -->
             <div class="card mb-4 form-section">
                 <div class="card-header">
                     <h5 class="mb-0">Seguridad</h5>
@@ -200,43 +254,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="password" class="form-label required-field">Contraseña</label>
-                            <input type="password" class="form-control" id="password" name="password" 
-                                   required placeholder="Mínimo 8 caracteres">
+                            <input type="password" class="form-control" id="password" name="password" required>
+                            <small class="form-text text-muted">Mínimo 8 caracteres</small>
                         </div>
                         
                         <div class="col-md-6 mb-3">
                             <label for="confirm_password" class="form-label required-field">Confirmar Contraseña</label>
-                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
-                                   required placeholder="Repita la contraseña">
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Sección Configuración -->
+            <!-- Sección Estado (solo informativa) -->
             <div class="card mb-4 form-section">
                 <div class="card-header">
-                    <h5 class="mb-0">Configuración</h5>
+                    <h5 class="mb-0">Estado del Usuario</h5>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="role" class="form-label required-field">Rol</label>
-                            <select class="form-select" id="role" name="role" required>
-                                <option value="cliente" <?= $valores['role'] === 'cliente' ? 'selected' : '' ?>>Cliente</option>
-                                <option value="cajero" <?= $valores['role'] === 'cajero' ? 'selected' : '' ?>>Cajero</option>
-                                <option value="gerente" <?= $valores['role'] === 'gerente' ? 'selected' : '' ?>>Gerente</option>
-                                <option value="admin" <?= $valores['role'] === 'admin' ? 'selected' : '' ?>>Administrador</option>
-                            </select>
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="activo" class="form-label required-field">Estado</label>
-                            <select class="form-select" id="activo" name="activo" required>
-                                <option value="1" <?= $valores['activo'] == 1 ? 'selected' : '' ?>>Activo</option>
-                                <option value="0" <?= $valores['activo'] == 0 ? 'selected' : '' ?>>Inactivo</option>
-                            </select>
-                        </div>
+                    <div class="estado-activo">
+                        <i class="bi bi-check-circle-fill"></i> El usuario se creará en estado ACTIVO
                     </div>
                 </div>
             </div>
@@ -252,12 +289,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
     </main>
 
-    <script src="<?php echo BASE_URL; ?>assets/js/bootstrap.bundle.min.js"></script>
+    <script src="<?= BASE_URL ?>assets/js/bootstrap.bundle.min.js"></script>
     <script>
-        setTimeout(() => {
-            const alert = document.querySelector('.alert');
-            if (alert) new bootstrap.Alert(alert).close();
-        }, 5000);
+        document.addEventListener('DOMContentLoaded', function() {
+            // Validar que los clientes sean obligatorios para rol cliente
+            document.querySelector('form').addEventListener('submit', function(e) {
+                const role = document.getElementById('role').value;
+                const clienteSeleccionado = document.querySelector('input[name="cliente_id"]:checked');
+                
+                if (role === 'cliente' && (!clienteSeleccionado || clienteSeleccionado.disabled)) {
+                    e.preventDefault();
+                    alert('Debe seleccionar un cliente disponible para el rol Cliente');
+                    return false;
+                }
+            });
+
+            // Resaltar clientes requeridos cuando el rol es Cliente
+            document.getElementById('role').addEventListener('change', function() {
+                const clienteSection = document.querySelector('.selector-clientes');
+                if (this.value === 'cliente') {
+                    clienteSection.classList.add('border-primary');
+                    clienteSection.classList.add('border-2');
+                } else {
+                    clienteSection.classList.remove('border-primary');
+                    clienteSection.classList.remove('border-2');
+                }
+            });
+
+            // Inicializar estado
+            const roleSelect = document.getElementById('role');
+            if (roleSelect.value === 'cliente') {
+                document.querySelector('.selector-clientes').classList.add('border-primary', 'border-2');
+            }
+
+            // Cerrar alertas automáticamente
+            setTimeout(() => {
+                const alert = document.querySelector('.alert');
+                if (alert) new bootstrap.Alert(alert).close();
+            }, 5000);
+        });
     </script>
 </body>
 </html>
