@@ -247,8 +247,8 @@ try {
                                             <?php if ($usuario['id'] != $_SESSION['user_id']): ?>
                                                 <button class="btn btn-sm btn-danger btn-action btn-borrar" 
                                                         data-id="<?= htmlspecialchars($usuario['id']) ?>"
-                                                        title="<?= $usuario['activo'] ? 'Desactivar' : 'Activar' ?>">
-                                                    <i class="bi bi-<?= $usuario['activo'] ? 'trash' : 'arrow-counterclockwise' ?>"></i>
+                                                        title="Desactivar">
+                                                    <i class="bi bi-trash"></i>
                                                 </button>
                                             <?php endif; ?>
                                         </div>
@@ -312,10 +312,9 @@ try {
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
                 const idUsuario = this.getAttribute('data-id');
-                const accion = this.getAttribute('title').toLowerCase();
                 
-                if (confirm(`¿Está seguro que desea ${accion} este usuario?\n\nEsta acción afectará su acceso al sistema.`)) {
-                    window.location.href = 'cambiar_estado.php?id=' + idUsuario;
+                if (confirm('¿Está seguro que desea desactivar este usuario?\n\nEl usuario perderá acceso al sistema pero podrá reactivarse después.')) {
+                    window.location.href = 'borrar.php?id=' + idUsuario;
                 }
             });
         });

@@ -16,30 +16,36 @@ if ($_SESSION['role'] !== 'admin') {
 }
 
 // Obtener ID del usuario a editar
-$idUsuario = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
-if ($idUsuario === 0) {
-    header('Location: lista.php');
-    exit;
-}
-
-// Obtener datos del usuario
 try {
     $pdo = getPDO();
-    $sql = "SELECT u.id, u.username, u.role, u.activo, u.cuscun, 
-                   c.cusna1, c.cusln1, c.cusidn
-            FROM users u
-            LEFT JOIN cumst c ON u.cuscun = c.cuscun
-            WHERE u.id = :id";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([':id' => $idUsuario]);
-    $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
     
+    // Obtener datos del usuario
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = :id");
+    $stmt->execute([':id' => $id]);
+    $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+
     if (!$usuario) {
         throw new Exception("Usuario no encontrado");
     }
+
+    // Obtener datos del cliente asociado (si existe)
+    $clienteAsociado = null;
+    if ($usuario['cuscun']) {
+        $stmt = $pdo->prepare("SELECT CONCAT(cusna1, ' ', cusln1) AS nombre, cusidn FROM cumst WHERE cuscun = :cuscun");
+        $stmt->execute([':cuscun' => $usuario['cuscun']]);
+        $clienteAsociado = $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+} catch (PDOException $e) {
+    $error = "Error al obtener datos: " . $e->getMessage();
+    error_log($error);
+    header('Location: lista.php');
+    exit;
 } catch (Exception $e) {
-    $_SESSION['error'] = $e->getMessage();
+    $error = $e->getMessage();
+    error_log($error);
     header('Location: lista.php');
     exit;
 }
@@ -51,17 +57,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->beginTransaction();
 
         // Validar y sanitizar datos
-        $username = trim($_POST['username'] ?? '');
         $password = $_POST['password'] ?? '';
         $confirmPassword = $_POST['confirm_password'] ?? '';
         $activo = isset($_POST['activo']) ? 1 : 0;
 
         // Validaciones
-        if (empty($username)) {
-            throw new Exception("El nombre de usuario es obligatorio");
-        }
-
-        // Si se proporcionó contraseña, validarla
         if (!empty($password)) {
             if (strlen($password) < 8) {
                 throw new Exception("La contraseña debe tener al menos 8 caracteres");
@@ -70,41 +70,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($password !== $confirmPassword) {
                 throw new Exception("Las contraseñas no coinciden");
             }
-        }
 
-        // Verificar si el username ya existe (excluyendo el usuario actual)
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE username = :username AND id != :id");
-        $stmt->execute([':username' => $username, ':id' => $idUsuario]);
-        
-        if ($stmt->fetchColumn() > 0) {
-            throw new Exception("El nombre de usuario ya está registrado");
-        }
-
-        // Actualizar usuario
-        if (!empty($password)) {
-            // Actualizar con nueva contraseña
+            // Hash de la contraseña
             $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+            
+            // Actualizar con nueva contraseña
             $sql = "UPDATE users 
-                    SET username = :username, password = :password, activo = :activo, actualizado_en = NOW()
+                    SET password = :password, 
+                        activo = :activo,
+                        actualizado_en = NOW()
                     WHERE id = :id";
+            
             $params = [
-                ':username' => $username,
                 ':password' => $passwordHash,
                 ':activo' => $activo,
-                ':id' => $idUsuario
+                ':id' => $id
             ];
         } else {
             // Actualizar sin cambiar contraseña
             $sql = "UPDATE users 
-                    SET username = :username, activo = :activo, actualizado_en = NOW()
+                    SET activo = :activo,
+                        actualizado_en = NOW()
                     WHERE id = :id";
+            
             $params = [
-                ':username' => $username,
                 ':activo' => $activo,
-                ':id' => $idUsuario
+                ':id' => $id
             ];
         }
-        
+
         $stmt = $pdo->prepare($sql);
         if (!$stmt->execute($params)) {
             throw new Exception("Error al actualizar el usuario: " . implode(" ", $stmt->errorInfo()));
@@ -144,25 +138,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="<?= BASE_URL ?>assets/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <link href="<?= BASE_URL ?>assets/css/registros.css" rel="stylesheet">
-    <style>
-        .campo-no-editable {
-            background-color: #f8f9fa;
-            cursor: not-allowed;
-        }
-        .estado-activo {
-            color: #28a745;
-            font-weight: bold;
-        }
-        .estado-inactivo {
-            color: #dc3545;
-        }
-    </style>
 </head>
 <body>
     <?php include __DIR__ . '/../includes/sidebar.php'; ?>
     
     <main class="container mt-4">
-        <h2 class="mb-4">Editar Usuario</h2>
+        <h2 class="mb-4">Editar Usuario: <?= htmlspecialchars($usuario['username']) ?></h2>
         
         <?php if (!empty($error)): ?>
             <div class="alert alert-danger alert-dismissible fade show">
@@ -172,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
         
         <form method="post" class="form-container">
-            <!-- Sección Información Básica -->
+            <!-- Sección Información del Usuario (solo lectura) -->
             <div class="card mb-4 form-section">
                 <div class="card-header">
                     <h5 class="mb-0">Información del Usuario</h5>
@@ -180,42 +161,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="username" class="form-label required-field">Nombre de Usuario</label>
-                            <input type="text" class="form-control" id="username" name="username" 
-                                   value="<?= htmlspecialchars($usuario['username']) ?>" required>
+                            <label class="form-label">Nombre de Usuario</label>
+                            <input type="text" class="form-control-plaintext" value="<?= htmlspecialchars($usuario['username']) ?>" readonly>
                         </div>
                         
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Rol</label>
-                            <input type="text" class="form-control campo-no-editable" 
-                                   value="<?= htmlspecialchars(ucfirst($usuario['role'])) ?>" readonly>
+                            <input type="text" class="form-control-plaintext" value="<?= htmlspecialchars(ucfirst($usuario['role'])) ?>" readonly>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Sección Cliente Asociado (solo lectura) -->
-            <?php if (!empty($usuario['cuscun'])): ?>
-            <div class="card mb-4 form-section">
-                <div class="card-header">
-                    <h5 class="mb-0">Cliente Asociado</h5>
-                </div>
-                <div class="card-body">
+                    
+                    <?php if ($clienteAsociado): ?>
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Nombre del Cliente</label>
-                            <input type="text" class="form-control campo-no-editable" 
-                                   value="<?= htmlspecialchars($usuario['cusna1'] . ' ' . $usuario['cusln1']) ?>" readonly>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Cédula/RIF</label>
-                            <input type="text" class="form-control campo-no-editable" 
-                                   value="<?= htmlspecialchars($usuario['cusidn']) ?>" readonly>
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Cliente Asociado</label>
+                            <input type="text" class="form-control-plaintext" 
+                                   value="<?= htmlspecialchars($clienteAsociado['nombre']) ?> (<?= htmlspecialchars($clienteAsociado['cusidn']) ?>)" readonly>
                         </div>
                     </div>
+                    <?php endif; ?>
                 </div>
             </div>
-            <?php endif; ?>
 
             <!-- Sección Contraseña -->
             <div class="card mb-4 form-section">
@@ -227,11 +193,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="col-md-6 mb-3">
                             <label for="password" class="form-label">Nueva Contraseña</label>
                             <input type="password" class="form-control" id="password" name="password">
-                            <small class="form-text text-muted">Dejar en blanco para mantener la contraseña actual</small>
+                            <small class="form-text text-muted">Dejar en blanco para no cambiar</small>
                         </div>
                         
                         <div class="col-md-6 mb-3">
-                            <label for="confirm_password" class="form-label">Confirmar Nueva Contraseña</label>
+                            <label for="confirm_password" class="form-label">Confirmar Contraseña</label>
                             <input type="password" class="form-control" id="confirm_password" name="confirm_password">
                         </div>
                     </div>
@@ -247,11 +213,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="activo" name="activo" 
                                <?= $usuario['activo'] ? 'checked' : '' ?>>
-                        <label class="form-check-label <?= $usuario['activo'] ? 'estado-activo' : 'estado-inactivo' ?>" 
-                               for="activo">
-                            <?= $usuario['activo'] ? 'Activo' : 'Inactivo' ?>
+                        <label class="form-check-label" for="activo">
+                            Usuario <?= $usuario['activo'] ? 'Activo' : 'Inactivo' ?>
                         </label>
                     </div>
+                    <small class="form-text text-muted">Activar/desactivar el acceso del usuario al sistema</small>
                 </div>
             </div>
             
@@ -274,17 +240,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 const password = document.getElementById('password').value;
                 const confirmPassword = document.getElementById('confirm_password').value;
                 
-                if (password && password.length < 8) {
-                    e.preventDefault();
-                    alert('La contraseña debe tener al menos 8 caracteres');
-                    return false;
+                if (password || confirmPassword) {
+                    if (password.length < 8) {
+                        e.preventDefault();
+                        alert('La contraseña debe tener al menos 8 caracteres');
+                        return false;
+                    }
+                    
+                    if (password !== confirmPassword) {
+                        e.preventDefault();
+                        alert('Las contraseñas no coinciden');
+                        return false;
+                    }
                 }
-                
-                if (password !== confirmPassword) {
-                    e.preventDefault();
-                    alert('Las contraseñas no coinciden');
-                    return false;
-                }
+            });
+
+            // Actualizar texto del estado al cambiar el switch
+            document.getElementById('activo').addEventListener('change', function() {
+                const label = document.querySelector('label[for="activo"]');
+                label.textContent = 'Usuario ' + (this.checked ? 'Activo' : 'Inactivo');
             });
 
             // Cerrar alertas automáticamente
