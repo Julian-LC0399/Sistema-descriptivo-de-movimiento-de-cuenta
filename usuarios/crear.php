@@ -134,6 +134,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="<?= BASE_URL ?>assets/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <link href="<?= BASE_URL ?>assets/css/registros.css" rel="stylesheet">
+    <style>
+        .selector-clientes {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .cliente-option {
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .cliente-option:hover {
+            background-color: #f8f9fa;
+        }
+        .form-check-input:checked ~ .form-check-label {
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
     <?php include __DIR__ . '/../includes/sidebar.php'; ?>
@@ -149,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
         
         <form method="post" class="form-container">
-            <!-- Sección Cliente Asociado -->
+            <!-- Sección Cliente Asociado - Versión Modificada -->
             <div class="card mb-4 form-section">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
@@ -166,27 +182,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="selector-clientes border rounded p-2 mb-2">
                             <?php foreach ($clientes as $cliente): ?>
                                 <?php $disponible = ($cliente['estado'] === 'Disponible'); ?>
-                                <div class="form-check">
+                                <div class="form-check cliente-option p-3 mb-2 rounded">
                                     <input class="form-check-input" type="radio" name="cliente_id" 
                                            id="cliente_<?= $cliente['cuscun'] ?>" 
                                            value="<?= $cliente['cuscun'] ?>"
                                            <?= !$disponible ? 'disabled' : '' ?>
-                                           <?= (isset($_POST['cliente_id']) && $_POST['cliente_id'] == $cliente['cuscun']) ? 'checked' : '' ?>>
-                                    <label class="form-check-label <?= $disponible ? 'cliente-disponible' : 'cliente-asociado' ?>" 
-                                           for="cliente_<?= $cliente['cuscun'] ?>">
-                                        <?= htmlspecialchars($cliente['nombre']) ?> 
-                                        (<?= htmlspecialchars($cliente['cusidn']) ?>)
-                                        <span class="badge-estado badge <?= $disponible ? 'bg-success' : 'bg-danger' ?>">
-                                            <?= htmlspecialchars($cliente['estado']) ?>
-                                        </span>
+                                           <?= (isset($_POST['cliente_id']) && $_POST['cliente_id'] == $cliente['cuscun'] ? 'checked' : '') ?>>
+                                    <label class="form-check-label w-100" for="cliente_<?= $cliente['cuscun'] ?>">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong><?= htmlspecialchars($cliente['nombre']) ?></strong>
+                                                <span class="text-muted ms-2">(<?= htmlspecialchars($cliente['cusidn']) ?>)</span>
+                                            </div>
+                                            <span class="<?= $disponible ? 'text-success' : 'text-danger' ?>">
+                                                <?= $disponible ? 'Disponible' : $cliente['estado'] ?>
+                                            </span>
+                                        </div>
                                     </label>
                                 </div>
                             <?php endforeach; ?>
                         </div>
                         
-                        <div class="d-flex gap-2">
-                            <span class="badge bg-success">Disponible</span>
-                            <span class="badge bg-danger">Ya asociado</span>
+                        <div class="d-flex gap-2 mt-3">
+                            <span class="text-success">
+                                <i class="bi bi-check-circle"></i> Disponible
+                            </span>
+                            <span class="text-danger">
+                                <i class="bi bi-x-circle"></i> Ya asociado
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -209,9 +232,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="col-md-6 mb-3">
                             <label for="role" class="form-label required-field">Rol</label>
                             <select class="form-select" id="role" name="role" required>
-                                <option value="admin" <?= (isset($_POST['role']) && $_POST['role'] === 'admin') ? 'selected' : '' ?>>Administrador</option>
-                                <option value="gerente" <?= (isset($_POST['role']) && $_POST['role'] === 'gerente') ? 'selected' : '' ?>>Gerente</option>
-                                <option value="cajero" <?= (isset($_POST['role']) && $_POST['role'] === 'cajero') ? 'selected' : '' ?>>Cajero</option>
+                                <option value="admin" <?= (isset($_POST['role']) && $_POST['role'] === 'admin' ? 'selected' : '') ?>>Administrador</option>
+                                <option value="gerente" <?= (isset($_POST['role']) && $_POST['role'] === 'gerente' ? 'selected' : '') ?>>Gerente</option>
+                                <option value="cajero" <?= (isset($_POST['role']) && $_POST['role'] === 'cajero' ? 'selected' : '') ?>>Cajero</option>
                                 <option value="cliente" <?= (!isset($_POST['role']) || $_POST['role'] === 'cliente') ? 'selected' : '' ?>>Cliente</option>
                             </select>
                         </div>
@@ -246,8 +269,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <h5 class="mb-0">Estado del Usuario</h5>
                 </div>
                 <div class="card-body">
-                    <div class="estado-activo">
-                        <i class="bi bi-check-circle-fill"></i> El usuario se creará en estado ACTIVO
+                    <div class="alert alert-success mb-0">
+                        <i class="bi bi-check-circle-fill"></i> El usuario se creará en estado <strong>ACTIVO</strong>
                     </div>
                 </div>
             </div>

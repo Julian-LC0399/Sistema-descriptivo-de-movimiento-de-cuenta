@@ -47,21 +47,17 @@ try {
     $error = $e->getMessage();
 }
 
-// Procesar actualización (solo estado, tipo y clase de cuenta son editables)
+// Procesar actualización (solo estado es editable)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $pdo = getPDO();
         $pdo->beginTransaction();
 
-        // Validar y sanitizar datos (solo campos editables)
-        $tipoCuenta = in_array($_POST['tipo_cuenta'] ?? '', ['CA', 'CC']) ? $_POST['tipo_cuenta'] : 'CA';
-        $claseCuenta = in_array($_POST['clase_cuenta'] ?? '', ['N', 'J', 'V']) ? $_POST['clase_cuenta'] : 'N';
+        // Validar y sanitizar solo el estado
         $estado = in_array($_POST['estado'] ?? '', ['A', 'I']) ? $_POST['estado'] : 'A';
 
-        // Actualizar cuenta (solo campos editables)
+        // Actualizar cuenta (solo estado)
         $sql = "UPDATE acmst SET 
-                acmtyp = :tipo,
-                acmcls = :clase,
                 acmsta = :estado,
                 acmlut = NOW(),
                 acmlau = :usuario
@@ -69,8 +65,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $params = [
             ':cuenta' => $numeroCuenta,
-            ':tipo' => $tipoCuenta,
-            ':clase' => $claseCuenta,
             ':estado' => $estado,
             ':usuario' => $_SESSION['username'] ?? 'SISTEMA'
         ];
@@ -178,30 +172,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Sección Configuración -->
-            <div class="card mb-4 form-section">
-                <div class="card-header">
-                    <h5 class="mb-0">Configuración de la Cuenta</h5>
-                </div>
-                <div class="card-body">
+                    <!-- Mostrar tipo y clase como información de solo lectura -->
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label for="tipo_cuenta" class="form-label required-field">Tipo de Cuenta</label>
-                            <select class="form-select" id="tipo_cuenta" name="tipo_cuenta" required>
-                                <option value="CA" <?php echo (!isset($cuenta['acmtyp']) || $cuenta['acmtyp'] === 'CA') ? 'selected' : ''; ?>>CA - Ahorros</option>
-                                <option value="CC" <?php echo (isset($cuenta['acmtyp']) && $cuenta['acmtyp'] === 'CC') ? 'selected' : ''; ?>>CC - Corriente</option>
-                            </select>
+                            <label class="form-label">Tipo de Cuenta</label>
+                            <div class="form-control-plaintext bg-light p-2 rounded">
+                                <?php 
+                                $tiposCuenta = [
+                                    'CA' => 'CA - Ahorros',
+                                    'CC' => 'CC - Corriente'
+                                ];
+                                echo htmlspecialchars($tiposCuenta[$cuenta['acmtyp']] ?? $cuenta['acmtyp']);
+                                ?>
+                            </div>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label for="clase_cuenta" class="form-label required-field">Clase de Cuenta</label>
-                            <select class="form-select" id="clase_cuenta" name="clase_cuenta" required>
-                                <option value="N" <?php echo (!isset($cuenta['acmcls']) || $cuenta['acmcls'] === 'N') ? 'selected' : ''; ?>>N - Normal</option>
-                                <option value="J" <?php echo (isset($cuenta['acmcls']) && $cuenta['acmcls'] === 'J') ? 'selected' : ''; ?>>J - Jurídica</option>
-                                <option value="V" <?php echo (isset($cuenta['acmcls']) && $cuenta['acmcls'] === 'V') ? 'selected' : ''; ?>>V - VIP</option>
-                            </select>
+                            <label class="form-label">Clase de Cuenta</label>
+                            <div class="form-control-plaintext bg-light p-2 rounded">
+                                <?php 
+                                $clasesCuenta = [
+                                    'N' => 'N - Normal',
+                                    'J' => 'J - Jurídica',
+                                    'V' => 'V - VIP'
+                                ];
+                                echo htmlspecialchars($clasesCuenta[$cuenta['acmcls']] ?? $cuenta['acmcls']);
+                                ?>
+                            </div>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="estado" class="form-label required-field">Estado</label>
