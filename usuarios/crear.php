@@ -134,22 +134,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="<?= BASE_URL ?>assets/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <link href="<?= BASE_URL ?>assets/css/registros.css" rel="stylesheet">
-    <style>
-        .selector-clientes {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .cliente-option {
-            border-left: 3px solid transparent;
-            transition: all 0.2s ease;
-        }
-        .cliente-option:hover {
-            background-color: #f8f9fa;
-        }
-        .form-check-input:checked ~ .form-check-label {
-            font-weight: bold;
-        }
-    </style>
 </head>
 <body>
     <?php include __DIR__ . '/../includes/sidebar.php'; ?>

@@ -143,6 +143,31 @@ h2 {
 }
 
 /* ============ ESTILOS ESPECÍFICOS PARA CREACIÓN DE USUARIOS ============ */
+.selector-clientes {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 10px;
+    background-color: #fff;
+    transition: border-color 0.3s ease;
+}
+
+.cliente-option {
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    background-color: #fff;
+    border: 1px solid #e9ecef;
+}
+
+.cliente-option:hover {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+}
+
 .cliente-disponible {
     color: #28a745;
     font-weight: bold;
@@ -153,19 +178,23 @@ h2 {
     text-decoration: line-through;
 }
 
-.selector-clientes {
-    height: 200px;
-    overflow-y: auto;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    padding: 10px;
-    background-color: #fff;
-    transition: border-color 0.3s ease;
+.form-check-input:checked ~ .form-check-label {
+    font-weight: bold;
+    color: #005883;
+}
+
+.form-check-input:checked ~ .form-check-label .cliente-info {
+    font-weight: normal;
+}
+
+.form-check-input:focus ~ .form-check-label {
+    box-shadow: 0 0 0 0.2rem rgba(0, 88, 131, 0.25);
 }
 
 .selector-clientes.border-primary {
     border-color: #005883;
     border-width: 2px;
+    box-shadow: 0 0 0 0.2rem rgba(0, 88, 131, 0.1);
 }
 
 .badge-estado {
@@ -193,6 +222,8 @@ h2 {
     padding: 5px 8px;
     border-radius: 4px;
     margin-left: 5px;
+    width: 100%;
+    cursor: pointer;
 }
 
 .form-check-label:hover {
@@ -705,26 +736,6 @@ h2 {
     }
 }
 
-/* ============ RESPONSIVE PARA CREACIÓN DE USUARIOS ============ */
-@media (max-width: 768px) {
-    .selector-clientes {
-        height: 150px;
-        padding: 8px;
-    }
-}
-
-@media (max-width: 576px) {
-    .selector-clientes {
-        height: 120px;
-    }
-    
-    .badge-estado {
-        display: block;
-        margin-left: 0;
-        margin-top: 4px;
-    }
-}
-
 /* ============ RESPONSIVE GENERAL ============ */
 @media (min-width: 1200px) {
     .form-group {
@@ -790,6 +801,15 @@ h2 {
     .btn {
         width: 100%;
     }
+
+    /* Selector de clientes responsive */
+    .selector-clientes {
+        max-height: 250px;
+    }
+    
+    .cliente-option {
+        padding: 10px;
+    }
 }
 
 @media (max-width: 576px) {
@@ -825,6 +845,23 @@ h2 {
     .form-control, 
     .form-select {
         padding: 0.5rem;
+    }
+
+    /* Selector de clientes responsive */
+    .selector-clientes {
+        max-height: 200px;
+        padding: 8px;
+    }
+    
+    .cliente-option {
+        padding: 8px;
+        margin-bottom: 6px;
+    }
+    
+    .badge-estado {
+        display: block;
+        margin-left: 0;
+        margin-top: 4px;
     }
 }
 
