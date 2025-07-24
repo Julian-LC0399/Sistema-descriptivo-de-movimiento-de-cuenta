@@ -142,6 +142,72 @@ h2 {
     display: block;
 }
 
+/* ============ ESTILOS ESPECÍFICOS PARA CREACIÓN DE USUARIOS ============ */
+.cliente-disponible {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.cliente-asociado {
+    color: #dc3545;
+    text-decoration: line-through;
+}
+
+.selector-clientes {
+    height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 10px;
+    background-color: #fff;
+    transition: border-color 0.3s ease;
+}
+
+.selector-clientes.border-primary {
+    border-color: #005883;
+    border-width: 2px;
+}
+
+.badge-estado {
+    font-size: 0.8em;
+    margin-left: 10px;
+    padding: 3px 8px;
+    border-radius: 10px;
+}
+
+.estado-activo {
+    color: #28a745;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-check-input:disabled + .form-check-label {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.form-check-label {
+    transition: all 0.2s ease;
+    padding: 5px 8px;
+    border-radius: 4px;
+    margin-left: 5px;
+}
+
+.form-check-label:hover {
+    background-color: rgba(0, 88, 131, 0.05);
+}
+
+.estado-activo .bi {
+    font-size: 1.2em;
+}
+
+.form-select option[disabled] {
+    color: #6c757d;
+    background-color: #f8f9fa;
+}
+
 /* ============ INPUT GROUPS ============ */
 .input-group {
     display: flex;
@@ -639,7 +705,27 @@ h2 {
     }
 }
 
-/* ============ RESPONSIVE ============ */
+/* ============ RESPONSIVE PARA CREACIÓN DE USUARIOS ============ */
+@media (max-width: 768px) {
+    .selector-clientes {
+        height: 150px;
+        padding: 8px;
+    }
+}
+
+@media (max-width: 576px) {
+    .selector-clientes {
+        height: 120px;
+    }
+    
+    .badge-estado {
+        display: block;
+        margin-left: 0;
+        margin-top: 4px;
+    }
+}
+
+/* ============ RESPONSIVE GENERAL ============ */
 @media (min-width: 1200px) {
     .form-group {
         max-width: 200px;

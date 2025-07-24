@@ -16,15 +16,25 @@ if (!in_array($_SESSION['role'], $allowedRoles)) {
     exit;
 }
 
-// Obtener lista de clientes activos y sucursales
+// Obtener lista de clientes activos
 try {
     $pdo = getPDO();
     $clientes = $pdo->query("SELECT cuscun, CONCAT(cusna1, ' ', cusln1) AS nombre FROM cumst WHERE cussts = 'A' ORDER BY cusna1")->fetchAll(PDO::FETCH_ASSOC);
-    $sucursales = $pdo->query("SELECT DISTINCT acmbrn FROM acmst ORDER BY acmbrn")->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
-    $error = "Error al obtener datos: " . $e->getMessage();
+    $error = "Error al obtener clientes: " . $e->getMessage();
     error_log($error);
 }
+
+// Definir valores fijos
+$sucursales = [
+    ['acmbrn' => 1],
+    ['acmbrn' => 2],
+    ['acmbrn' => 3],
+    ['acmbrn' => 4],
+    ['acmbrn' => 5]
+];
+
+$productosBancarios = [10, 20, 30, 40, 50];
 
 // Función para generar número de cuenta único
 function generarNumeroCuenta($pdo, $producto, $sucursal, $clienteId) {
@@ -79,12 +89,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception("Todos los campos obligatorios deben ser completados");
         }
 
-        if ($productoBancario < 1 || $productoBancario > 99) {
-            throw new Exception("El producto bancario debe ser entre 1 y 99");
+        // Validar sucursal (1-5)
+        if ($sucursal < 1 || $sucursal > 5) {
+            throw new Exception("El número de sucursal debe ser entre 1 y 5");
         }
 
-        if ($sucursal < 1 || $sucursal > 99) {
-            throw new Exception("El número de sucursal debe ser entre 1 y 99");
+        // Validar producto bancario (10,20,30,40,50)
+        if (!in_array($productoBancario, $productosBancarios)) {
+            throw new Exception("El producto bancario seleccionado no es válido");
         }
 
         // Verificar cliente existe
@@ -244,11 +256,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label for="producto_bancario" class="form-label required-field">Producto Bancario</label>
                             <select class="form-select" id="producto_bancario" name="producto_bancario" required>
                                 <option value="">Seleccione producto</option>
-                                <option value="10" <?php echo (isset($_POST['producto_bancario']) && $_POST['producto_bancario'] == '10') ? 'selected' : ''; ?>>10</option>
-                                <option value="20" <?php echo (isset($_POST['producto_bancario']) && $_POST['producto_bancario'] == '20') ? 'selected' : ''; ?>>20</option>
-                                <option value="30" <?php echo (isset($_POST['producto_bancario']) && $_POST['producto_bancario'] == '30') ? 'selected' : ''; ?>>30</option>
-                                <option value="40" <?php echo (isset($_POST['producto_bancario']) && $_POST['producto_bancario'] == '40') ? 'selected' : ''; ?>>40</option>
-                                <option value="50" <?php echo (isset($_POST['producto_bancario']) && $_POST['producto_bancario'] == '50') ? 'selected' : ''; ?>>50</option>
+                                <?php foreach ($productosBancarios as $producto): ?>
+                                    <option value="<?php echo $producto; ?>"
+                                        <?php echo (isset($_POST['producto_bancario']) && $_POST['producto_bancario'] == $producto) ? 'selected' : ''; ?>>
+                                        <?php echo $producto; ?>
+                                    </option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                     </div>

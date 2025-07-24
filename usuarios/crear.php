@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Hash de la contraseña
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
-        // Insertar usuario (siempre activo)
+        // Insertar usuario (sin campo email)
         $sql = "INSERT INTO users 
                 (username, password, role, activo, creado_en, actualizado_en, cuscun) 
                 VALUES 
@@ -134,32 +134,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="<?= BASE_URL ?>assets/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <link href="<?= BASE_URL ?>assets/css/registros.css" rel="stylesheet">
-    <style>
-        .cliente-disponible {
-            color: #28a745;
-            font-weight: bold;
-        }
-        .cliente-asociado {
-            color: #dc3545;
-            text-decoration: line-through;
-        }
-        .form-select option[disabled] {
-            color: #6c757d;
-            background-color: #f8f9fa;
-        }
-        .selector-clientes {
-            height: 200px;
-            overflow-y: auto;
-        }
-        .badge-estado {
-            font-size: 0.8em;
-            margin-left: 10px;
-        }
-        .estado-activo {
-            color: #28a745;
-            font-weight: bold;
-        }
-    </style>
 </head>
 <body>
     <?php include __DIR__ . '/../includes/sidebar.php'; ?>
@@ -308,11 +282,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             document.getElementById('role').addEventListener('change', function() {
                 const clienteSection = document.querySelector('.selector-clientes');
                 if (this.value === 'cliente') {
-                    clienteSection.classList.add('border-primary');
-                    clienteSection.classList.add('border-2');
+                    clienteSection.classList.add('border-primary', 'border-2');
                 } else {
-                    clienteSection.classList.remove('border-primary');
-                    clienteSection.classList.remove('border-2');
+                    clienteSection.classList.remove('border-primary', 'border-2');
                 }
             });
 
