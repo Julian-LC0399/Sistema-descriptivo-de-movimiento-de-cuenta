@@ -166,34 +166,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="selector-clientes border rounded p-2 mb-2">
                             <?php foreach ($clientes as $cliente): ?>
                                 <?php $disponible = ($cliente['estado'] === 'Disponible'); ?>
-                                <div class="form-check cliente-option p-3 mb-2 rounded">
+                                <div class="form-check cliente-option p-3 mb-2 rounded <?= $disponible ? 'cliente-disponible' : 'cliente-asociado' ?>">
                                     <input class="form-check-input" type="radio" name="cliente_id" 
                                            id="cliente_<?= $cliente['cuscun'] ?>" 
                                            value="<?= $cliente['cuscun'] ?>"
                                            <?= !$disponible ? 'disabled' : '' ?>
-                                           <?= (isset($_POST['cliente_id']) && $_POST['cliente_id'] == $cliente['cuscun'] ? 'checked' : '') ?>>
+                                           <?= (isset($_POST['cliente_id']) && $_POST['cliente_id'] == $cliente['cuscun']) ? 'checked' : '' ?>>
                                     <label class="form-check-label w-100" for="cliente_<?= $cliente['cuscun'] ?>">
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div>
                                                 <strong><?= htmlspecialchars($cliente['nombre']) ?></strong>
                                                 <span class="text-muted ms-2">(<?= htmlspecialchars($cliente['cusidn']) ?>)</span>
                                             </div>
-                                            <span class="<?= $disponible ? 'text-success' : 'text-danger' ?>">
-                                                <?= $disponible ? 'Disponible' : $cliente['estado'] ?>
+                                            <span class="badge <?= $disponible ? 'bg-success' : 'bg-danger' ?>">
+                                                <?= $disponible ? '<i class="bi bi-check-circle"></i> Disponible' : '<i class="bi bi-x-circle"></i> Ya asociado' ?>
                                             </span>
                                         </div>
+                                        <?php if (!$disponible): ?>
+                                            <small class="text-danger d-block mt-1"><?= htmlspecialchars($cliente['estado']) ?></small>
+                                        <?php endif; ?>
                                     </label>
                                 </div>
                             <?php endforeach; ?>
-                        </div>
-                        
-                        <div class="d-flex gap-2 mt-3">
-                            <span class="text-success">
-                                <i class="bi bi-check-circle"></i> Disponible
-                            </span>
-                            <span class="text-danger">
-                                <i class="bi bi-x-circle"></i> Ya asociado
-                            </span>
                         </div>
                     </div>
                 </div>
