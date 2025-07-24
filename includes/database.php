@@ -3,62 +3,55 @@
 
 /**
  * Configuración de sesión segura
- * Recomendación: Iniciar sesión antes de cualquier output
  */
 if (session_status() === PHP_SESSION_NONE) {
     session_start([
-        'cookie_lifetime' => 86400, // 1 día
-        'cookie_secure'   => isset($_SERVER['HTTPS']), // Solo HTTPS en producción
-        'cookie_httponly' => true, // Protección contra XSS
-        'use_strict_mode' => true // Mejor seguridad de sesión
+        'cookie_lifetime' => 86400,
+        'cookie_secure'   => isset($_SERVER['HTTPS']),
+        'cookie_httponly' => true,
+        'use_strict_mode' => true
     ]);
 }
 
-// Configuración de la base de datos (Recomendación: Mover a configuración separada en producción)
+// Configuración de la base de datos
 $host = 'localhost';
 $dbname = 'banco';
 $username = 'root';
 $password = '1234';
 $port = '3306';
 
-// Intentar conexión a la base de datos
+// Conexión a la base de datos
 try {
     $dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4";
     $options = [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
-        PDO::ATTR_PERSISTENT => false // Recomendación: No usar conexiones persistentes
+        PDO::ATTR_PERSISTENT => false
     ];
     
     $pdo = new PDO($dsn, $username, $password, $options);
 } catch (PDOException $e) {
-    // Recomendación: Loggear el error en producción en lugar de mostrar detalles
     error_log("Error de conexión a BD: " . $e->getMessage());
     die("Error en el sistema. Por favor intente más tarde.");
 }
 
 /**
  * Verifica si el usuario está autenticado
- * Recomendación: Verificar también el agente de usuario e IP para seguridad
  */
 function isLoggedIn(): bool {
     return isset($_SESSION['user_id']);
-    // Mejora adicional (opcional):
-    // && $_SESSION['ip'] === $_SERVER['REMOTE_ADDR']
-    // && $_SESSION['user_agent'] === $_SERVER['HTTP_USER_AGENT'];
 }
 
 /**
- * Autentica un usuario
- * Recomendación: Añadir límite de intentos fallidos
+ * Autentica un usuario (versión corregida)
  */
 function authenticate(string $username, string $password): bool {
     global $pdo;
     
     try {
         $stmt = $pdo->prepare("
-            SELECT id, username, password, nombre, apellido, role 
+            SELECT id, username, password, role, cuscun
             FROM users 
             WHERE username = :username 
             AND activo = 1
@@ -69,22 +62,19 @@ function authenticate(string $username, string $password): bool {
         $user = $stmt->fetch();
         
         if ($user && password_verify($password, $user['password'])) {
-            // Regenerar ID de sesión para prevenir fixation
             session_regenerate_id(true);
             
             $_SESSION = [
                 'user_id' => $user['id'],
                 'username' => $user['username'],
-                'nombre' => $user['nombre'],
-                'apellido' => $user['apellido'],
                 'role' => $user['role'],
-                'ip' => $_SERVER['REMOTE_ADDR'], // Para verificación posterior
-                'user_agent' => $_SERVER['HTTP_USER_AGENT'] // Para verificación posterior
+                'cuscun' => $user['cuscun'],
+                'ip' => $_SERVER['REMOTE_ADDR'],
+                'user_agent' => $_SERVER['HTTP_USER_AGENT']
             ];
             return true;
         }
         
-        // Recomendación: Registrar intento fallido (para límite de intentos)
         error_log("Intento fallido de login para usuario: $username");
         return false;
     } catch (PDOException $e) {
@@ -95,13 +85,10 @@ function authenticate(string $username, string $password): bool {
 
 /**
  * Cierra la sesión del usuario
- * Mejorado: Limpieza más completa
  */
 function logout(): void {
-    // Destruir todas las variables de sesión
     $_SESSION = [];
 
-    // Borrar cookie de sesión
     if (ini_get("session.use_cookies")) {
         $params = session_get_cookie_params();
         setcookie(
@@ -115,17 +102,13 @@ function logout(): void {
         );
     }
 
-    // Destruir sesión
     session_destroy();
-
-    // Recomendación: Redirigir a login después de cerrar sesión
     header("Location: login.php");
     exit;
 }
 
 /**
  * Requiere que el usuario esté autenticado
- * Recomendación: Añadir verificación de seguridad adicional
  */
 function requireLogin(?string $rolRequerido = null): void {
     if (!isLoggedIn()) {
@@ -134,7 +117,6 @@ function requireLogin(?string $rolRequerido = null): void {
         exit;
     }
     
-    // Verificación de seguridad adicional (opcional)
     if ($_SESSION['ip'] !== $_SERVER['REMOTE_ADDR'] || 
         $_SESSION['user_agent'] !== $_SERVER['HTTP_USER_AGENT']) {
         logout();
@@ -142,27 +124,21 @@ function requireLogin(?string $rolRequerido = null): void {
     
     if ($rolRequerido && $_SESSION['role'] !== $rolRequerido) {
         header('HTTP/1.0 403 Forbidden');
-        // Recomendación: Mostrar página de error personalizada
         die('Acceso no autorizado para tu rol');
     }
 }
 
 /**
  * Redirige al usuario después del login
- * Recomendación: Validar URL antes de redirigir
  */
 function redirectAfterLogin(string $urlDefault = 'index.php'): void {
     $url = $_SESSION['redirect_url'] ?? $urlDefault;
+    unset($_SESSION['redirect_url']);
     
-    // Validación básica de URL (mejorable)
-    if (filter_var($url, FILTER_VALIDATE_URL)) {
-        header("Location: $urlDefault");
-        exit;
-    }
+    $allowedPaths = ['index.php', 'dashboard.php', 'perfil.php'];
+    $path = parse_url($url, PHP_URL_PATH);
     
-    // Redirigir a URL local válida
-    $allowedPaths = ['index.php', 'dashboard.php', 'perfil.php']; // Ajustar según necesidades
-    if (in_array(parse_url($url, PHP_URL_PATH), $allowedPaths)) {
+    if (in_array($path, $allowedPaths)) {
         header("Location: $url");
     } else {
         header("Location: $urlDefault");
@@ -172,7 +148,6 @@ function redirectAfterLogin(string $urlDefault = 'index.php'): void {
 
 /**
  * Escapa y sanitiza datos para HTML
- * Recomendación: Mantener esta función para consistencia
  */
 function e(string $data): string {
     return htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
@@ -180,7 +155,6 @@ function e(string $data): string {
 
 /**
  * Obtiene la conexión PDO
- * Recomendación: Considerar inyección de dependencias en lugar de global
  */
 function getPDO(): PDO {
     global $pdo;
@@ -188,15 +162,95 @@ function getPDO(): PDO {
 }
 
 /**
- * Recomendación adicional: Función para hashear contraseñas
+ * Hashea contraseñas
  */
 function hashPassword(string $password): string {
     return password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
 }
 
 /**
- * Recomendación: Función para verificar necesidad de rehashear
+ * Verifica necesidad de rehashear
  */
 function needsRehash(string $hash): bool {
     return password_needs_rehash($hash, PASSWORD_BCRYPT, ['cost' => 12]);
+}
+
+/**
+ * Obtiene información del usuario actual
+ */
+function getCurrentUser(): ?array {
+    if (!isLoggedIn()) {
+        return null;
+    }
+    
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare("
+            SELECT id, username, role, cuscun, creado_en 
+            FROM users 
+            WHERE id = :user_id
+        ");
+        $stmt->execute([':user_id' => $_SESSION['user_id']]);
+        return $stmt->fetch();
+    } catch (PDOException $e) {
+        error_log("Error al obtener usuario: " . $e->getMessage());
+        return null;
+    }
+}
+
+/**
+ * Verifica si el usuario tiene un permiso específico
+ */
+function hasPermission(string $permCode): bool {
+    if (!isLoggedIn()) {
+        return false;
+    }
+    
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) 
+            FROM user_permissions up
+            JOIN permissions p ON up.permission_id = p.id
+            WHERE up.user_id = :user_id AND p.perm_code = :perm_code
+        ");
+        $stmt->execute([
+            ':user_id' => $_SESSION['user_id'],
+            ':perm_code' => $permCode
+        ]);
+        return $stmt->fetchColumn() > 0;
+    } catch (PDOException $e) {
+        error_log("Error al verificar permiso: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Registra un evento en el log del sistema
+ */
+function logEvent(string $action, ?array $details = null): bool {
+    if (!isLoggedIn()) {
+        return false;
+    }
+    
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare("
+            INSERT INTO system_logs 
+            (user_id, action, details, ip_address, user_agent) 
+            VALUES 
+            (:user_id, :action, :details, :ip, :user_agent)
+        ");
+        
+        return $stmt->execute([
+            ':user_id' => $_SESSION['user_id'],
+            ':action' => $action,
+            ':details' => $details ? json_encode($details) : null,
+            ':ip' => $_SERVER['REMOTE_ADDR'],
+            ':user_agent' => $_SERVER['HTTP_USER_AGENT']
+        ]);
+    } catch (PDOException $e) {
+        error_log("Error al registrar evento: " . $e->getMessage());
+        return false;
+    }
 }

@@ -142,6 +142,92 @@ h2 {
     display: block;
 }
 
+/* ============ SELECTOR DE CLIENTES MEJORADO ============ */
+.selector-clientes {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 10px;
+    background-color: #fff;
+    transition: border-color 0.3s ease;
+}
+
+.cliente-option {
+    border-left: 4px solid transparent;
+    transition: all 0.3s ease;
+    padding: 12px 15px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    background-color: #fff;
+    border: 1px solid #e9ecef;
+    position: relative;
+}
+
+/* ESTILOS MEJORADOS PARA CLIENTES DISPONIBLES */
+.cliente-disponible {
+    background-color: #e8f5e9;
+    border-left-color: #28a745 !important;
+    padding-right: 100px; /* Espacio para el badge */
+}
+
+.cliente-disponible .disponible-badge {
+    position: absolute;
+    top: 12px;
+    right: 15px;
+    background-color: #28a745;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: bold;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.cliente-disponible .disponible-badge i {
+    font-size: 0.9em;
+}
+
+/* ESTILOS PARA CLIENTES ASOCIADOS */
+.cliente-asociado {
+    background-color: #fff5f5;
+    border-left-color: #dc3545 !important;
+}
+
+.cliente-asociado .asociado-badge {
+    background-color: #dc3545 !important;
+    color: white !important;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.cliente-option:hover {
+    transform: translateX(5px);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.cliente-disponible:hover {
+    background-color: #e0f2e1 !important;
+}
+
+.cliente-asociado:hover {
+    background-color: #ffebee !important;
+}
+
+.selector-clientes.border-primary {
+    border-color: #005883;
+    border-width: 2px;
+    box-shadow: 0 0 0 0.2rem rgba(0, 88, 131, 0.1);
+}
+
 /* ============ INPUT GROUPS ============ */
 .input-group {
     display: flex;
@@ -639,7 +725,7 @@ h2 {
     }
 }
 
-/* ============ RESPONSIVE ============ */
+/* ============ RESPONSIVE GENERAL ============ */
 @media (min-width: 1200px) {
     .form-group {
         max-width: 200px;
@@ -704,6 +790,27 @@ h2 {
     .btn {
         width: 100%;
     }
+
+    /* Selector de clientes responsive */
+    .selector-clientes {
+        max-height: 250px;
+    }
+    
+    .cliente-option {
+        padding: 10px;
+    }
+    
+    .cliente-disponible {
+        padding-right: 15px;
+    }
+    
+    .cliente-disponible .disponible-badge {
+        position: static;
+        display: block;
+        margin-top: 5px;
+        margin-left: 0;
+        width: fit-content;
+    }
 }
 
 @media (max-width: 576px) {
@@ -740,14 +847,22 @@ h2 {
     .form-select {
         padding: 0.5rem;
     }
-}
 
-/* ============ CORRECCIONES ESPECÍFICAS ============ */
-.form-control::placeholder {
-    color: #a0aec0;
-    opacity: 1;
-}
-
-.form-select option {
-    padding: 8px 12px;
+    /* Selector de clientes responsive */
+    .selector-clientes {
+        max-height: 200px;
+        padding: 8px;
+    }
+    
+    .cliente-option {
+        padding: 8px;
+        margin-bottom: 6px;
+        border-left-width: 2px;
+    }
+    
+    .cliente-disponible .disponible-badge,
+    .cliente-asociado .asociado-badge {
+        font-size: 0.7em;
+        padding: 3px 8px;
+    }
 }
