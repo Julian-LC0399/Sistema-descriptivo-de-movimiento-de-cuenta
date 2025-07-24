@@ -18,8 +18,9 @@ $filtroRol = isset($_GET['rol']) ? $_GET['rol'] : '';
 $filtroEstado = isset($_GET['estado']) ? $_GET['estado'] : '1'; // Por defecto muestra solo activos
 
 // Consulta base
-$sql = "SELECT u.id, u.username, u.nombre, u.apellido, u.role, u.activo, 
-               u.creado_en, u.actualizado_en, c.cusna1, c.cusln1 
+$sql = "SELECT u.id, u.username, u.role, u.activo, 
+               u.creado_en, u.actualizado_en, 
+               c.cusna1, c.cusna2, c.cusln1, c.cusln2 
         FROM users u
         LEFT JOIN cumst c ON u.cuscun = c.cuscun";
 $params = [];
@@ -45,7 +46,7 @@ if (!empty($busquedaUsuario)) {
 }
 
 if (!empty($busquedaGeneral)) {
-    $conditions[] = "(u.nombre LIKE :busqueda_nombre OR u.apellido LIKE :busqueda_apellido)";
+    $conditions[] = "(c.cusna1 LIKE :busqueda_nombre OR c.cusln1 LIKE :busqueda_apellido)";
     $params[':busqueda_nombre'] = "%$busquedaGeneral%";
     $params[':busqueda_apellido'] = "%$busquedaGeneral%";
 }
@@ -76,7 +77,7 @@ try {
 }
 
 // Consulta para obtener usuarios con paginación
-$sql .= " ORDER BY u.nombre, u.apellido LIMIT :limit OFFSET :offset";
+$sql .= " ORDER BY c.cusna1, c.cusln1 LIMIT :limit OFFSET :offset";
 $params[':limit'] = $usuariosPorPagina;
 $params[':offset'] = $offset;
 
@@ -213,9 +214,11 @@ try {
                                     <td><?= htmlspecialchars($usuario['username']) ?></td>
                                     <td>
                                         <?= htmlspecialchars(
-                                            ($usuario['nombre'] ?? '') . ' ' . 
-                                            ($usuario['apellido'] ?? '')
-                                        ) ?>
+                                            trim(($usuario['cusna1'] ?? '') . ' ' . 
+                                            ($usuario['cusna2'] ?? '') . ' ' .
+                                            ($usuario['cusln1'] ?? '') . ' ' . 
+                                            ($usuario['cusln2'] ?? '')
+                                        ) ); ?>
                                     </td>
                                     <td><?= htmlspecialchars($usuario['role']) ?></td>
                                     <td>
