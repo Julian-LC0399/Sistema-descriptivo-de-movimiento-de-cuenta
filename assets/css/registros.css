@@ -156,30 +156,57 @@ h2 {
 .cliente-option {
     border-left: 4px solid transparent;
     transition: all 0.3s ease;
-    padding: 12px;
+    padding: 12px 15px;
     margin-bottom: 8px;
     border-radius: 4px;
     background-color: #fff;
     border: 1px solid #e9ecef;
+    position: relative;
 }
 
+/* ESTILOS MEJORADOS PARA CLIENTES DISPONIBLES */
 .cliente-disponible {
-    background-color: #f0fff4;
+    background-color: #e8f5e9;
     border-left-color: #28a745 !important;
+    padding-right: 100px; /* Espacio para el badge */
 }
 
+.cliente-disponible .disponible-badge {
+    position: absolute;
+    top: 12px;
+    right: 15px;
+    background-color: #28a745;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: bold;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.cliente-disponible .disponible-badge i {
+    font-size: 0.9em;
+}
+
+/* ESTILOS PARA CLIENTES ASOCIADOS */
 .cliente-asociado {
     background-color: #fff5f5;
     border-left-color: #dc3545 !important;
-    opacity: 0.9;
 }
 
-.cliente-disponible .form-check-label {
-    color: #28a745;
-}
-
-.cliente-asociado .form-check-label {
-    color: #dc3545;
+.cliente-asociado .asociado-badge {
+    background-color: #dc3545 !important;
+    color: white !important;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
 }
 
 .cliente-option:hover {
@@ -188,76 +215,17 @@ h2 {
 }
 
 .cliente-disponible:hover {
-    background-color: #e8f5e9 !important;
+    background-color: #e0f2e1 !important;
 }
 
 .cliente-asociado:hover {
     background-color: #ffebee !important;
 }
 
-.badge-estado {
-    font-size: 0.8em;
-    margin-left: 10px;
-    padding: 5px 10px;
-    border-radius: 10px;
-}
-
-.cliente-disponible .badge-estado {
-    background-color: #28a745 !important;
-    color: white;
-}
-
-.cliente-asociado .badge-estado {
-    background-color: #dc3545 !important;
-    color: white;
-}
-
-.info-asociado {
-    font-size: 0.8rem;
-    color: #dc3545;
-    margin-top: 5px;
-    display: block;
-}
-
-.form-check-input:disabled + .form-check-label {
-    opacity: 0.7;
-    cursor: not-allowed;
-}
-
-.form-check-input:checked ~ .form-check-label {
-    font-weight: bold;
-    color: #005883;
-}
-
-.form-check-input:checked ~ .form-check-label .cliente-info {
-    font-weight: normal;
-}
-
-.form-check-input:focus ~ .form-check-label {
-    box-shadow: 0 0 0 0.2rem rgba(0, 88, 131, 0.25);
-}
-
 .selector-clientes.border-primary {
     border-color: #005883;
     border-width: 2px;
     box-shadow: 0 0 0 0.2rem rgba(0, 88, 131, 0.1);
-}
-
-.estado-activo {
-    color: #28a745;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.estado-activo .bi {
-    font-size: 1.2em;
-}
-
-.form-select option[disabled] {
-    color: #6c757d;
-    background-color: #f8f9fa;
 }
 
 /* ============ INPUT GROUPS ============ */
@@ -831,6 +799,18 @@ h2 {
     .cliente-option {
         padding: 10px;
     }
+    
+    .cliente-disponible {
+        padding-right: 15px;
+    }
+    
+    .cliente-disponible .disponible-badge {
+        position: static;
+        display: block;
+        margin-top: 5px;
+        margin-left: 0;
+        width: fit-content;
+    }
 }
 
 @media (max-width: 576px) {
@@ -880,23 +860,9 @@ h2 {
         border-left-width: 2px;
     }
     
-    .badge-estado {
-        display: block;
-        margin-left: 0;
-        margin-top: 4px;
+    .cliente-disponible .disponible-badge,
+    .cliente-asociado .asociado-badge {
+        font-size: 0.7em;
+        padding: 3px 8px;
     }
-    
-    .info-asociado {
-        font-size: 0.7rem;
-    }
-}
-
-/* ============ CORRECCIONES ESPECÍFICAS ============ */
-.form-control::placeholder {
-    color: #a0aec0;
-    opacity: 1;
-}
-
-.form-select option {
-    padding: 8px 12px;
 }

@@ -149,7 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
         
         <form method="post" class="form-container">
-            <!-- Sección Cliente Asociado - Versión Modificada -->
+            <!-- Sección Cliente Asociado - Versión Mejorada -->
             <div class="card mb-4 form-section">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
@@ -171,20 +171,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                            id="cliente_<?= $cliente['cuscun'] ?>" 
                                            value="<?= $cliente['cuscun'] ?>"
                                            <?= !$disponible ? 'disabled' : '' ?>
-                                           <?= (isset($_POST['cliente_id']) && $_POST['cliente_id'] == $cliente['cuscun']) ? 'checked' : '' ?>>
+                                           <?= (isset($_POST['cliente_id']) && $_POST['cliente_id'] == $cliente['cuscun'] ? 'checked' : '') ?>>
                                     <label class="form-check-label w-100" for="cliente_<?= $cliente['cuscun'] ?>">
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div>
                                                 <strong><?= htmlspecialchars($cliente['nombre']) ?></strong>
                                                 <span class="text-muted ms-2">(<?= htmlspecialchars($cliente['cusidn']) ?>)</span>
                                             </div>
-                                            <span class="badge <?= $disponible ? 'bg-success' : 'bg-danger' ?>">
-                                                <?= $disponible ? '<i class="bi bi-check-circle"></i> Disponible' : '<i class="bi bi-x-circle"></i> Ya asociado' ?>
-                                            </span>
+                                            <?php if ($disponible): ?>
+                                                <span class="disponible-badge">
+                                                    <i class="bi bi-check-circle"></i> Disponible
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="asociado-badge">
+                                                    <i class="bi bi-x-circle"></i> <?= htmlspecialchars($cliente['estado']) ?>
+                                                </span>
+                                            <?php endif; ?>
                                         </div>
-                                        <?php if (!$disponible): ?>
-                                            <small class="text-danger d-block mt-1"><?= htmlspecialchars($cliente['estado']) ?></small>
-                                        <?php endif; ?>
                                     </label>
                                 </div>
                             <?php endforeach; ?>
