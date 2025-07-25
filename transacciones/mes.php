@@ -52,6 +52,7 @@ function formatAccountNumber($cuenta) {
     return $cuenta;
 }
 
+// Verificar sesión y obtener información del usuario
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
     exit();
@@ -59,6 +60,18 @@ if (!isset($_SESSION['user_id'])) {
 
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/database.php';
+
+// Obtener información del usuario actual
+$stmt_user = $pdo->prepare("SELECT u.*, c.cuscun FROM users u LEFT JOIN cumst c ON u.cuscun = c.cuscun WHERE u.id = :user_id");
+$stmt_user->execute([':user_id' => $_SESSION['user_id']]);
+$user = $stmt_user->fetch(PDO::FETCH_ASSOC);
+
+if (!$user) {
+    die("Usuario no encontrado");
+}
+
+$is_admin = ($user['role'] === 'admin');
+$is_client = ($user['role'] === 'cliente');
 
 $mes = $_GET['mes'] ?? date('m');
 $ano = $_GET['ano'] ?? date('Y');
@@ -81,8 +94,24 @@ if (!empty($cuenta) && !preg_match('/^[0-9]{9,20}$/', $cuenta)) {
     die("Número de cuenta inválido. Debe contener solo dígitos (9-20 caracteres).");
 }
 
+// Para clientes, si no se especifica cuenta, usar su cuenta principal
+if ($is_client && empty($cuenta)) {
+    $stmt_cuenta = $pdo->prepare("SELECT acmacc FROM acmst WHERE acmcun = :cuscun LIMIT 1");
+    $stmt_cuenta->execute([':cuscun' => $user['cuscun']]);
+    $cuenta = $stmt_cuenta->fetchColumn();
+}
+
 if (!empty($cuenta)) {
     try {
+        // Verificar permisos para la cuenta solicitada
+        if ($is_client) {
+            $stmt_check = $pdo->prepare("SELECT COUNT(*) FROM acmst WHERE acmacc = :cuenta AND acmcun = :client_id");
+            $stmt_check->execute([':cuenta' => $cuenta, ':client_id' => $user['cuscun']]);
+            if ($stmt_check->fetchColumn() == 0) {
+                die("No tienes permiso para acceder a esta cuenta");
+            }
+        }
+
         // Obtener saldo inicial
         $sql_saldo_inicial = "SELECT t.trdbal AS saldo_inicial FROM actrd t 
                              WHERE t.trdacc = :cuenta AND t.trddat < :fecha_inicio
@@ -101,7 +130,7 @@ if (!empty($cuenta)) {
             }
         }
 
-        // Obtener información del cliente (MODIFICADO)
+        // Obtener información del cliente
         $stmt_cliente = $pdo->prepare("SELECT 
                                       CONCAT(c.cusna1, ' ', IFNULL(c.cusna2, ''), ' ', c.cusln1, ' ', IFNULL(c.cusln2, '')) AS nombre_completo,
                                       c.cusdir1 AS direccion1, 
@@ -135,13 +164,21 @@ if (empty($cuenta)) $sql .= ", t.trdacc AS cuenta";
 $sql .= " FROM actrd t JOIN acmst a ON t.trdacc = a.acmacc
         WHERE t.trddat BETWEEN :fecha_inicio AND :fecha_fin";
 
-if (!empty($cuenta)) $sql .= " AND t.trdacc = :cuenta";
+if (!empty($cuenta)) {
+    $sql .= " AND t.trdacc = :cuenta";
+} elseif ($is_client) {
+    // Si es cliente y no especificó cuenta, mostrar solo sus cuentas
+    $sql .= " AND a.acmcun = :client_id";
+    $params[':client_id'] = $user['cuscun'];
+}
+
 $sql .= " ORDER BY t.trddat, t.trdseq";
 
 try {
     $stmt = $pdo->prepare($sql);
     $params = [':fecha_inicio' => $fecha_inicio, ':fecha_fin' => $fecha_fin];
     if (!empty($cuenta)) $params[':cuenta'] = $cuenta;
+    elseif ($is_client) $params[':client_id'] = $user['cuscun'];
     
     $stmt->execute($params);
     $transacciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -212,7 +249,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             $this->SetFont('helvetica', 'B', 10);
             $this->Cell(0, 6, strtoupper($this->nombre_cliente), 0, 1, 'L');
             
-            // Dirección (MODIFICADO para mostrar mejor la dirección)
+            // Dirección
             $this->SetFont('helvetica', '', 8);
             $this->SetX(120);
             $this->MultiCell(80, 4, strtoupper($this->direccion), 0, 'L');
@@ -232,7 +269,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         }
     }
 
-    // Dirección completa (MODIFICADO)
+    // Dirección completa
     $direccion_completa = trim(implode(', ', array_filter([
         $cliente_info['direccion1'] ?? '',
         $cliente_info['direccion2'] ?? '',
@@ -542,10 +579,18 @@ ob_end_flush();
                         <label for="cuenta" class="filter-label">
                             <i class="fas fa-wallet"></i> Número de Cuenta
                         </label>
-                        <input type="text" id="cuenta" name="cuenta" 
-                               value="<?= htmlspecialchars($cuenta) ?>" 
-                               placeholder="Ej: 123456789"
-                               class="filter-input">
+                        <?php if ($is_admin): ?>
+                            <input type="text" id="cuenta" name="cuenta" 
+                                   value="<?= htmlspecialchars($cuenta) ?>" 
+                                   placeholder="Ej: 123456789"
+                                   class="filter-input">
+                        <?php else: ?>
+                            <input type="text" id="cuenta" name="cuenta" 
+                                   value="<?= htmlspecialchars($cuenta) ?>" 
+                                   placeholder="Su cuenta"
+                                   class="filter-input" readonly>
+                            <input type="hidden" name="cuenta" value="<?= htmlspecialchars($cuenta) ?>">
+                        <?php endif; ?>
                     </div>
                 </div>
             </form>

@@ -4,6 +4,27 @@ ob_start();
 require_once __DIR__ . '/../includes/config.php'; 
 session_start();
 
+// Verificar sesión
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../login.php");
+    exit();
+}
+
+require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/database.php';
+
+// Obtener información del usuario actual
+$stmt_user = $pdo->prepare("SELECT u.*, c.cuscun FROM users u LEFT JOIN cumst c ON u.cuscun = c.cuscun WHERE u.id = :user_id");
+$stmt_user->execute([':user_id' => $_SESSION['user_id']]);
+$user = $stmt_user->fetch(PDO::FETCH_ASSOC);
+
+if (!$user) {
+    die("Usuario no encontrado");
+}
+
+$is_admin = ($user['role'] === 'admin');
+$is_client = ($user['role'] === 'cliente');
+
 // Inicializar variables
 $nombre_cliente = 'CLIENTE NO ESPECIFICADO';
 $nombre_cliente_web = '';
@@ -54,14 +75,6 @@ function formatAccountNumber($cuenta) {
     return $cuenta;
 }
 
-if (!isset($_SESSION['user_id'])) {
-    header("Location: ../login.php");
-    exit();
-}
-
-require_once __DIR__ . '/../includes/functions.php';
-require_once __DIR__ . '/../includes/database.php';
-
 $fecha_inicio = $_GET['fecha_inicio'] ?? date('Y-m-01');
 $fecha_fin = $_GET['fecha_fin'] ?? date('Y-m-t');
 $cuenta = isset($_GET['cuenta']) ? trim($_GET['cuenta']) : null;
@@ -78,8 +91,25 @@ if (!empty($cuenta) && !preg_match('/^[0-9]{9,20}$/', $cuenta)) {
     die("Número de cuenta inválido. Debe contener solo dígitos (9-20 caracteres).");
 }
 
+// Para clientes, si no se especifica cuenta, usar su cuenta principal
+if ($is_client && empty($cuenta)) {
+    $stmt_cuenta = $pdo->prepare("SELECT acmacc FROM acmst WHERE acmcun = :cuscun LIMIT 1");
+    $stmt_cuenta->execute([':cuscun' => $user['cuscun']]);
+    $cuenta = $stmt_cuenta->fetchColumn();
+}
+
 if (!empty($cuenta)) {
     try {
+        // Verificar permisos para la cuenta solicitada
+        if ($is_client) {
+            $stmt_check = $pdo->prepare("SELECT COUNT(*) FROM acmst WHERE acmacc = :cuenta AND acmcun = :client_id");
+            $stmt_check->execute([':cuenta' => $cuenta, ':client_id' => $user['cuscun']]);
+            if ($stmt_check->fetchColumn() == 0) {
+                die("No tienes permiso para acceder a esta cuenta");
+            }
+        }
+
+        // Obtener saldo inicial
         $sql_saldo_inicial = "SELECT t.trdbal AS saldo_inicial FROM actrd t 
                              WHERE t.trdacc = :cuenta AND t.trddat < :fecha_inicio
                              ORDER BY t.trddat DESC, t.trdseq DESC LIMIT 1";
@@ -97,6 +127,7 @@ if (!empty($cuenta)) {
             }
         }
 
+        // Obtener información del cliente
         $stmt_cliente = $pdo->prepare("SELECT 
                                       CONCAT(c.cusna1, ' ', IFNULL(c.cusna2, ''), ' ', c.cusln1, ' ', IFNULL(c.cusln2, '')) AS nombre_completo,
                                       c.cusdir1 AS direccion1, 
@@ -120,6 +151,7 @@ if (!empty($cuenta)) {
     }
 }
 
+// Consulta de transacciones del rango con control de acceso
 $sql = "SELECT t.trddat AS fecha, t.trdseq AS secuencia, t.trdmd AS tipo,
                t.trdamt AS monto, t.trdbal AS saldo, t.trddsc AS descripcion,
                t.trdref AS referencia, t.trdusr AS usuario, a.acmccy AS moneda";
@@ -129,13 +161,21 @@ if (empty($cuenta)) $sql .= ", t.trdacc AS cuenta";
 $sql .= " FROM actrd t JOIN acmst a ON t.trdacc = a.acmacc
         WHERE t.trddat BETWEEN :fecha_inicio AND :fecha_fin";
 
-if (!empty($cuenta)) $sql .= " AND t.trdacc = :cuenta";
+if (!empty($cuenta)) {
+    $sql .= " AND t.trdacc = :cuenta";
+} elseif ($is_client) {
+    // Si es cliente y no especificó cuenta, mostrar solo sus cuentas
+    $sql .= " AND a.acmcun = :client_id";
+    $params[':client_id'] = $user['cuscun'];
+}
+
 $sql .= " ORDER BY t.trddat, t.trdseq";
 
 try {
     $stmt = $pdo->prepare($sql);
     $params = [':fecha_inicio' => $fecha_inicio, ':fecha_fin' => $fecha_fin];
     if (!empty($cuenta)) $params[':cuenta'] = $cuenta;
+    elseif ($is_client) $params[':client_id'] = $user['cuscun'];
     
     $stmt->execute($params);
     $transacciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -582,10 +622,18 @@ ob_end_flush();
                         <label for="cuenta" class="filter-label">
                             <i class="fas fa-wallet"></i> Número de Cuenta
                         </label>
-                        <input type="text" id="cuenta" name="cuenta" 
-                               value="<?= htmlspecialchars($cuenta) ?>" 
-                               placeholder="Ej: 123456789"
-                               class="filter-input">
+                        <?php if ($is_admin): ?>
+                            <input type="text" id="cuenta" name="cuenta" 
+                                   value="<?= htmlspecialchars($cuenta) ?>" 
+                                   placeholder="Ej: 123456789"
+                                   class="filter-input">
+                        <?php else: ?>
+                            <input type="text" id="cuenta" name="cuenta" 
+                                   value="<?= htmlspecialchars($cuenta) ?>" 
+                                   placeholder="Su cuenta"
+                                   class="filter-input" readonly>
+                            <input type="hidden" name="cuenta" value="<?= htmlspecialchars($cuenta) ?>">
+                        <?php endif; ?>
                     </div>
                 </div>
             </form>
@@ -625,7 +673,7 @@ ob_end_flush();
                         <div class="account-info">
                             <p><strong><i class="fas fa-user"></i> Cliente:</strong> <?= htmlspecialchars($nombre_cliente_web) ?></p>
                             <p><strong><i class="fas fa-wallet"></i> Número de Cuenta:</strong> <?= htmlspecialchars(formatAccountNumber($cuenta)) ?></p>
-                            <p><strong><i class="fas fa-coins"></i> Saldo Inicial:</strong> <?= number_format($saldo_mes['saldo_inicial'], 2, ',', '.') ?> BS</p>
+                            <p><strong><i class="fas fa-coins"></i> Saldo Inicial:</strong> <?= number_format($saldo_mes['saldo_inicial'], 2, ',', '.') ?> <?= $moneda ?></p>
                         </div>
                     <?php endif; ?>
                     
@@ -658,7 +706,7 @@ ob_end_flush();
                                         <td class="debit" style="text-align: right;"><?= $trans['tipo'] == 'D' ? number_format($trans['monto'], 2, ',', '.') : '' ?></td>
                                         <td class="credit" style="text-align: right;"><?= $trans['tipo'] == 'C' ? number_format($trans['monto'], 2, ',', '.') : '' ?></td>
                                         <?php if (!empty($cuenta)): ?>
-                                            <td class="balance" style="text-align: right; color: <?= getSaldoColor($trans['saldo']) ?>"><?= number_format($trans['saldo'], 2, ',', '.') ?> BS</td>
+                                            <td class="balance" style="text-align: right; color: <?= getSaldoColor($trans['saldo']) ?>"><?= number_format($trans['saldo'], 2, ',', '.') ?> <?= $moneda ?></td>
                                         <?php endif; ?>
                                     </tr>
                                 <?php endforeach; ?>
@@ -669,18 +717,18 @@ ob_end_flush();
                     <div class="month-totals">
                         <div class="total-box">
                             <div class="total-label"><i class="fas fa-arrow-down"></i> Total Débitos</div>
-                            <div class="total-value"><?= number_format($saldo_mes['total_debitos'], 2, ',', '.') ?> BS</div>
+                            <div class="total-value"><?= number_format($saldo_mes['total_debitos'], 2, ',', '.') ?> <?= $moneda ?></div>
                             <div class="total-count"><?= $saldo_mes['count_debitos'] ?> movimientos</div>
                         </div>
                         <div class="total-box">
                             <div class="total-label"><i class="fas fa-arrow-up"></i> Total Créditos</div>
-                            <div class="total-value"><?= number_format($saldo_mes['total_creditos'], 2, ',', '.') ?> BS</div>
+                            <div class="total-value"><?= number_format($saldo_mes['total_creditos'], 2, ',', '.') ?> <?= $moneda ?></div>
                             <div class="total-count"><?= $saldo_mes['count_creditos'] ?> movimientos</div>
                         </div>
                         <?php if (!empty($cuenta)): ?>
                             <div class="total-box">
                                 <div class="total-label"><i class="fas fa-coins"></i> Saldo Final</div>
-                                <div class="total-value" style="color: <?= getSaldoColor($saldo_mes['saldo_final']) ?>"><?= number_format($saldo_mes['saldo_final'], 2, ',', '.') ?> BS</div>
+                                <div class="total-value" style="color: <?= getSaldoColor($saldo_mes['saldo_final']) ?>"><?= number_format($saldo_mes['saldo_final'], 2, ',', '.') ?> <?= $moneda ?></div>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -692,22 +740,22 @@ ob_end_flush();
                 <div class="totals-grid">
                     <div class="total-box">
                         <div class="total-label"><i class="fas fa-coins"></i> Saldo Inicial</div>
-                        <div class="total-value"><?= number_format($saldo_inicial, 2, ',', '.') ?> BS</div>
+                        <div class="total-value"><?= number_format($saldo_inicial, 2, ',', '.') ?> <?= $moneda ?></div>
                     </div>
                     <div class="total-box">
                         <div class="total-label"><i class="fas fa-arrow-down"></i> Total Débitos</div>
-                        <div class="total-value"><?= number_format($total_general_debitos, 2, ',', '.') ?> BS</div>
+                        <div class="total-value"><?= number_format($total_general_debitos, 2, ',', '.') ?> <?= $moneda ?></div>
                         <div class="total-count"><?= $total_count_debitos ?> movimientos</div>
                     </div>
                     <div class="total-box">
                         <div class="total-label"><i class="fas fa-arrow-up"></i> Total Créditos</div>
-                        <div class="total-value"><?= number_format($total_general_creditos, 2, ',', '.') ?> BS</div>
+                        <div class="total-value"><?= number_format($total_general_creditos, 2, ',', '.') ?> <?= $moneda ?></div>
                         <div class="total-count"><?= $total_count_creditos ?> movimientos</div>
                     </div>
                     <?php if (!empty($cuenta)): ?>
                         <div class="total-box">
                             <div class="total-label"><i class="fas fa-wallet"></i> Saldo Final</div>
-                            <div class="total-value" style="color: <?= getSaldoColor($saldo_final) ?>"><?= number_format($saldo_final, 2, ',', '.') ?> BS</div>
+                            <div class="total-value" style="color: <?= getSaldoColor($saldo_final) ?>"><?= number_format($saldo_final, 2, ',', '.') ?> <?= $moneda ?></div>
                         </div>
                     <?php endif; ?>
                 </div>
