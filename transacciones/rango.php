@@ -4,26 +4,26 @@ ob_start();
 require_once __DIR__ . '/../includes/config.php'; 
 session_start();
 
-// Control de acceso por roles
+// Verificar sesión
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
     exit();
 }
 
-$user_id = $_SESSION['user_id'];
-$user_role = $_SESSION['role'];
-$cuscun = null;
+require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/database.php';
 
-if ($user_role === 'cliente') {
-    $stmt = $pdo->prepare("SELECT cuscun FROM users WHERE id = :user_id");
-    $stmt->execute([':user_id' => $user_id]);
-    $user_data = $stmt->fetch(PDO::FETCH_ASSOC);
-    $cuscun = $user_data['cuscun'] ?? null;
-    
-    if (!$cuscun) {
-        die("No se encontró información de cliente asociada a su usuario.");
-    }
+// Obtener información del usuario actual
+$stmt_user = $pdo->prepare("SELECT u.*, c.cuscun FROM users u LEFT JOIN cumst c ON u.cuscun = c.cuscun WHERE u.id = :user_id");
+$stmt_user->execute([':user_id' => $_SESSION['user_id']]);
+$user = $stmt_user->fetch(PDO::FETCH_ASSOC);
+
+if (!$user) {
+    die("Usuario no encontrado");
 }
+
+$is_admin = ($user['role'] === 'admin');
+$is_client = ($user['role'] === 'cliente');
 
 // Inicializar variables
 $nombre_cliente = 'CLIENTE NO ESPECIFICADO';
@@ -75,9 +75,6 @@ function formatAccountNumber($cuenta) {
     return $cuenta;
 }
 
-require_once __DIR__ . '/../includes/functions.php';
-require_once __DIR__ . '/../includes/database.php';
-
 $fecha_inicio = $_GET['fecha_inicio'] ?? date('Y-m-01');
 $fecha_fin = $_GET['fecha_fin'] ?? date('Y-m-t');
 $cuenta = isset($_GET['cuenta']) ? trim($_GET['cuenta']) : null;
@@ -94,17 +91,25 @@ if (!empty($cuenta) && !preg_match('/^[0-9]{9,20}$/', $cuenta)) {
     die("Número de cuenta inválido. Debe contener solo dígitos (9-20 caracteres).");
 }
 
+// Para clientes, si no se especifica cuenta, usar su cuenta principal
+if ($is_client && empty($cuenta)) {
+    $stmt_cuenta = $pdo->prepare("SELECT acmacc FROM acmst WHERE acmcun = :cuscun LIMIT 1");
+    $stmt_cuenta->execute([':cuscun' => $user['cuscun']]);
+    $cuenta = $stmt_cuenta->fetchColumn();
+}
+
 if (!empty($cuenta)) {
     try {
-        // Validar acceso a la cuenta para clientes
-        if ($user_role === 'cliente') {
-            $stmt = $pdo->prepare("SELECT COUNT(*) FROM acmst WHERE acmacc = :cuenta AND acmcun = :cuscun");
-            $stmt->execute([':cuenta' => $cuenta, ':cuscun' => $cuscun]);
-            if ($stmt->fetchColumn() == 0) {
-                die("No tienes permisos para acceder a esta cuenta.");
+        // Verificar permisos para la cuenta solicitada
+        if ($is_client) {
+            $stmt_check = $pdo->prepare("SELECT COUNT(*) FROM acmst WHERE acmacc = :cuenta AND acmcun = :client_id");
+            $stmt_check->execute([':cuenta' => $cuenta, ':client_id' => $user['cuscun']]);
+            if ($stmt_check->fetchColumn() == 0) {
+                die("No tienes permiso para acceder a esta cuenta");
             }
         }
 
+        // Obtener saldo inicial
         $sql_saldo_inicial = "SELECT t.trdbal AS saldo_inicial FROM actrd t 
                              WHERE t.trdacc = :cuenta AND t.trddat < :fecha_inicio
                              ORDER BY t.trddat DESC, t.trdseq DESC LIMIT 1";
@@ -122,6 +127,7 @@ if (!empty($cuenta)) {
             }
         }
 
+        // Obtener información del cliente
         $stmt_cliente = $pdo->prepare("SELECT 
                                       CONCAT(c.cusna1, ' ', IFNULL(c.cusna2, ''), ' ', c.cusln1, ' ', IFNULL(c.cusln2, '')) AS nombre_completo,
                                       c.cusdir1 AS direccion1, 
@@ -145,6 +151,7 @@ if (!empty($cuenta)) {
     }
 }
 
+// Consulta de transacciones del rango con control de acceso
 $sql = "SELECT t.trddat AS fecha, t.trdseq AS secuencia, t.trdmd AS tipo,
                t.trdamt AS monto, t.trdbal AS saldo, t.trddsc AS descripcion,
                t.trdref AS referencia, t.trdusr AS usuario, a.acmccy AS moneda";
@@ -154,25 +161,21 @@ if (empty($cuenta)) $sql .= ", t.trdacc AS cuenta";
 $sql .= " FROM actrd t JOIN acmst a ON t.trdacc = a.acmacc
         WHERE t.trddat BETWEEN :fecha_inicio AND :fecha_fin";
 
-// Restricción para clientes cuando no se especifica cuenta
-if ($user_role === 'cliente' && empty($cuenta)) {
-    $sql .= " AND a.acmcun = :cuscun";
+if (!empty($cuenta)) {
+    $sql .= " AND t.trdacc = :cuenta";
+} elseif ($is_client) {
+    // Si es cliente y no especificó cuenta, mostrar solo sus cuentas
+    $sql .= " AND a.acmcun = :client_id";
+    $params[':client_id'] = $user['cuscun'];
 }
 
-if (!empty($cuenta)) $sql .= " AND t.trdacc = :cuenta";
 $sql .= " ORDER BY t.trddat, t.trdseq";
 
 try {
     $stmt = $pdo->prepare($sql);
     $params = [':fecha_inicio' => $fecha_inicio, ':fecha_fin' => $fecha_fin];
-    
-    if (!empty($cuenta)) {
-        $params[':cuenta'] = $cuenta;
-    }
-    
-    if ($user_role === 'cliente' && empty($cuenta)) {
-        $params[':cuscun'] = $cuscun;
-    }
+    if (!empty($cuenta)) $params[':cuenta'] = $cuenta;
+    elseif ($is_client) $params[':client_id'] = $user['cuscun'];
     
     $stmt->execute($params);
     $transacciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -243,34 +246,42 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
         }
         
         public function Header() {
+            // Configuración del logo sin marco
             $logo_path = realpath(__DIR__ . '/../assets/images/logo-banco.jpg');
             if (file_exists($logo_path)) {
+                // Logo sin marco decorativo
                 $this->Image($logo_path, 10, 8, 35, 0, 'JPG', '', 'T', false, 300, '', false, false, 0, false, false, false);
             }
             
+            // Fecha de emisión
             $this->SetFont('helvetica', 'B', 8);
             $this->SetTextColor(80, 80, 80);
             $this->SetFillColor(245, 245, 245);
             $this->SetY(30);
             $this->Cell(35, 6, 'EMITIDO: '.date('d/m/Y H:i'), 0, 1, 'C', 1);
             
+            // Línea separadora
             $this->SetLineWidth(0.5);
             $this->SetDrawColor(0, 51, 102);
             $this->Line(10, 38, $this->getPageWidth()-10, 38);
             
+            // Información del cliente
             $this->SetY(15);
             $this->SetX(120);
             $this->SetFont('helvetica', 'B', 10);
             $this->Cell(0, 6, strtoupper($this->nombre_cliente), 0, 1, 'L');
             
+            // Dirección
             $this->SetFont('helvetica', '', 8);
             $this->SetX(120);
             $this->MultiCell(80, 4, strtoupper($this->direccion), 0, 'L');
             
+            // Número de cuenta
             $this->SetFont('helvetica', 'B', 8);
             $this->SetX(120);
             $this->Cell(0, 6, 'CUENTA: '.formatAccountNumber($this->cuenta), 0, 1, 'L');
             
+            // Espacio después del encabezado
             $this->SetY(42);
         }
         
@@ -611,11 +622,17 @@ ob_end_flush();
                         <label for="cuenta" class="filter-label">
                             <i class="fas fa-wallet"></i> Número de Cuenta
                         </label>
-                        <?php if ($user_role !== 'cliente'): ?>
+                        <?php if ($is_admin): ?>
                             <input type="text" id="cuenta" name="cuenta" 
                                    value="<?= htmlspecialchars($cuenta) ?>" 
                                    placeholder="Ej: 123456789"
                                    class="filter-input">
+                        <?php else: ?>
+                            <input type="text" id="cuenta" name="cuenta" 
+                                   value="<?= htmlspecialchars($cuenta) ?>" 
+                                   placeholder="Su cuenta"
+                                   class="filter-input" readonly>
+                            <input type="hidden" name="cuenta" value="<?= htmlspecialchars($cuenta) ?>">
                         <?php endif; ?>
                     </div>
                 </div>
