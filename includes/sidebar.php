@@ -95,6 +95,29 @@ $isAdmin = ($_SESSION['role'] ?? '') === 'admin';
                     </li>
                 </ul>
             </li>
+            
+            <!-- Sección de Auditoría -->
+            <li class="nav-item has-submenu">
+                <a class="nav-link submenu-parent" href="#">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>Auditoría</span>
+                    <i class="fas fa-chevron-right submenu-toggle"></i>
+                </a>
+                <ul class="submenu" style="display: none;">
+                    <li class="submenu-item">
+                        <a href="<?= BASE_URL ?>auditoria/estados.php">
+                            <i class="fas fa-history"></i>
+                            <span>Histórico de Estados</span>
+                        </a>
+                    </li>
+                    <li class="submenu-item">
+                        <a href="<?= BASE_URL ?>auditoria/accesos.php">
+                            <i class="fas fa-user-shield"></i>
+                            <span>Logs de Acceso</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
             <?php endif; ?>
             
             <li class="menu-section">CONSULTAS</li>
@@ -123,7 +146,7 @@ $isAdmin = ($_SESSION['role'] ?? '') === 'admin';
     </div>
 </div>
 
-<!-- Script para manejar el submenú (se mantiene igual) -->
+<!-- Script para manejar el submenú -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const submenuParents = document.querySelectorAll('.submenu-parent');
