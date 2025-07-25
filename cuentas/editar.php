@@ -15,6 +15,7 @@ if (!in_array($_SESSION['role'], $allowedRoles)) {
 // Obtener datos de la cuenta a editar
 $numeroCuenta = $_GET['id'] ?? null;
 $cuenta = [];
+$cliente = [];
 $error = '';
 
 if (!$numeroCuenta) {
@@ -55,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Validar y sanitizar solo el estado
         $estado = in_array($_POST['estado'] ?? '', ['A', 'I']) ? $_POST['estado'] : 'A';
+        $razon = !empty($_POST['razon_cambio']) ? substr($_POST['razon_cambio'], 0, 100) : 'Cambio de estado';
 
         // Actualizar cuenta (solo estado)
         $sql = "UPDATE acmst SET 
@@ -72,6 +74,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare($sql);
         if (!$stmt->execute($params)) {
             throw new Exception("Error al actualizar la cuenta: " . implode(" ", $stmt->errorInfo()));
+        }
+
+        // Registrar cambio en histórico solo si el estado cambió
+        if ($cuenta['acmsta'] != $estado) {
+            // Obtener el siguiente número de secuencia primero
+            $stmtSeq = $pdo->prepare("SELECT IFNULL(MAX(hstseq), 0) + 1 FROM achst WHERE hstacc = :cuenta");
+            $stmtSeq->bindParam(':cuenta', $numeroCuenta);
+            $stmtSeq->execute();
+            $nextSeq = $stmtSeq->fetchColumn();
+
+            $sqlHistorico = "INSERT INTO achst 
+                            (hstacc, hstdat, hstseq, hststa, hstrsn, hstusr, hstip, hstauth) 
+                            VALUES 
+                            (:cuenta, NOW(), :next_seq, :estado, :razon, :usuario, :ip, :auth)";
+            
+            $paramsHistorico = [
+                ':cuenta' => $numeroCuenta,
+                ':next_seq' => $nextSeq,
+                ':estado' => $estado,
+                ':razon' => $razon,
+                ':usuario' => $_SESSION['username'] ?? 'SISTEMA',
+                ':ip' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+                ':auth' => $_SESSION['username'] ?? 'SISTEMA'
+            ];
+            
+            $stmtHistorico = $pdo->prepare($sqlHistorico);
+            if (!$stmtHistorico->execute($paramsHistorico)) {
+                throw new Exception("Error al registrar en histórico: " . implode(" ", $stmtHistorico->errorInfo()));
+            }
         }
 
         $pdo->commit();
@@ -173,7 +204,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
 
-                    <!-- Mostrar tipo y clase como información de solo lectura -->
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Tipo de Cuenta</label>
@@ -206,6 +236,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <option value="A" <?php echo (!isset($cuenta['acmsta']) || $cuenta['acmsta'] === 'A') ? 'selected' : ''; ?>>Activo</option>
                                 <option value="I" <?php echo (isset($cuenta['acmsta']) && $cuenta['acmsta'] === 'I') ? 'selected' : ''; ?>>Inactivo</option>
                             </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="razon_cambio" class="form-label required-field">Razón del cambio de estado</label>
+                            <textarea class="form-control" id="razon_cambio" name="razon_cambio" rows="2" required></textarea>
                         </div>
                     </div>
                     
