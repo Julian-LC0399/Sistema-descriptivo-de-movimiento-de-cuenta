@@ -20,9 +20,10 @@ $porPagina = 10;
 $pagina = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
 $offset = ($pagina - 1) * $porPagina;
 
-// Filtros (solo cliente y estado)
+// Filtros
 $filtroCliente = isset($_GET['cliente']) ? trim($_GET['cliente']) : '';
-$filtroEstado = isset($_GET['estado']) ? $_GET['estado'] : 'A'; // Cambiado a 'A' por defecto
+$filtroEstado = isset($_GET['estado']) ? $_GET['estado'] : 'A';
+$filtroCedula = isset($_GET['cedula']) ? trim($_GET['cedula']) : '';
 
 try {
     $pdo = getPDO();
@@ -30,6 +31,7 @@ try {
     // Construir consulta base
     $sql = "SELECT 
                 a.acmacc AS cuenta,
+                c.cusidn AS cedula,
                 CONCAT(c.cusna1, ' ', c.cusln1) AS nombre_cliente,
                 a.acmbrn AS sucursal,
                 a.acmccy AS moneda,
@@ -61,6 +63,12 @@ try {
         $where[] = "(CONCAT(c.cusna1, ' ', c.cusln1) LIKE :cliente OR c.cuscun = :cliente_num)";
         $params[':cliente'] = "%$filtroCliente%";
         $params[':cliente_num'] = $filtroCliente;
+    }
+    
+    // Filtro por cédula/RIF
+    if ($filtroCedula !== '') {
+        $where[] = "c.cusidn LIKE :cedula";
+        $params[':cedula'] = "%$filtroCedula%";
     }
     
     // Combinar condiciones WHERE
@@ -146,10 +154,16 @@ try {
             </div>
             <form method="get" class="filtros-grid">
                 <div class="form-group">
-                    <label for="cliente" class="form-label">Cliente</label>
+                    <label for="cliente" class="form-label">Nombre/ID Cliente</label>
                     <input type="text" class="form-control" id="cliente" name="cliente" 
                            value="<?php echo htmlspecialchars($filtroCliente); ?>" 
                            placeholder="Nombre, apellido o ID de cliente">
+                </div>
+                <div class="form-group">
+                    <label for="cedula" class="form-label">Cédula</label>
+                    <input type="text" class="form-control" id="cedula" name="cedula" 
+                           value="<?php echo htmlspecialchars($filtroCedula); ?>" 
+                           placeholder="Ej: V12345678 o J123456789">
                 </div>
                 <div class="form-group">
                     <label for="estado" class="form-label">Estado</label>
@@ -181,6 +195,7 @@ try {
                     <thead>
                         <tr>
                             <th>Número de Cuenta</th>
+                            <th>Cédula</th>
                             <th>Cliente</th>
                             <th>Sucursal</th>
                             <th>Moneda</th>
@@ -195,7 +210,7 @@ try {
                     <tbody>
                         <?php if (empty($cuentas)): ?>
                             <tr>
-                                <td colspan="<?php echo $isAdminOrGerente ? 8 : 7; ?>" class="text-center py-4">
+                                <td colspan="<?php echo $isAdminOrGerente ? 9 : 8; ?>" class="text-center py-4">
                                     <i class="bi bi-exclamation-circle fs-4"></i>
                                     <p class="mt-2">No se encontraron cuentas</p>
                                 </td>
@@ -204,6 +219,7 @@ try {
                             <?php foreach ($cuentas as $cuenta): ?>
                                 <tr>
                                     <td><?php echo htmlspecialchars($cuenta['cuenta']); ?></td>
+                                    <td><?php echo htmlspecialchars($cuenta['cedula']); ?></td>
                                     <td><?php echo htmlspecialchars($cuenta['nombre_cliente']); ?></td>
                                     <td><?php echo htmlspecialchars($cuenta['sucursal']); ?></td>
                                     <td><?php echo htmlspecialchars($cuenta['moneda']); ?></td>
