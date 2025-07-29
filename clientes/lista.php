@@ -12,6 +12,7 @@ $paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
 $offset = ($paginaActual - 1) * $clientesPorPagina;
 
 // Parámetros de búsqueda
+$busquedaId = isset($_GET['busqueda_id']) ? trim($_GET['busqueda_id']) : '';
 $busquedaCedula = isset($_GET['busqueda_cedula']) ? trim($_GET['busqueda_cedula']) : '';
 $busquedaGeneral = isset($_GET['busqueda_general']) ? trim($_GET['busqueda_general']) : '';
 $filtroEstado = isset($_GET['estado']) ? $_GET['estado'] : 'A'; // Por defecto muestra solo activos
@@ -30,6 +31,11 @@ if ($filtroEstado !== 'T') { // 'T' sería para mostrar Todos
 
 // Aplicar filtros de búsqueda
 $conditions = [];
+if (!empty($busquedaId)) {
+    $conditions[] = "cuscun LIKE :busqueda_id";
+    $params[':busqueda_id'] = "%$busquedaId%"; // Búsqueda parcial del ID
+}
+
 if (!empty($busquedaCedula)) {
     $conditions[] = "cusidn LIKE :busqueda_cedula";
     $params[':busqueda_cedula'] = "%$busquedaCedula%";
@@ -132,6 +138,11 @@ try {
                 </h3>
             </div>
             <form method="get" class="filtros-grid">
+                <div class="form-group">
+                    <label for="busqueda_id" class="form-label">Buscar por ID</label>
+                    <input type="text" class="form-control" id="busqueda_id" name="busqueda_id" 
+                           value="<?= htmlspecialchars($busquedaId) ?>" placeholder="Ingrese parte del ID">
+                </div>
                 <div class="form-group">
                     <label for="busqueda_cedula" class="form-label">Buscar por cédula</label>
                     <input type="text" class="form-control" id="busqueda_cedula" name="busqueda_cedula" 
@@ -238,6 +249,7 @@ try {
                 <div class="alert alert-info mb-0 py-2">
                     Mostrando <?= count($clientes) ?> de <?= $totalClientes ?> clientes
                     <?= $filtroEstado !== 'T' ? '('.($filtroEstado === 'A' ? 'Activos' : 'Inactivos').')' : '' ?>
+                    <?= !empty($busquedaId) ? '| ID: '.htmlspecialchars($busquedaId) : '' ?>
                     <?= !empty($busquedaCedula) ? '| Cédula: '.htmlspecialchars($busquedaCedula) : '' ?>
                     <?= !empty($busquedaGeneral) ? '| Nombre/Apellido: '.htmlspecialchars($busquedaGeneral) : '' ?>
                 </div>
