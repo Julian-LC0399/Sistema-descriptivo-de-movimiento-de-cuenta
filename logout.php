@@ -1,6 +1,24 @@
 <?php
-// logout.php
+require_once __DIR__ . '/includes/functions.php';
 session_start();
+
+if (isset($_SESSION['user_id'])) {
+    $session_duration = isset($_SESSION['login_time']) 
+        ? time() - $_SESSION['login_time'] 
+        : 'N/A';
+    
+    registrarAcceso(
+        $_SESSION['user_id'],
+        $_SESSION['username'],
+        'logout',
+        [
+            'ip' => $_SERVER['REMOTE_ADDR'],
+            'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+            'session_duration_seconds' => $session_duration,
+            'logout_time' => date('Y-m-d H:i:s')
+        ]
+    );
+}
 
 // Destruir completamente la sesión
 $_SESSION = array();

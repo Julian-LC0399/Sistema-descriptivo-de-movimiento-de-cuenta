@@ -26,6 +26,12 @@ function check_auth() {
     
     // Verificar si el usuario está logueado
     if (!isset($_SESSION['user_id'])) {
+        // Registrar intento de acceso no autorizado
+        registrarAcceso(0, 'GUEST', 'access_denied', [
+            'reason' => 'No autenticado',
+            'attempted_url' => $_SERVER['REQUEST_URI']
+        ]);
+        
         // Redirigir al login
         header('Location: ../login.php');
         exit;
@@ -52,7 +58,6 @@ function has_permission($permission) {
     
     return false;
 }
-
 
 /**
  * Formatea un número de cuenta para mostrarlo con separaciones
@@ -117,6 +122,46 @@ function obtener_nombre_producto($codigo) {
         40 => 'Depósito a Plazo Fijo'
     ];
     return $productos[$codigo] ?? 'Producto ' . $codigo;
+}
+
+/**
+ * Registra un acceso en la tabla access_logs
+ * 
+ * @param int $user_id ID del usuario (0 para no autenticados)
+ * @param string $username Nombre de usuario
+ * @param string $action Acción realizada (login, logout, etc.)
+ * @param array|null $details Detalles adicionales (opcional)
+ * @return bool True si se registró correctamente
+ */
+function registrarAcceso($user_id, $username, $action, $details = null) {
+    global $pdo;
+    
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
+    $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'DESCONOCIDO';
+    $endpoint = $_SERVER['REQUEST_URI'] ?? 'DESCONOCIDO';
+    $status_code = http_response_code();
+    
+    try {
+        $stmt = $pdo->prepare("INSERT INTO access_logs 
+                              (user_id, username, ip_address, action, endpoint, 
+                               status_code, user_agent, details) 
+                              VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        
+        $stmt->execute([
+            $user_id,
+            $username,
+            $ip,
+            $action,
+            $endpoint,
+            $status_code,
+            $user_agent,
+            $details ? json_encode($details, JSON_UNESCAPED_UNICODE) : null
+        ]);
+        return true;
+    } catch (PDOException $e) {
+        error_log("Error al registrar acceso: " . $e->getMessage());
+        return false;
+    }
 }
 
 /**
