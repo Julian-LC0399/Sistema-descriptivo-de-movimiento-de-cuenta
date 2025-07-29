@@ -1,8 +1,15 @@
 <?php
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/database.php';
+require_once __DIR__ . '/includes/functions.php';
 
 if (isLoggedIn()) {
+    registrarAcceso(
+        $_SESSION['user_id'],
+        $_SESSION['username'],
+        'already_logged_in_redirect',
+        ['redirect_to' => $_SESSION['redirect_url'] ?? 'index.php']
+    );
     redirectAfterLogin();
 }
 
@@ -13,9 +20,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($username) || empty($password)) {
         $error = 'Por favor ingrese usuario y contraseña';
+        registrarAcceso(0, 'GUEST', 'login_failed', [
+            'reason' => 'empty_fields',
+            'attempted_username' => $username,
+            'ip' => $_SERVER['REMOTE_ADDR']
+        ]);
     } elseif (!authenticate($username, $password)) {
         $error = 'Usuario o contraseña incorrectos';
+        registrarAcceso(0, $username, 'login_failed', [
+            'reason' => 'invalid_credentials',
+            'ip' => $_SERVER['REMOTE_ADDR'],
+            'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown'
+        ]);
     } else {
+        registrarAcceso(
+            $_SESSION['user_id'],
+            $_SESSION['username'],
+            'login_success',
+            [
+                'ip' => $_SERVER['REMOTE_ADDR'],
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+                'login_time' => date('Y-m-d H:i:s')
+            ]
+        );
         redirectAfterLogin();
     }
 }
@@ -29,7 +56,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="assets/css/login.css">
 </head>
 <body>
-    <!-- Barra superior con fecha animada -->
     <div class="date-ticker">
         <div class="ticker-content">
             <span id="current-date"></span> | Bienvenido al módulo de reportes de movimientos de cuentas del Banco Caroní
@@ -38,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="login-container">
         <h1 class="bank-header">Banco Caroní</h1>
-        <div class="sec-title">MRMC -   Módulo de Reportes de Movimientos de Cuentas</div>
+        <div class="sec-title">MRMC - Módulo de Reportes de Movimientos de Cuentas</div>
 
         <?php if ($error): ?>
             <div class="error-message">
@@ -62,7 +88,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
     </div>
 
-    <!-- Cambiamos la posición del script para asegurar que el DOM esté cargado -->
     <script src="assets/js/login.js"></script>
 </body>
 </html>
