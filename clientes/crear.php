@@ -4,7 +4,7 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/database.php';
 requireLogin();
 
-$tituloPagina = "Agregar Nuevo Cliente";
+$tituloPagina = "Registrar cliente";
 
 // Inicializar variables para mantener los valores del formulario
 $valoresFormulario = [

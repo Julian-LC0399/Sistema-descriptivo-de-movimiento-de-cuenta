@@ -191,7 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php include __DIR__ . '/../includes/sidebar.php'; ?>
     
     <main class="container mt-4">
-        <h2 class="mb-4">Crear Nueva Cuenta Bancaria</h2>
+        <h2 class="mb-4">Registrar cuenta bancaria</h2>
         
         <?php if (!empty($error)): ?>
             <div class="alert alert-danger alert-dismissible fade show">

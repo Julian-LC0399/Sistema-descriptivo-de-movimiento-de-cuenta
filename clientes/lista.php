@@ -128,7 +128,7 @@ try {
         <div class="filtros-card mb-4">
             <div class="filtros-header">
                 <h3 class="filtros-title">
-                    <i class="bi bi-funnel"></i> Buscar Clientes
+                    <i class="bi bi-funnel"></i> Filtros de búsqueda
                 </h3>
             </div>
             <form method="get" class="filtros-grid">

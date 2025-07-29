@@ -24,6 +24,7 @@ $offset = ($pagina - 1) * $porPagina;
 $filtroCliente = isset($_GET['cliente']) ? trim($_GET['cliente']) : '';
 $filtroEstado = isset($_GET['estado']) ? $_GET['estado'] : 'A';
 $filtroCedula = isset($_GET['cedula']) ? trim($_GET['cedula']) : '';
+$filtroCuenta = isset($_GET['cuenta']) ? trim($_GET['cuenta']) : '';
 
 try {
     $pdo = getPDO();
@@ -69,6 +70,12 @@ try {
     if ($filtroCedula !== '') {
         $where[] = "c.cusidn LIKE :cedula";
         $params[':cedula'] = "%$filtroCedula%";
+    }
+    
+    // Filtro por número de cuenta (NUEVO)
+    if ($filtroCuenta !== '') {
+        $where[] = "a.acmacc LIKE :cuenta";
+        $params[':cuenta'] = "%$filtroCuenta%";
     }
     
     // Combinar condiciones WHERE
@@ -154,16 +161,22 @@ try {
             </div>
             <form method="get" class="filtros-grid">
                 <div class="form-group">
-                    <label for="cliente" class="form-label">Nombre/ID Cliente</label>
+                    <label for="cliente" class="form-label">ID Cliente</label>
                     <input type="text" class="form-control" id="cliente" name="cliente" 
                            value="<?php echo htmlspecialchars($filtroCliente); ?>" 
-                           placeholder="Nombre, apellido o ID de cliente">
+                           placeholder="ID de cliente">
                 </div>
                 <div class="form-group">
                     <label for="cedula" class="form-label">Cédula</label>
                     <input type="text" class="form-control" id="cedula" name="cedula" 
                            value="<?php echo htmlspecialchars($filtroCedula); ?>" 
                            placeholder="Ej: V12345678 o J123456789">
+                </div>
+                <div class="form-group">
+                    <label for="cuenta" class="form-label">Número de Cuenta</label>
+                    <input type="text" class="form-control" id="cuenta" name="cuenta" 
+                           value="<?php echo htmlspecialchars($filtroCuenta); ?>" 
+                           placeholder="Ej: 123456789">
                 </div>
                 <div class="form-group">
                     <label for="estado" class="form-label">Estado</label>
