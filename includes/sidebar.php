@@ -111,7 +111,7 @@ $isAdmin = ($_SESSION['role'] ?? '') === 'admin';
                         </a>
                     </li>
                     <li class="submenu-item">
-                        <a href="<?= BASE_URL ?>auditoria/accesos.php">
+                        <a href="<?= BASE_URL ?>auditoria/logs.php">
                             <i class="fas fa-user-shield"></i>
                             <span>Logs de Acceso</span>
                         </a>
