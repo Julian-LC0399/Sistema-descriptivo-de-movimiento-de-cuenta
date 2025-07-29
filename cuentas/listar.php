@@ -21,7 +21,7 @@ $pagina = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
 $offset = ($pagina - 1) * $porPagina;
 
 // Filtros
-$filtroCliente = isset($_GET['cliente']) ? trim($_GET['cliente']) : '';
+$filtroNombreCliente = isset($_GET['nombre_cliente']) ? trim($_GET['nombre_cliente']) : '';
 $filtroEstado = isset($_GET['estado']) ? $_GET['estado'] : 'A';
 $filtroCedula = isset($_GET['cedula']) ? trim($_GET['cedula']) : '';
 $filtroCuenta = isset($_GET['cuenta']) ? trim($_GET['cuenta']) : '';
@@ -60,10 +60,9 @@ try {
     }
     
     // Aplicar filtros de búsqueda
-    if ($filtroCliente !== '') {
-        $where[] = "(CONCAT(c.cusna1, ' ', c.cusln1) LIKE :cliente OR c.cuscun = :cliente_num)";
-        $params[':cliente'] = "%$filtroCliente%";
-        $params[':cliente_num'] = $filtroCliente;
+    if ($filtroNombreCliente !== '') {
+        $where[] = "CONCAT(c.cusna1, ' ', c.cusln1) LIKE :nombre_cliente";
+        $params[':nombre_cliente'] = "%$filtroNombreCliente%";
     }
     
     // Filtro por cédula/RIF
@@ -72,7 +71,7 @@ try {
         $params[':cedula'] = "%$filtroCedula%";
     }
     
-    // Filtro por número de cuenta (NUEVO)
+    // Filtro por número de cuenta
     if ($filtroCuenta !== '') {
         $where[] = "a.acmacc LIKE :cuenta";
         $params[':cuenta'] = "%$filtroCuenta%";
@@ -161,10 +160,10 @@ try {
             </div>
             <form method="get" class="filtros-grid">
                 <div class="form-group">
-                    <label for="cliente" class="form-label">ID Cliente</label>
-                    <input type="text" class="form-control" id="cliente" name="cliente" 
-                           value="<?php echo htmlspecialchars($filtroCliente); ?>" 
-                           placeholder="ID de cliente">
+                    <label for="nombre_cliente" class="form-label">Nombre del Cliente</label>
+                    <input type="text" class="form-control" id="nombre_cliente" name="nombre_cliente" 
+                           value="<?php echo htmlspecialchars($filtroNombreCliente); ?>" 
+                           placeholder="Nombre del cliente">
                 </div>
                 <div class="form-group">
                     <label for="cedula" class="form-label">Cédula</label>
