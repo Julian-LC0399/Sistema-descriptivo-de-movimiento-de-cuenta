@@ -4,35 +4,67 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/database.php';
 requireLogin();
 
-$tituloPagina = "Editar Cliente";
+$tituloPagina = "Editar cliente";
 
-// Inicializar variables
-$errores = [];
-$clienteId = $_GET['id'] ?? null;
-
-// Validar ID del cliente
-if (!$clienteId || !is_numeric($clienteId)) {
-    $_SESSION['mensaje'] = [
-        'tipo' => 'danger',
-        'texto' => 'ID de cliente no válido'
-    ];
+// Obtener ID del cliente a editar
+$idCliente = $_GET['id'] ?? null;
+if (!$idCliente) {
     header("Location: lista.php");
     exit();
 }
 
-// Obtener datos actuales del cliente
-$pdo = getPDO();
-$stmt = $pdo->prepare("SELECT * FROM cumst WHERE cuscun = ?");
-$stmt->execute([$clienteId]);
-$cliente = $stmt->fetch(PDO::FETCH_ASSOC);
+// Inicializar variables
+$valoresFormulario = [];
+$errores = [];
 
-if (!$cliente) {
-    $_SESSION['mensaje'] = [
-        'tipo' => 'danger',
-        'texto' => 'Cliente no encontrado'
+// Obtener datos actuales del cliente
+try {
+    $pdo = getPDO();
+    $stmt = $pdo->prepare("SELECT * FROM cumst WHERE cuscun = ?");
+    $stmt->execute([$idCliente]);
+    $cliente = $stmt->fetch();
+
+    if (!$cliente) {
+        $_SESSION['mensaje'] = [
+            'tipo' => 'danger',
+            'texto' => 'Cliente no encontrado'
+        ];
+        header("Location: lista.php");
+        exit();
+    }
+
+    // Mapear datos a valores del formulario
+    $valoresFormulario = [
+        'cuscun' => $cliente['cuscun'],
+        'cusidn' => $cliente['cusidn'],
+        'cusna1' => $cliente['cusna1'],
+        'cusna2' => $cliente['cusna2'],
+        'cusln1' => $cliente['cusln1'],
+        'cusln2' => $cliente['cusln2'],
+        'cusemp' => $cliente['cusemp'],
+        'cusjob' => $cliente['cusjob'],
+        'cusdir1' => $cliente['cusdir1'],
+        'cusdir2' => $cliente['cusdir2'],
+        'cusdir3' => $cliente['cusdir3'],
+        'cuscty' => $cliente['cuscty'],
+        'cuseml' => $cliente['cuseml'],
+        'cusemw' => $cliente['cusemw'],
+        'cusphn' => $cliente['cusphn'],
+        'cusphh' => $cliente['cusphh'],
+        'cusphw' => $cliente['cusphw'],
+        'cuspxt' => $cliente['cuspxt'],
+        'cusfax' => $cliente['cusfax'],
+        'cusidc' => $cliente['cusidc'],
+        'cusbds' => $cliente['cusbds'],
+        'cusgen' => $cliente['cusgen'],
+        'cusmar' => $cliente['cusmar'],
+        'cusnac' => $cliente['cusnac'],
+        'cusweb' => $cliente['cusweb'],
+        'cussts' => $cliente['cussts']
     ];
-    header("Location: lista.php");
-    exit();
+
+} catch (PDOException $e) {
+    $errores['general'] = "Error al cargar cliente: " . $e->getMessage();
 }
 
 // Procesar formulario de edición
@@ -40,6 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         // Obtener y sanitizar datos del formulario
         $valoresFormulario = [
+            'cuscun' => $idCliente,
             'cusidn' => trim($_POST['cusidn'] ?? ''),
             'cusna1' => trim($_POST['cusna1'] ?? ''),
             'cusna2' => trim($_POST['cusna2'] ?? ''),
@@ -47,7 +80,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'cusln2' => trim($_POST['cusln2'] ?? ''),
             'cusemp' => trim($_POST['cusemp'] ?? ''),
             'cusjob' => trim($_POST['cusjob'] ?? ''),
-            'cusidp' => trim($_POST['cusidp'] ?? ''),
             'cusdir1' => trim($_POST['cusdir1'] ?? ''),
             'cusdir2' => trim($_POST['cusdir2'] ?? ''),
             'cusdir3' => trim($_POST['cusdir3'] ?? ''),
@@ -72,26 +104,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($valoresFormulario['cusidn'])) {
             $errores['cusidn'] = "La cédula es obligatoria";
         }
-        
+
         if (empty($valoresFormulario['cusna1'])) {
             $errores['cusna1'] = "El primer nombre es obligatorio";
         }
-        
+
         if (empty($valoresFormulario['cusln1'])) {
             $errores['cusln1'] = "El primer apellido es obligatorio";
         }
-        
+
         if (empty($valoresFormulario['cusdir1'])) {
-            $errores['cusdir1'] = "La dirección es obligatoria";
+            $errores['cusdir1'] = "El estado es obligatorio";
         }
-        
+
         if (empty($valoresFormulario['cuscty'])) {
             $errores['cuscty'] = "La ciudad es obligatoria";
         }
 
         // Si no hay errores, proceder con la actualización
         if (empty($errores)) {
-            $sql = "
+            $stmt = $pdo->prepare("
                 UPDATE cumst SET
                     cusidn = :cusidn,
                     cusna1 = :cusna1,
@@ -100,7 +132,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     cusln2 = :cusln2,
                     cusemp = :cusemp,
                     cusjob = :cusjob,
-                    cusidp = :cusidp,
                     cusdir1 = :cusdir1,
                     cusdir2 = :cusdir2,
                     cusdir3 = :cusdir3,
@@ -114,49 +145,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     cusfax = :cusfax,
                     cusidc = :cusidc,
                     cusbds = :cusbds,
+                    cussts = :cussts,
                     cusgen = :cusgen,
                     cusmar = :cusmar,
                     cusnac = :cusnac,
                     cusweb = :cusweb,
-                    cussts = :cussts,
                     cuslut = NOW(),
                     cuslau = :usuario
                 WHERE cuscun = :cuscun
-            ";
-            
-            $stmt = $pdo->prepare($sql);
-            
+            ");
+
             $params = $valoresFormulario;
-            $params[':cuscun'] = $clienteId;
             $params[':usuario'] = $_SESSION['username'] ?? 'SISTEMA';
-            
-            if ($stmt->execute($params)) {
-                $_SESSION['mensaje'] = [
-                    'tipo' => 'success',
-                    'texto' => "Cliente #$clienteId actualizado exitosamente"
-                ];
-                header("Location: lista.php");
-                exit();
-            } else {
-                throw new Exception("Error al ejecutar la actualización");
-            }
+
+            $stmt->execute($params);
+
+            $_SESSION['mensaje'] = [
+                'tipo' => 'success',
+                'texto' => "Cliente actualizado exitosamente"
+            ];
+            header("Location: lista.php");
+            exit();
         }
-        
+
     } catch (PDOException $e) {
         $errores['general'] = "Error al actualizar cliente: " . $e->getMessage();
-        error_log("Error al actualizar cliente: " . $e->getMessage());
     } catch (Exception $e) {
         $errores['general'] = $e->getMessage();
-        error_log("Error general al actualizar cliente: " . $e->getMessage());
     }
-} else {
-    // Si no es POST, usar los valores actuales del cliente
-    $valoresFormulario = $cliente;
 }
 ?>
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -165,45 +187,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <link href="<?= BASE_URL ?>assets/css/registros.css" rel="stylesheet">
 </head>
+
 <body>
     <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-    
+
     <main class="container mt-4">
         <h2 class="mb-4"><?= htmlspecialchars($tituloPagina) ?></h2>
-        
+
         <?php if (!empty($errores['general'])): ?>
             <div class="alert alert-danger alert-dismissible fade show">
                 <?= htmlspecialchars($errores['general']) ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <?php endif; ?>
-        
-        <form method="post" class="form-container">
-            <!-- Sección ID Cliente (no editable) -->
-            <div class="card mb-4 form-section">
-                <div class="card-header">
-                    <h5 class="mb-0">Información Básica</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">ID Cliente</label>
-                            <div class="form-control-plaintext bg-light p-2 rounded">
-                                <?= htmlspecialchars($clienteId) ?>
-                                <input type="hidden" name="cuscun" value="<?= htmlspecialchars($clienteId) ?>">
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="cussts" class="form-label">Estado</label>
-                            <select class="form-select" id="cussts" name="cussts">
-                                <option value="A" <?= $valoresFormulario['cussts'] === 'A' ? 'selected' : '' ?>>Activo</option>
-                                <option value="I" <?= $valoresFormulario['cussts'] === 'I' ? 'selected' : '' ?>>Inactivo</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
+        <form method="post" class="form-container">
             <!-- Sección Información de Identificación -->
             <div class="card mb-4 form-section">
                 <div class="card-header">
@@ -211,16 +209,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
+                            <label for="cuscun" class="form-label">ID Cliente</label>
+                            <input type="text" class="form-control" id="cuscun" name="cuscun" 
+                                value="<?= htmlspecialchars($valoresFormulario['cuscun']) ?>" readonly>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
                             <label for="cusidn" class="form-label required-field">Cédula</label>
-                            <input type="text" class="form-control <?= isset($errores['cusidn']) ? 'is-invalid' : '' ?>" 
-                                   id="cusidn" name="cusidn" value="<?= htmlspecialchars($valoresFormulario['cusidn']) ?>" required>
+                            <input type="text" class="form-control <?= isset($errores['cusidn']) ? 'is-invalid' : '' ?>"
+                                id="cusidn" name="cusidn" value="<?= htmlspecialchars($valoresFormulario['cusidn']) ?>"
+                                required>
                             <?php if (isset($errores['cusidn'])): ?>
                                 <div class="invalid-feedback"><?= htmlspecialchars($errores['cusidn']) ?></div>
                             <?php endif; ?>
                         </div>
-                        
-                        <div class="col-md-6 mb-3">
+
+                        <div class="col-md-4 mb-3">
                             <label for="cusidc" class="form-label">Tipo de Identificación</label>
                             <select class="form-select" id="cusidc" name="cusidc">
                                 <option value="V" <?= $valoresFormulario['cusidc'] === 'V' ? 'selected' : '' ?>>V - Venezolano</option>
@@ -231,18 +236,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </select>
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="cusidp" class="form-label">Número de Pasaporte</label>
-                            <input type="text" class="form-control" id="cusidp" name="cusidp" 
-                                   value="<?= htmlspecialchars($valoresFormulario['cusidp']) ?>">
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
                             <label for="cusnac" class="form-label">Nacionalidad</label>
-                            <input type="text" class="form-control" id="cusnac" name="cusnac" 
-                                   value="<?= htmlspecialchars($valoresFormulario['cusnac']) ?>">
+                            <input type="text" class="form-control" id="cusnac" name="cusnac"
+                                value="<?= htmlspecialchars($valoresFormulario['cusnac']) ?>">
                         </div>
                     </div>
                 </div>
@@ -257,44 +256,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="cusna1" class="form-label required-field">Primer Nombre</label>
-                            <input type="text" class="form-control <?= isset($errores['cusna1']) ? 'is-invalid' : '' ?>" 
-                                   id="cusna1" name="cusna1" value="<?= htmlspecialchars($valoresFormulario['cusna1']) ?>" required>
+                            <input type="text" class="form-control <?= isset($errores['cusna1']) ? 'is-invalid' : '' ?>"
+                                id="cusna1" name="cusna1" value="<?= htmlspecialchars($valoresFormulario['cusna1']) ?>"
+                                required>
                             <?php if (isset($errores['cusna1'])): ?>
                                 <div class="invalid-feedback"><?= htmlspecialchars($errores['cusna1']) ?></div>
                             <?php endif; ?>
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="cusna2" class="form-label">Segundo Nombre</label>
-                            <input type="text" class="form-control" id="cusna2" name="cusna2" 
-                                   value="<?= htmlspecialchars($valoresFormulario['cusna2']) ?>">
+                            <input type="text" class="form-control" id="cusna2" name="cusna2"
+                                value="<?= htmlspecialchars($valoresFormulario['cusna2']) ?>">
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="cusln1" class="form-label required-field">Primer Apellido</label>
-                            <input type="text" class="form-control <?= isset($errores['cusln1']) ? 'is-invalid' : '' ?>" 
-                                   id="cusln1" name="cusln1" value="<?= htmlspecialchars($valoresFormulario['cusln1']) ?>" required>
+                            <input type="text" class="form-control <?= isset($errores['cusln1']) ? 'is-invalid' : '' ?>"
+                                id="cusln1" name="cusln1" value="<?= htmlspecialchars($valoresFormulario['cusln1']) ?>"
+                                required>
                             <?php if (isset($errores['cusln1'])): ?>
                                 <div class="invalid-feedback"><?= htmlspecialchars($errores['cusln1']) ?></div>
                             <?php endif; ?>
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="cusln2" class="form-label">Segundo Apellido</label>
-                            <input type="text" class="form-control" id="cusln2" name="cusln2" 
-                                   value="<?= htmlspecialchars($valoresFormulario['cusln2']) ?>">
+                            <input type="text" class="form-control" id="cusln2" name="cusln2"
+                                value="<?= htmlspecialchars($valoresFormulario['cusln2']) ?>">
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label for="cusbds" class="form-label">Fecha de Nacimiento</label>
-                            <input type="date" class="form-control" id="cusbds" name="cusbds" 
-                                   value="<?= htmlspecialchars($valoresFormulario['cusbds']) ?>">
+                            <input type="date" class="form-control" id="cusbds" name="cusbds"
+                                value="<?= htmlspecialchars($valoresFormulario['cusbds']) ?>">
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <label for="cusgen" class="form-label">Género</label>
                             <select class="form-select" id="cusgen" name="cusgen">
@@ -304,7 +305,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <option value="O" <?= $valoresFormulario['cusgen'] === 'O' ? 'selected' : '' ?>>Otro</option>
                             </select>
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <label for="cusmar" class="form-label">Estado Civil</label>
                             <select class="form-select" id="cusmar" name="cusmar">
@@ -317,12 +318,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </select>
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-12 mb-3">
                             <label for="cusweb" class="form-label">Sitio Web</label>
-                            <input type="url" class="form-control" id="cusweb" name="cusweb" 
-                                   value="<?= htmlspecialchars($valoresFormulario['cusweb']) ?>">
+                            <input type="url" class="form-control" id="cusweb" name="cusweb"
+                                value="<?= htmlspecialchars($valoresFormulario['cusweb']) ?>">
                         </div>
                     </div>
                 </div>
@@ -337,37 +338,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="cusemp" class="form-label">Empresa</label>
-                            <input type="text" class="form-control" id="cusemp" name="cusemp" 
-                                   value="<?= htmlspecialchars($valoresFormulario['cusemp']) ?>">
+                            <input type="text" class="form-control" id="cusemp" name="cusemp"
+                                value="<?= htmlspecialchars($valoresFormulario['cusemp']) ?>">
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="cusjob" class="form-label">Cargo/Puesto</label>
-                            <input type="text" class="form-control" id="cusjob" name="cusjob" 
-                                   value="<?= htmlspecialchars($valoresFormulario['cusjob']) ?>">
+                            <input type="text" class="form-control" id="cusjob" name="cusjob"
+                                value="<?= htmlspecialchars($valoresFormulario['cusjob']) ?>">
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="cusemw" class="form-label">Email Corporativo</label>
-                            <input type="email" class="form-control <?= isset($errores['cusemw']) ? 'is-invalid' : '' ?>" 
-                                   id="cusemw" name="cusemw" value="<?= htmlspecialchars($valoresFormulario['cusemw']) ?>">
+                            <input type="email" class="form-control <?= isset($errores['cusemw']) ? 'is-invalid' : '' ?>" id="cusemw"
+                                name="cusemw" value="<?= htmlspecialchars($valoresFormulario['cusemw']) ?>">
                             <?php if (isset($errores['cusemw'])): ?>
                                 <div class="invalid-feedback"><?= htmlspecialchars($errores['cusemw']) ?></div>
                             <?php endif; ?>
                         </div>
-                        
+
                         <div class="col-md-3 mb-3">
                             <label for="cusphw" class="form-label">Teléfono Trabajo</label>
-                            <input type="tel" class="form-control" id="cusphw" name="cusphw" 
-                                   value="<?= htmlspecialchars($valoresFormulario['cusphw']) ?>">
+                            <input type="tel" class="form-control" id="cusphw" name="cusphw"
+                                value="<?= htmlspecialchars($valoresFormulario['cusphw']) ?>">
                         </div>
-                        
+
                         <div class="col-md-3 mb-3">
                             <label for="cuspxt" class="form-label">Extensión</label>
-                            <input type="text" class="form-control" id="cuspxt" name="cuspxt" 
-                                   value="<?= htmlspecialchars($valoresFormulario['cuspxt']) ?>">
+                            <input type="text" class="form-control" id="cuspxt" name="cuspxt"
+                                value="<?= htmlspecialchars($valoresFormulario['cuspxt']) ?>">
                         </div>
                     </div>
                 </div>
@@ -380,40 +381,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label for="cusdir1" class="form-label required-field">Dirección Línea 1</label>
-                        <input type="text" class="form-control <?= isset($errores['cusdir1']) ? 'is-invalid' : '' ?>" 
-                               id="cusdir1" name="cusdir1" value="<?= htmlspecialchars($valoresFormulario['cusdir1']) ?>" required>
+                        <label for="cusdir1" class="form-label required-field">Estado</label>
+                        <input type="text" class="form-control <?= isset($errores['cusdir1']) ? 'is-invalid' : '' ?>"
+                            id="cusdir1" name="cusdir1" value="<?= htmlspecialchars($valoresFormulario['cusdir1']) ?>"
+                            required>
                         <?php if (isset($errores['cusdir1'])): ?>
                             <div class="invalid-feedback"><?= htmlspecialchars($errores['cusdir1']) ?></div>
                         <?php endif; ?>
                     </div>
-                    
+
                     <div class="mb-3">
-                        <label for="cusdir2" class="form-label">Dirección Línea 2</label>
-                        <input type="text" class="form-control" id="cusdir2" name="cusdir2" 
-                               value="<?= htmlspecialchars($valoresFormulario['cusdir2']) ?>">
+                        <label for="cusdir2" class="form-label">Municipio</label>
+                        <input type="text" class="form-control" id="cusdir2" name="cusdir2"
+                            value="<?= htmlspecialchars($valoresFormulario['cusdir2']) ?>">
                     </div>
-                    
+
                     <div class="mb-3">
-                        <label for="cusdir3" class="form-label">Dirección Línea 3</label>
-                        <input type="text" class="form-control" id="cusdir3" name="cusdir3" 
-                               value="<?= htmlspecialchars($valoresFormulario['cusdir3']) ?>">
+                        <label for="cusdir3" class="form-label">Parroquia</label>
+                        <input type="text" class="form-control" id="cusdir3" name="cusdir3"
+                            value="<?= htmlspecialchars($valoresFormulario['cusdir3']) ?>">
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="cuscty" class="form-label required-field">Ciudad</label>
-                            <input type="text" class="form-control <?= isset($errores['cuscty']) ? 'is-invalid' : '' ?>" 
-                                   id="cuscty" name="cuscty" value="<?= htmlspecialchars($valoresFormulario['cuscty']) ?>" required>
+                            <input type="text" class="form-control <?= isset($errores['cuscty']) ? 'is-invalid' : '' ?>"
+                                id="cuscty" name="cuscty" value="<?= htmlspecialchars($valoresFormulario['cuscty']) ?>"
+                                required>
                             <?php if (isset($errores['cuscty'])): ?>
                                 <div class="invalid-feedback"><?= htmlspecialchars($errores['cuscty']) ?></div>
                             <?php endif; ?>
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="cusfax" class="form-label">Fax</label>
-                            <input type="tel" class="form-control" id="cusfax" name="cusfax" 
-                                   value="<?= htmlspecialchars($valoresFormulario['cusfax']) ?>">
+                            <input type="tel" class="form-control" id="cusfax" name="cusfax"
+                                value="<?= htmlspecialchars($valoresFormulario['cusfax']) ?>">
                         </div>
                     </div>
                 </div>
@@ -428,30 +431,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="cuseml" class="form-label">Email Personal</label>
-                            <input type="email" class="form-control <?= isset($errores['cuseml']) ? 'is-invalid' : '' ?>" 
-                                   id="cuseml" name="cuseml" value="<?= htmlspecialchars($valoresFormulario['cuseml']) ?>">
+                            <input type="email" class="form-control <?= isset($errores['cuseml']) ? 'is-invalid' : '' ?>" id="cuseml"
+                                name="cuseml" value="<?= htmlspecialchars($valoresFormulario['cuseml']) ?>">
                             <?php if (isset($errores['cuseml'])): ?>
                                 <div class="invalid-feedback"><?= htmlspecialchars($errores['cuseml']) ?></div>
                             <?php endif; ?>
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="cusphn" class="form-label">Teléfono Móvil</label>
-                            <input type="tel" class="form-control" id="cusphn" name="cusphn" 
-                                   value="<?= htmlspecialchars($valoresFormulario['cusphn']) ?>">
+                            <input type="tel" class="form-control" id="cusphn" name="cusphn"
+                                value="<?= htmlspecialchars($valoresFormulario['cusphn']) ?>">
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="cusphh" class="form-label">Teléfono Habitación</label>
-                            <input type="tel" class="form-control" id="cusphh" name="cusphh" 
-                                   value="<?= htmlspecialchars($valoresFormulario['cusphh']) ?>">
+                            <input type="tel" class="form-control" id="cusphh" name="cusphh"
+                                value="<?= htmlspecialchars($valoresFormulario['cusphh']) ?>">
                         </div>
                     </div>
                 </div>
             </div>
-            
+
+            <!-- Sección Estado (ahora editable) -->
+            <div class="card mb-4 form-section">
+                <div class="card-header">
+                    <h5 class="mb-0">Estado del Cliente</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cussts" class="form-label">Estado</label>
+                            <select class="form-select" id="cussts" name="cussts">
+                                <option value="A" <?= $valoresFormulario['cussts'] === 'A' ? 'selected' : '' ?>>Activo</option>
+                                <option value="I" <?= $valoresFormulario['cussts'] === 'I' ? 'selected' : '' ?>>Inactivo</option>
+                                <option value="S" <?= $valoresFormulario['cussts'] === 'S' ? 'selected' : '' ?>>Suspendido</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="form-actions">
                 <a href="lista.php" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left"></i> Cancelar
@@ -467,7 +489,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script>
         // Validar teléfonos (solo números)
         document.querySelectorAll('input[type="tel"]').forEach(input => {
-            input.addEventListener('input', function() {
+            input.addEventListener('input', function () {
                 this.value = this.value.replace(/[^0-9]/g, '');
             });
         });
@@ -481,7 +503,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }, 5000);
 
         // Manejar el tipo de identificación
-        document.getElementById('cusidc').addEventListener('change', function() {
+        document.getElementById('cusidc').addEventListener('change', function () {
             const cusidn = document.getElementById('cusidn');
             if (this.value === 'V') {
                 cusidn.placeholder = 'Ej: V12345678';
@@ -497,4 +519,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         });
     </script>
 </body>
+
 </html>
