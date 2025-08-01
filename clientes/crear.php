@@ -4,7 +4,7 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/database.php';
 requireLogin();
 
-$tituloPagina = "Agregar Nuevo Cliente";
+$tituloPagina = "Registrar cliente";
 
 // Inicializar variables para mantener los valores del formulario
 $valoresFormulario = [
@@ -15,7 +15,6 @@ $valoresFormulario = [
     'cusln2' => '',
     'cusemp' => '',
     'cusjob' => '',
-    'cusidp' => '',
     'cusdir1' => '',
     'cusdir2' => '',
     'cusdir3' => '',
@@ -49,7 +48,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'cusln2' => trim($_POST['cusln2'] ?? ''),
             'cusemp' => trim($_POST['cusemp'] ?? ''),
             'cusjob' => trim($_POST['cusjob'] ?? ''),
-            'cusidp' => trim($_POST['cusidp'] ?? ''),
             'cusdir1' => trim($_POST['cusdir1'] ?? ''),
             'cusdir2' => trim($_POST['cusdir2'] ?? ''),
             'cusdir3' => trim($_POST['cusdir3'] ?? ''),
@@ -84,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (empty($valoresFormulario['cusdir1'])) {
-            $errores['cusdir1'] = "La dirección es obligatoria";
+            $errores['cusdir1'] = "El estado es obligatorio";
         }
 
         if (empty($valoresFormulario['cuscty'])) {
@@ -104,13 +102,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare("
                 INSERT INTO cumst (
                     cuscun, cusidn, cusna1, cusna2, cusln1, cusln2,
-                    cusemp, cusjob, cusidp, cusdir1, cusdir2, cusdir3,
+                    cusemp, cusjob, cusdir1, cusdir2, cusdir3,
                     cuscty, cuseml, cusemw, cusphn, cusphh, cusphw,
                     cuspxt, cusfax, cusidc, cusbds, cussts, cusgen,
                     cusmar, cusnac, cusweb, cuslau, cuslut
                 ) VALUES (
                     :cuscun, :cusidn, :cusna1, :cusna2, :cusln1, :cusln2,
-                    :cusemp, :cusjob, :cusidp, :cusdir1, :cusdir2, :cusdir3,
+                    :cusemp, :cusjob, :cusdir1, :cusdir2, :cusdir3,
                     :cuscty, :cuseml, :cusemw, :cusphn, :cusphh, :cusphw,
                     :cuspxt, :cusfax, :cusidc, :cusbds, :cussts, :cusgen,
                     :cusmar, :cusnac, :cusweb, :usuario, NOW()
@@ -199,12 +197,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="cusidp" class="form-label">Número de Pasaporte</label>
-                            <input type="text" class="form-control" id="cusidp" name="cusidp"
-                                value="<?= htmlspecialchars($valoresFormulario['cusidp']) ?>">
-                        </div>
-
                         <div class="col-md-6 mb-3">
                             <label for="cusnac" class="form-label">Nacionalidad</label>
                             <input type="text" class="form-control" id="cusnac" name="cusnac"
@@ -357,7 +349,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label for="cusdir1" class="form-label required-field">Dirección Línea 1</label>
+                        <label for="cusdir1" class="form-label required-field">Estado</label>
                         <input type="text" class="form-control <?= isset($errores['cusdir1']) ? 'is-invalid' : '' ?>"
                             id="cusdir1" name="cusdir1" value="<?= htmlspecialchars($valoresFormulario['cusdir1']) ?>"
                             required>
@@ -367,13 +359,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                     <div class="mb-3">
-                        <label for="cusdir2" class="form-label">Dirección Línea 2</label>
+                        <label for="cusdir2" class="form-label">Municipio</label>
                         <input type="text" class="form-control" id="cusdir2" name="cusdir2"
                             value="<?= htmlspecialchars($valoresFormulario['cusdir2']) ?>">
                     </div>
 
                     <div class="mb-3">
-                        <label for="cusdir3" class="form-label">Dirección Línea 3</label>
+                        <label for="cusdir3" class="form-label">Parroquia</label>
                         <input type="text" class="form-control" id="cusdir3" name="cusdir3"
                             value="<?= htmlspecialchars($valoresFormulario['cusdir3']) ?>">
                     </div>
@@ -398,7 +390,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
 
-            <!-- Sección Contacto -->
+            <!-- Sección Contacto (simplificada) -->
             <div class="card mb-4 form-section">
                 <div class="card-header">
                     <h5 class="mb-0">Información de Contacto</h5>
@@ -428,34 +420,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <input type="tel" class="form-control" id="cusphh" name="cusphh"
                                 value="<?= htmlspecialchars($valoresFormulario['cusphh']) ?>">
                         </div>
-
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">ID Cliente</label>
-                            <div class="form-control-plaintext bg-light p-2 rounded">
-                                Se generará automáticamente
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Sección Estado - MODIFICADA -->
-            <div class="card mb-4 form-section">
-                <div class="card-header">
-                    <h5 class="mb-0">Estado del Cliente</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Estado</label>
-                            <div class="form-control-plaintext bg-light p-2 rounded">
-                                Los nuevos clientes siempre se crean como activos
-                            </div>
-                            <input type="hidden" name="cussts" value="A">
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- Campo hidden para el estado -->
+            <input type="hidden" name="cussts" value="A">
 
             <div class="form-actions">
                 <a href="lista.php" class="btn btn-outline-secondary">

@@ -12,24 +12,25 @@ $paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
 $offset = ($paginaActual - 1) * $clientesPorPagina;
 
 // Parámetros de búsqueda
+$busquedaId = isset($_GET['busqueda_id']) ? trim($_GET['busqueda_id']) : '';
 $busquedaCedula = isset($_GET['busqueda_cedula']) ? trim($_GET['busqueda_cedula']) : '';
 $busquedaGeneral = isset($_GET['busqueda_general']) ? trim($_GET['busqueda_general']) : '';
-$filtroEstado = isset($_GET['estado']) ? $_GET['estado'] : 'A'; // Por defecto muestra solo activos
+
+// Determinar si hay filtros aplicados (condición para mostrar tabla)
+$filtrosActivos = !empty($busquedaId) || !empty($busquedaCedula) || !empty($busquedaGeneral);
 
 // Consulta base
 $sql = "SELECT cuscun, cusidn, cusna1, cusna2, cusln1, cusln2, cuscty, cuseml, cusphn, cusphh, cusemp, cusjob, cussts FROM cumst";
 $params = [];
 $contarSql = "SELECT COUNT(*) as total FROM cumst";
 
-// Aplicar filtro de estado
-if ($filtroEstado !== 'T') { // 'T' sería para mostrar Todos
-    $sql .= " WHERE cussts = :estado";
-    $contarSql .= " WHERE cussts = :estado";
-    $params[':estado'] = $filtroEstado;
-}
-
 // Aplicar filtros de búsqueda
 $conditions = [];
+if (!empty($busquedaId)) {
+    $conditions[] = "cuscun LIKE :busqueda_id";
+    $params[':busqueda_id'] = "%$busquedaId%";
+}
+
 if (!empty($busquedaCedula)) {
     $conditions[] = "cusidn LIKE :busqueda_cedula";
     $params[':busqueda_cedula'] = "%$busquedaCedula%";
@@ -42,9 +43,8 @@ if (!empty($busquedaGeneral)) {
 }
 
 if (!empty($conditions)) {
-    $whereClause = empty($params) ? " WHERE" : " AND";
-    $sql .= $whereClause . " " . implode(" AND ", $conditions);
-    $contarSql .= $whereClause . " " . implode(" AND ", $conditions);
+    $sql .= " WHERE " . implode(" AND ", $conditions);
+    $contarSql .= " WHERE " . implode(" AND ", $conditions);
 }
 
 // Obtener conexión PDO
@@ -128,10 +128,15 @@ try {
         <div class="filtros-card mb-4">
             <div class="filtros-header">
                 <h3 class="filtros-title">
-                    <i class="bi bi-funnel"></i> Buscar Clientes
+                    <i class="bi bi-funnel"></i> Filtros de búsqueda
                 </h3>
             </div>
             <form method="get" class="filtros-grid">
+                <div class="form-group">
+                    <label for="busqueda_id" class="form-label">Buscar por ID</label>
+                    <input type="text" class="form-control" id="busqueda_id" name="busqueda_id" 
+                           value="<?= htmlspecialchars($busquedaId) ?>" placeholder="Ingrese parte del ID">
+                </div>
                 <div class="form-group">
                     <label for="busqueda_cedula" class="form-label">Buscar por cédula</label>
                     <input type="text" class="form-control" id="busqueda_cedula" name="busqueda_cedula" 
@@ -141,14 +146,6 @@ try {
                     <label for="busqueda_general" class="form-label">Buscar por nombre o apellido</label>
                     <input type="text" class="form-control" id="busqueda_general" name="busqueda_general" 
                            value="<?= htmlspecialchars($busquedaGeneral) ?>" placeholder="Ingrese nombre o apellido">
-                </div>
-                <div class="form-group">
-                    <label for="estado" class="form-label">Estado</label>
-                    <select class="form-select" id="estado" name="estado">
-                        <option value="A" <?= $filtroEstado === 'A' ? 'selected' : '' ?>>Activos</option>
-                        <option value="I" <?= $filtroEstado === 'I' ? 'selected' : '' ?>>Inactivos</option>
-                        <option value="T" <?= $filtroEstado === 'T' ? 'selected' : '' ?>>Todos</option>
-                    </select>
                 </div>
                 <div class="filtros-actions">
                     <button type="submit" class="btn btn-primary">
@@ -161,118 +158,126 @@ try {
             </form>
         </div>
         
-        <!-- Tabla de clientes -->
-        <div class="table-container">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>ID Cliente</th>
-                            <th>Cédula</th>
-                            <th>Nombre Completo</th>
-                            <th>Empresa</th>
-                            <th>Cargo</th>
-                            <th>Ciudad</th>
-                            <th>Email</th>
-                            <th>Teléfono Móvil</th>
-                            <th>Teléfono Habitación</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($clientes)): ?>
+        <!-- Mensaje inicial cuando no hay filtros -->
+        <?php if (!$filtrosActivos): ?>
+            <div class="alert alert-info text-center py-4">
+                <i class="bi bi-info-circle fs-4"></i>
+                <p class="mt-2 mb-0">Utilice los filtros de búsqueda para mostrar clientes</p>
+            </div>
+        <?php else: ?>
+            <!-- Tabla de clientes (oculta inicialmente) -->
+            <div class="table-container">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
                             <tr>
-                                <td colspan="11" class="text-center py-4">
-                                    <i class="bi bi-exclamation-circle fs-4"></i>
-                                    <p class="mt-2">No se encontraron clientes</p>
-                                </td>
+                                <th>ID Cliente</th>
+                                <th>Cédula</th>
+                                <th>Nombre Completo</th>
+                                <th>Empresa</th>
+                                <th>Cargo</th>
+                                <th>Ciudad</th>
+                                <th>Email</th>
+                                <th>Teléfono Móvil</th>
+                                <th>Teléfono Habitación</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
                             </tr>
-                        <?php else: ?>
-                            <?php foreach ($clientes as $cliente): ?>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($clientes)): ?>
                                 <tr>
-                                    <td><?= htmlspecialchars($cliente['cuscun']) ?></td>
-                                    <td><?= htmlspecialchars($cliente['cusidn']) ?></td>
-                                    <td>
-                                        <?= htmlspecialchars(
-                                            $cliente['cusna1'] . ' ' . 
-                                            ($cliente['cusna2'] ? $cliente['cusna2'] . ' ' : '') . 
-                                            $cliente['cusln1'] . ' ' . 
-                                            ($cliente['cusln2'] ? $cliente['cusln2'] : '')
-                                        ) ?>
-                                    </td>
-                                    <td><?= htmlspecialchars($cliente['cusemp'] ?? 'N/A') ?></td>
-                                    <td><?= htmlspecialchars($cliente['cusjob'] ?? 'N/A') ?></td>
-                                    <td><?= htmlspecialchars($cliente['cuscty']) ?></td>
-                                    <td><?= htmlspecialchars($cliente['cuseml']) ?></td>
-                                    <td><?= htmlspecialchars($cliente['cusphn']) ?></td>
-                                    <td><?= htmlspecialchars($cliente['cusphh'] ?? 'N/A') ?></td>
-                                    <td>
-                                        <span class="badge <?= $cliente['cussts'] == 'A' ? 'bg-success' : 'bg-secondary' ?>">
-                                            <?= $cliente['cussts'] == 'A' ? 'Activo' : 'Inactivo' ?>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex gap-2">
-                                            <a href="editar.php?id=<?= urlencode($cliente['cuscun']) ?>" 
-                                               class="btn btn-sm btn-warning btn-action"
-                                               title="Editar">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </a>
-                                            <button class="btn btn-sm btn-danger btn-action btn-borrar" 
-                                                    data-id="<?= htmlspecialchars($cliente['cuscun']) ?>"
-                                                    title="Borrar">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </div>
+                                    <td colspan="11" class="text-center py-4">
+                                        <i class="bi bi-exclamation-circle fs-4"></i>
+                                        <p class="mt-2">No se encontraron clientes con los filtros aplicados</p>
                                     </td>
                                 </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- Resumen y paginación -->
-            <div class="d-flex justify-content-between align-items-center mt-3">
-                <div class="alert alert-info mb-0 py-2">
-                    Mostrando <?= count($clientes) ?> de <?= $totalClientes ?> clientes
-                    <?= $filtroEstado !== 'T' ? '('.($filtroEstado === 'A' ? 'Activos' : 'Inactivos').')' : '' ?>
-                    <?= !empty($busquedaCedula) ? '| Cédula: '.htmlspecialchars($busquedaCedula) : '' ?>
-                    <?= !empty($busquedaGeneral) ? '| Nombre/Apellido: '.htmlspecialchars($busquedaGeneral) : '' ?>
+                            <?php else: ?>
+                                <?php foreach ($clientes as $cliente): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($cliente['cuscun']) ?></td>
+                                        <td><?= htmlspecialchars($cliente['cusidn']) ?></td>
+                                        <td>
+                                            <?= htmlspecialchars(
+                                                $cliente['cusna1'] . ' ' . 
+                                                ($cliente['cusna2'] ? $cliente['cusna2'] . ' ' : '') . 
+                                                $cliente['cusln1'] . ' ' . 
+                                                ($cliente['cusln2'] ? $cliente['cusln2'] : '')
+                                            ) ?>
+                                        </td>
+                                        <td><?= htmlspecialchars($cliente['cusemp'] ?? 'N/A') ?></td>
+                                        <td><?= htmlspecialchars($cliente['cusjob'] ?? 'N/A') ?></td>
+                                        <td><?= htmlspecialchars($cliente['cuscty']) ?></td>
+                                        <td><?= htmlspecialchars($cliente['cuseml']) ?></td>
+                                        <td><?= htmlspecialchars($cliente['cusphn']) ?></td>
+                                        <td><?= htmlspecialchars($cliente['cusphh'] ?? 'N/A') ?></td>
+                                        <td>
+                                            <span class="badge <?= $cliente['cussts'] == 'A' ? 'bg-success' : 'bg-secondary' ?>">
+                                                <?= $cliente['cussts'] == 'A' ? 'Activo' : 'Inactivo' ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-2">
+                                                <a href="editar.php?id=<?= urlencode($cliente['cuscun']) ?>" 
+                                                   class="btn btn-sm btn-warning btn-action"
+                                                   title="Editar">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </a>
+                                                <button class="btn btn-sm btn-danger btn-action btn-borrar" 
+                                                        data-id="<?= htmlspecialchars($cliente['cuscun']) ?>"
+                                                        title="Borrar">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
                 
-                <?php if ($totalPaginas > 1): ?>
-                    <nav aria-label="Paginación">
-                        <ul class="pagination mb-0">
-                            <?php if ($paginaActual > 1): ?>
-                                <li class="page-item">
-                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $paginaActual - 1])) ?>">
-                                        <i class="bi bi-chevron-left"></i>
-                                    </a>
-                                </li>
-                            <?php endif; ?>
-                            
-                            <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
-                                <li class="page-item <?= $i === $paginaActual ? 'active' : '' ?>">
-                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $i])) ?>">
-                                        <?= $i ?>
-                                    </a>
-                                </li>
-                            <?php endfor; ?>
-                            
-                            <?php if ($paginaActual < $totalPaginas): ?>
-                                <li class="page-item">
-                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $paginaActual + 1])) ?>">
-                                        <i class="bi bi-chevron-right"></i>
-                                    </a>
-                                </li>
-                            <?php endif; ?>
-                        </ul>
-                    </nav>
-                <?php endif; ?>
+                <!-- Resumen y paginación -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="alert alert-info mb-0 py-2">
+                        Mostrando <?= count($clientes) ?> de <?= $totalClientes ?> clientes
+                        <?= !empty($busquedaId) ? '| ID: '.htmlspecialchars($busquedaId) : '' ?>
+                        <?= !empty($busquedaCedula) ? '| Cédula: '.htmlspecialchars($busquedaCedula) : '' ?>
+                        <?= !empty($busquedaGeneral) ? '| Nombre/Apellido: '.htmlspecialchars($busquedaGeneral) : '' ?>
+                    </div>
+                    
+                    <?php if ($totalPaginas > 1): ?>
+                        <nav aria-label="Paginación">
+                            <ul class="pagination mb-0">
+                                <?php if ($paginaActual > 1): ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $paginaActual - 1])) ?>">
+                                            <i class="bi bi-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
+                                
+                                <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
+                                    <li class="page-item <?= $i === $paginaActual ? 'active' : '' ?>">
+                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $i])) ?>">
+                                            <?= $i ?>
+                                        </a>
+                                    </li>
+                                <?php endfor; ?>
+                                
+                                <?php if ($paginaActual < $totalPaginas): ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $paginaActual + 1])) ?>">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
+                            </ul>
+                        </nav>
+                    <?php endif; ?>
+                </div>
             </div>
-        </div>
+        <?php endif; ?>
     </main>
 
     <script src="<?= BASE_URL ?>assets/js/bootstrap.bundle.min.js"></script>

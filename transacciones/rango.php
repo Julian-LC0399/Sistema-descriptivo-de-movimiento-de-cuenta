@@ -25,6 +25,19 @@ if (!$user) {
 $is_admin = ($user['role'] === 'admin');
 $is_client = ($user['role'] === 'cliente');
 
+// Obtener las cuentas del cliente (si es cliente)
+$cuentas_cliente = [];
+if ($is_client) {
+    $stmt_cuentas = $pdo->prepare("SELECT acmacc, acmbal, acmccy FROM acmst WHERE acmcun = :cuscun ORDER BY acmacc");
+    $stmt_cuentas->execute([':cuscun' => $user['cuscun']]);
+    $cuentas_cliente = $stmt_cuentas->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Si no se especificó cuenta y el cliente tiene cuentas, usar la primera como predeterminada
+    if (empty($cuenta) && !empty($cuentas_cliente)) {
+        $cuenta = $cuentas_cliente[0]['acmacc'];
+    }
+}
+
 // Inicializar variables
 $nombre_cliente = 'CLIENTE NO ESPECIFICADO';
 $nombre_cliente_web = '';
@@ -91,20 +104,19 @@ if (!empty($cuenta) && !preg_match('/^[0-9]{9,20}$/', $cuenta)) {
     die("Número de cuenta inválido. Debe contener solo dígitos (9-20 caracteres).");
 }
 
-// Para clientes, si no se especifica cuenta, usar su cuenta principal
-if ($is_client && empty($cuenta)) {
-    $stmt_cuenta = $pdo->prepare("SELECT acmacc FROM acmst WHERE acmcun = :cuscun LIMIT 1");
-    $stmt_cuenta->execute([':cuscun' => $user['cuscun']]);
-    $cuenta = $stmt_cuenta->fetchColumn();
-}
-
 if (!empty($cuenta)) {
     try {
         // Verificar permisos para la cuenta solicitada
         if ($is_client) {
-            $stmt_check = $pdo->prepare("SELECT COUNT(*) FROM acmst WHERE acmacc = :cuenta AND acmcun = :client_id");
-            $stmt_check->execute([':cuenta' => $cuenta, ':client_id' => $user['cuscun']]);
-            if ($stmt_check->fetchColumn() == 0) {
+            $cuenta_permitida = false;
+            foreach ($cuentas_cliente as $cuenta_info) {
+                if ($cuenta_info['acmacc'] == $cuenta) {
+                    $cuenta_permitida = true;
+                    $moneda = $cuenta_info['acmccy'] ?? 'BS';
+                    break;
+                }
+            }
+            if (!$cuenta_permitida) {
                 die("No tienes permiso para acceder a esta cuenta");
             }
         }
@@ -249,7 +261,6 @@ if (isset($_GET['export']) && $_GET['export'] == 'pdf') {
             // Configuración del logo sin marco
             $logo_path = realpath(__DIR__ . '/../assets/images/logo-banco.jpg');
             if (file_exists($logo_path)) {
-                // Logo sin marco decorativo
                 $this->Image($logo_path, 10, 8, 35, 0, 'JPG', '', 'T', false, 300, '', false, false, 0, false, false, false);
             }
             
@@ -628,11 +639,24 @@ ob_end_flush();
                                    placeholder="Ej: 123456789"
                                    class="filter-input">
                         <?php else: ?>
-                            <input type="text" id="cuenta" name="cuenta" 
-                                   value="<?= htmlspecialchars($cuenta) ?>" 
-                                   placeholder="Su cuenta"
-                                   class="filter-input" readonly>
-                            <input type="hidden" name="cuenta" value="<?= htmlspecialchars($cuenta) ?>">
+                            <?php if (count($cuentas_cliente) > 1): ?>
+                                <select id="cuenta" name="cuenta" class="filter-input">
+                                    <?php foreach ($cuentas_cliente as $cuenta_info): ?>
+                                        <option value="<?= htmlspecialchars($cuenta_info['acmacc']) ?>" 
+                                            <?= ($cuenta_info['acmacc'] == $cuenta) ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars(formatAccountNumber($cuenta_info['acmacc'])) ?> 
+                                            (<?= strtoupper($cuenta_info['acmccy'] ?? 'BS') ?>)
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            <?php elseif (!empty($cuentas_cliente)): ?>
+                                <input type="text" id="cuenta" name="cuenta" 
+                                       value="<?= htmlspecialchars(formatAccountNumber($cuentas_cliente[0]['acmacc'])) ?>" 
+                                       class="filter-input" readonly>
+                                <input type="hidden" name="cuenta" value="<?= htmlspecialchars($cuentas_cliente[0]['acmacc']) ?>">
+                            <?php else: ?>
+                                <input type="text" id="cuenta" class="filter-input" value="NO TIENE CUENTAS" readonly>
+                            <?php endif; ?>
                         <?php endif; ?>
                     </div>
                 </div>

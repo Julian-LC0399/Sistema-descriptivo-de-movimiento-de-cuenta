@@ -14,7 +14,10 @@ if (!defined('BASE_URL')) {
 }
 
 $logoUrl = BASE_URL . 'assets/images/logo-banco.jpg';
-$isAdmin = ($_SESSION['role'] ?? '') === 'admin';
+$userRole = $_SESSION['role'] ?? '';
+$isAdmin = $userRole === 'admin';
+$isSeguridad = $userRole === 'seguridad';
+$isCliente = $userRole === 'cliente';
 ?>
 <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/sidebar.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -95,8 +98,10 @@ $isAdmin = ($_SESSION['role'] ?? '') === 'admin';
                     </li>
                 </ul>
             </li>
+            <?php elseif ($isSeguridad): ?>
+            <li class="menu-section">AUDITORÍA</li>
             
-            <!-- Sección de Auditoría -->
+            <!-- Sección de Auditoría solo para seguridad -->
             <li class="nav-item has-submenu">
                 <a class="nav-link submenu-parent" href="#">
                     <i class="fas fa-clipboard-check"></i>
@@ -120,6 +125,7 @@ $isAdmin = ($_SESSION['role'] ?? '') === 'admin';
             </li>
             <?php endif; ?>
             
+            <?php if (!$isSeguridad || $isCliente): ?>
             <li class="menu-section">CONSULTAS</li>
             
             <li class="nav-item">
@@ -135,6 +141,7 @@ $isAdmin = ($_SESSION['role'] ?? '') === 'admin';
                     <span>Consulta por rango</span>
                 </a>
             </li>
+            <?php endif; ?>
             
             <li class="nav-item logout-item">
                 <a class="nav-link" href="<?= BASE_URL ?>logout.php">
@@ -146,7 +153,7 @@ $isAdmin = ($_SESSION['role'] ?? '') === 'admin';
     </div>
 </div>
 
-<!-- Script para manejar el submenú -->
+<!-- Script para manejar el submenú (el mismo que antes) -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const submenuParents = document.querySelectorAll('.submenu-parent');

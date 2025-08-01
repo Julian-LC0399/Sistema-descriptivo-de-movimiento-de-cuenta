@@ -21,9 +21,12 @@ $pagina = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
 $offset = ($pagina - 1) * $porPagina;
 
 // Filtros
-$filtroCliente = isset($_GET['cliente']) ? trim($_GET['cliente']) : '';
-$filtroEstado = isset($_GET['estado']) ? $_GET['estado'] : 'A';
+$filtroNombreCliente = isset($_GET['nombre_cliente']) ? trim($_GET['nombre_cliente']) : '';
 $filtroCedula = isset($_GET['cedula']) ? trim($_GET['cedula']) : '';
+$filtroCuenta = isset($_GET['cuenta']) ? trim($_GET['cuenta']) : '';
+
+// Determinar si hay filtros activos
+$filtrosActivos = !empty($filtroNombreCliente) || !empty($filtroCedula) || !empty($filtroCuenta);
 
 try {
     $pdo = getPDO();
@@ -50,25 +53,24 @@ try {
         $where[] = "u.id = :user_id";
         $params[':user_id'] = $_SESSION['user_id'];
         $where[] = "a.acmsta = 'A'"; // Solo mostrar activas para usuarios normales
-    } else {
-        // Para admin/gerente, aplicar filtro de estado si está seleccionado
-        if ($filtroEstado !== '') {
-            $where[] = "a.acmsta = :estado";
-            $params[':estado'] = $filtroEstado;
-        }
     }
     
     // Aplicar filtros de búsqueda
-    if ($filtroCliente !== '') {
-        $where[] = "(CONCAT(c.cusna1, ' ', c.cusln1) LIKE :cliente OR c.cuscun = :cliente_num)";
-        $params[':cliente'] = "%$filtroCliente%";
-        $params[':cliente_num'] = $filtroCliente;
+    if (!empty($filtroNombreCliente)) {
+        $where[] = "CONCAT(c.cusna1, ' ', c.cusln1) LIKE :nombre_cliente";
+        $params[':nombre_cliente'] = "%$filtroNombreCliente%";
     }
     
     // Filtro por cédula/RIF
-    if ($filtroCedula !== '') {
+    if (!empty($filtroCedula)) {
         $where[] = "c.cusidn LIKE :cedula";
         $params[':cedula'] = "%$filtroCedula%";
+    }
+    
+    // Filtro por número de cuenta
+    if (!empty($filtroCuenta)) {
+        $where[] = "a.acmacc LIKE :cuenta";
+        $params[':cuenta'] = "%$filtroCuenta%";
     }
     
     // Combinar condiciones WHERE
@@ -154,10 +156,10 @@ try {
             </div>
             <form method="get" class="filtros-grid">
                 <div class="form-group">
-                    <label for="cliente" class="form-label">Nombre/ID Cliente</label>
-                    <input type="text" class="form-control" id="cliente" name="cliente" 
-                           value="<?php echo htmlspecialchars($filtroCliente); ?>" 
-                           placeholder="Nombre, apellido o ID de cliente">
+                    <label for="nombre_cliente" class="form-label">Nombre del Cliente</label>
+                    <input type="text" class="form-control" id="nombre_cliente" name="nombre_cliente" 
+                           value="<?php echo htmlspecialchars($filtroNombreCliente); ?>" 
+                           placeholder="Nombre del cliente">
                 </div>
                 <div class="form-group">
                     <label for="cedula" class="form-label">Cédula</label>
@@ -166,16 +168,10 @@ try {
                            placeholder="Ej: V12345678 o J123456789">
                 </div>
                 <div class="form-group">
-                    <label for="estado" class="form-label">Estado</label>
-                    <select class="form-select" id="estado" name="estado">
-                        <?php if ($isAdminOrGerente): ?>
-                            <option value="">Todas</option>
-                        <?php endif; ?>
-                        <option value="A" <?= $filtroEstado === 'A' ? 'selected' : '' ?>>Activa</option>
-                        <?php if ($isAdminOrGerente): ?>
-                            <option value="I" <?= $filtroEstado === 'I' ? 'selected' : '' ?>>Inactiva</option>
-                        <?php endif; ?>
-                    </select>
+                    <label for="cuenta" class="form-label">Número de Cuenta</label>
+                    <input type="text" class="form-control" id="cuenta" name="cuenta" 
+                           value="<?php echo htmlspecialchars($filtroCuenta); ?>" 
+                           placeholder="Ej: 123456789">
                 </div>
                 <div class="filtros-actions">
                     <button type="submit" class="btn btn-primary">
@@ -188,110 +184,121 @@ try {
             </form>
         </div>
         
-        <!-- Tabla de cuentas -->
-        <div class="table-container">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Número de Cuenta</th>
-                            <th>Cédula</th>
-                            <th>Cliente</th>
-                            <th>Sucursal</th>
-                            <th>Moneda</th>
-                            <th>Tipo de Cuenta</th>
-                            <th>Producto</th>
-                            <th>Estado</th>
-                            <?php if ($isAdminOrGerente): ?>
-                                <th>Acciones</th>
-                            <?php endif; ?>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($cuentas)): ?>
-                            <tr>
-                                <td colspan="<?php echo $isAdminOrGerente ? 9 : 8; ?>" class="text-center py-4">
-                                    <i class="bi bi-exclamation-circle fs-4"></i>
-                                    <p class="mt-2">No se encontraron cuentas</p>
-                                </td>
-                            </tr>
-                        <?php else: ?>
-                            <?php foreach ($cuentas as $cuenta): ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($cuenta['cuenta']); ?></td>
-                                    <td><?php echo htmlspecialchars($cuenta['cedula']); ?></td>
-                                    <td><?php echo htmlspecialchars($cuenta['nombre_cliente']); ?></td>
-                                    <td><?php echo htmlspecialchars($cuenta['sucursal']); ?></td>
-                                    <td><?php echo htmlspecialchars($cuenta['moneda']); ?></td>
-                                    <td><?php echo htmlspecialchars($cuenta['tipo_cuenta']); ?></td>
-                                    <td><?php echo htmlspecialchars($cuenta['producto']); ?></td>
-                                    <td>
-                                        <span class="badge <?php echo $cuenta['estado'] === 'A' ? 'bg-success' : 'bg-secondary'; ?>">
-                                            <?php echo $cuenta['estado'] === 'A' ? 'Activo' : 'Inactivo'; ?>
-                                        </span>
-                                    </td>
-                                    <?php if ($isAdminOrGerente): ?>
-                                        <td>
-                                            <div class="d-flex gap-2">
-                                                <a href="editar.php?id=<?php echo urlencode($cuenta['cuenta']); ?>" 
-                                                   class="btn btn-sm btn-warning btn-action"
-                                                   title="Editar cuenta">
-                                                    <i class="bi bi-pencil-square"></i>
-                                                </a>
-                                                <?php if ($cuenta['estado'] === 'A'): ?>
-                                                    <button class="btn btn-sm btn-danger btn-action btn-borrar" 
-                                                            data-cuenta="<?php echo htmlspecialchars($cuenta['cuenta']); ?>" 
-                                                            title="Eliminar cuenta">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                <?php endif; ?>
-                                            </div>
-                                        </td>
-                                    <?php endif; ?>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+        <!-- Mensaje inicial cuando no hay filtros -->
+        <?php if (!$filtrosActivos): ?>
+            <div class="alert alert-info text-center py-4">
+                <i class="bi bi-info-circle fs-4"></i>
+                <p class="mt-2 mb-0">Utilice los filtros de búsqueda para mostrar cuentas</p>
             </div>
-            
-            <!-- Resumen y paginación -->
-            <div class="d-flex justify-content-between align-items-center mt-3">
-                <div class="alert alert-info mb-0 py-2">
-                    Mostrando <?php echo count($cuentas); ?> de <?php echo $totalRegistros; ?> cuentas
+        <?php else: ?>
+            <!-- Tabla de cuentas -->
+            <div class="table-container">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Número de Cuenta</th>
+                                <th>Cédula</th>
+                                <th>Cliente</th>
+                                <th>Sucursal</th>
+                                <th>Moneda</th>
+                                <th>Tipo de Cuenta</th>
+                                <th>Producto</th>
+                                <th>Estado</th>
+                                <?php if ($isAdminOrGerente): ?>
+                                    <th>Acciones</th>
+                                <?php endif; ?>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($cuentas)): ?>
+                                <tr>
+                                    <td colspan="<?php echo $isAdminOrGerente ? 9 : 8; ?>" class="text-center py-4">
+                                        <i class="bi bi-exclamation-circle fs-4"></i>
+                                        <p class="mt-2">No se encontraron cuentas con los filtros aplicados</p>
+                                    </td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($cuentas as $cuenta): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($cuenta['cuenta']); ?></td>
+                                        <td><?php echo htmlspecialchars($cuenta['cedula']); ?></td>
+                                        <td><?php echo htmlspecialchars($cuenta['nombre_cliente']); ?></td>
+                                        <td><?php echo htmlspecialchars($cuenta['sucursal']); ?></td>
+                                        <td><?php echo htmlspecialchars($cuenta['moneda']); ?></td>
+                                        <td><?php echo htmlspecialchars($cuenta['tipo_cuenta']); ?></td>
+                                        <td><?php echo htmlspecialchars($cuenta['producto']); ?></td>
+                                        <td>
+                                            <span class="badge <?php echo $cuenta['estado'] === 'A' ? 'bg-success' : 'bg-secondary'; ?>">
+                                                <?php echo $cuenta['estado'] === 'A' ? 'Activo' : 'Inactivo'; ?>
+                                            </span>
+                                        </td>
+                                        <?php if ($isAdminOrGerente): ?>
+                                            <td>
+                                                <div class="d-flex gap-2">
+                                                    <a href="editar.php?id=<?php echo urlencode($cuenta['cuenta']); ?>" 
+                                                       class="btn btn-sm btn-warning btn-action"
+                                                       title="Editar cuenta">
+                                                        <i class="bi bi-pencil-square"></i>
+                                                    </a>
+                                                    <?php if ($cuenta['estado'] === 'A'): ?>
+                                                        <button class="btn btn-sm btn-danger btn-action btn-borrar" 
+                                                                data-cuenta="<?php echo htmlspecialchars($cuenta['cuenta']); ?>" 
+                                                                title="Eliminar cuenta">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </td>
+                                        <?php endif; ?>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
                 
-                <?php if ($totalPaginas > 1): ?>
-                    <nav aria-label="Paginación">
-                        <ul class="pagination mb-0">
-                            <?php if ($pagina > 1): ?>
-                                <li class="page-item">
-                                    <a class="page-link" href="?<?php echo http_build_query(array_merge($_GET, ['pagina' => $pagina - 1])); ?>">
-                                        <i class="bi bi-chevron-left"></i>
-                                    </a>
-                                </li>
-                            <?php endif; ?>
-                            
-                            <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
-                                <li class="page-item <?php echo $i === $pagina ? 'active' : ''; ?>">
-                                    <a class="page-link" href="?<?php echo http_build_query(array_merge($_GET, ['pagina' => $i])); ?>">
-                                        <?php echo $i; ?>
-                                    </a>
-                                </li>
-                            <?php endfor; ?>
-                            
-                            <?php if ($pagina < $totalPaginas): ?>
-                                <li class="page-item">
-                                    <a class="page-link" href="?<?php echo http_build_query(array_merge($_GET, ['pagina' => $pagina + 1])); ?>">
-                                        <i class="bi bi-chevron-right"></i>
-                                    </a>
-                                </li>
-                            <?php endif; ?>
-                        </ul>
-                    </nav>
-                <?php endif; ?>
+                <!-- Resumen y paginación -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="alert alert-info mb-0 py-2">
+                        Mostrando <?php echo count($cuentas); ?> de <?php echo $totalRegistros; ?> cuentas
+                        <?php if (!empty($filtroNombreCliente)): ?>| Cliente: <?php echo htmlspecialchars($filtroNombreCliente); ?><?php endif; ?>
+                        <?php if (!empty($filtroCedula)): ?>| Cédula: <?php echo htmlspecialchars($filtroCedula); ?><?php endif; ?>
+                        <?php if (!empty($filtroCuenta)): ?>| Cuenta: <?php echo htmlspecialchars($filtroCuenta); ?><?php endif; ?>
+                    </div>
+                    
+                    <?php if ($totalPaginas > 1): ?>
+                        <nav aria-label="Paginación">
+                            <ul class="pagination mb-0">
+                                <?php if ($pagina > 1): ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?<?php echo http_build_query(array_merge($_GET, ['pagina' => $pagina - 1])); ?>">
+                                            <i class="bi bi-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
+                                
+                                <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
+                                    <li class="page-item <?php echo $i === $pagina ? 'active' : ''; ?>">
+                                        <a class="page-link" href="?<?php echo http_build_query(array_merge($_GET, ['pagina' => $i])); ?>">
+                                            <?php echo $i; ?>
+                                        </a>
+                                    </li>
+                                <?php endfor; ?>
+                                
+                                <?php if ($pagina < $totalPaginas): ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?<?php echo http_build_query(array_merge($_GET, ['pagina' => $pagina + 1])); ?>">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
+                            </ul>
+                        </nav>
+                    <?php endif; ?>
+                </div>
             </div>
-        </div>
+        <?php endif; ?>
     </main>
 
     <!-- Bootstrap JS Bundle con Popper -->

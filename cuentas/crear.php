@@ -191,7 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php include __DIR__ . '/../includes/sidebar.php'; ?>
     
     <main class="container mt-4">
-        <h2 class="mb-4">Crear Nueva Cuenta Bancaria</h2>
+        <h2 class="mb-4">Registrar cuenta bancaria</h2>
         
         <?php if (!empty($error)): ?>
             <div class="alert alert-danger alert-dismissible fade show">
@@ -209,13 +209,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Número de Cuenta</label>
-                            <div class="form-control-plaintext bg-light p-2 rounded">
-                                Se generará automáticamente
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
                             <label for="cliente_id" class="form-label required-field">Cliente</label>
                             <select class="form-select" id="cliente_id" name="cliente_id" required>
                                 <option value="">Seleccione un cliente</option>
@@ -223,6 +216,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <option value="<?php echo htmlspecialchars($cliente['cuscun']); ?>"
                                         <?php echo (isset($_POST['cliente_id']) && $_POST['cliente_id'] == $cliente['cuscun']) ? 'selected' : ''; ?>>
                                         <?php echo htmlspecialchars($cliente['nombre']); ?> (ID: <?php echo htmlspecialchars($cliente['cuscun']); ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="producto_bancario" class="form-label required-field">Producto Bancario</label>
+                            <select class="form-select" id="producto_bancario" name="producto_bancario" required>
+                                <option value="">Seleccione producto</option>
+                                <?php foreach ($productosBancarios as $producto): ?>
+                                    <option value="<?php echo $producto; ?>"
+                                        <?php echo (isset($_POST['producto_bancario']) && $_POST['producto_bancario'] == $producto) ? 'selected' : ''; ?>>
+                                        <?php echo $producto; ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -252,18 +257,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <option value="BRL" <?php echo (isset($_POST['moneda']) && $_POST['moneda'] === 'BRL') ? 'selected' : ''; ?>>BRL - Real Brasileño</option>
                             </select>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="producto_bancario" class="form-label required-field">Producto Bancario</label>
-                            <select class="form-select" id="producto_bancario" name="producto_bancario" required>
-                                <option value="">Seleccione producto</option>
-                                <?php foreach ($productosBancarios as $producto): ?>
-                                    <option value="<?php echo $producto; ?>"
-                                        <?php echo (isset($_POST['producto_bancario']) && $_POST['producto_bancario'] == $producto) ? 'selected' : ''; ?>>
-                                        <?php echo $producto; ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -275,43 +268,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label for="tipo_cuenta" class="form-label required-field">Tipo de Cuenta</label>
                             <select class="form-select" id="tipo_cuenta" name="tipo_cuenta" required>
                                 <option value="CA" <?php echo (!isset($_POST['tipo_cuenta']) || $_POST['tipo_cuenta'] === 'CA') ? 'selected' : ''; ?>>CA - Ahorros</option>
                                 <option value="CC" <?php echo (isset($_POST['tipo_cuenta']) && $_POST['tipo_cuenta'] === 'CC') ? 'selected' : ''; ?>>CC - Corriente</option>
                             </select>
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label for="clase_cuenta" class="form-label required-field">Clase de Cuenta</label>
                             <select class="form-select" id="clase_cuenta" name="clase_cuenta" required>
                                 <option value="N" <?php echo (!isset($_POST['clase_cuenta']) || $_POST['clase_cuenta'] === 'N') ? 'selected' : ''; ?>>N - Normal</option>
                                 <option value="J" <?php echo (isset($_POST['clase_cuenta']) && $_POST['clase_cuenta'] === 'J') ? 'selected' : ''; ?>>J - Jurídica</option>
                                 <option value="V" <?php echo (isset($_POST['clase_cuenta']) && $_POST['clase_cuenta'] === 'V') ? 'selected' : ''; ?>>V - VIP</option>
                             </select>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Estado</label>
-                            <div class="form-control-plaintext bg-light p-2 rounded">
-                                Activo (siempre)
-                            </div>
-                            <input type="hidden" name="estado" value="A">
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Fecha Apertura</label>
-                            <div class="form-control-plaintext bg-light p-2 rounded">
-                                <?php echo date('d/m/Y'); ?> (fecha actual)
-                            </div>
-                            <input type="hidden" name="fecha_apertura" value="<?php echo date('Y-m-d'); ?>">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Saldo Inicial</label>
-                            <div class="form-control-plaintext bg-light p-2 rounded">
-                                0.00 (Se establecerá automáticamente)
-                            </div>
                         </div>
                     </div>
                 </div>
