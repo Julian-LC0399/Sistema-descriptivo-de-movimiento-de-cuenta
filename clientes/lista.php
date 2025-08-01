@@ -15,22 +15,14 @@ $offset = ($paginaActual - 1) * $clientesPorPagina;
 $busquedaId = isset($_GET['busqueda_id']) ? trim($_GET['busqueda_id']) : '';
 $busquedaCedula = isset($_GET['busqueda_cedula']) ? trim($_GET['busqueda_cedula']) : '';
 $busquedaGeneral = isset($_GET['busqueda_general']) ? trim($_GET['busqueda_general']) : '';
-$filtroEstado = isset($_GET['estado']) ? $_GET['estado'] : 'A'; // Por defecto muestra solo activos
 
 // Determinar si hay filtros aplicados (condición para mostrar tabla)
-$filtrosActivos = !empty($busquedaId) || !empty($busquedaCedula) || !empty($busquedaGeneral) || $filtroEstado !== 'A';
+$filtrosActivos = !empty($busquedaId) || !empty($busquedaCedula) || !empty($busquedaGeneral);
 
 // Consulta base
 $sql = "SELECT cuscun, cusidn, cusna1, cusna2, cusln1, cusln2, cuscty, cuseml, cusphn, cusphh, cusemp, cusjob, cussts FROM cumst";
 $params = [];
 $contarSql = "SELECT COUNT(*) as total FROM cumst";
-
-// Aplicar filtro de estado
-if ($filtroEstado !== 'T') {
-    $sql .= " WHERE cussts = :estado";
-    $contarSql .= " WHERE cussts = :estado";
-    $params[':estado'] = $filtroEstado;
-}
 
 // Aplicar filtros de búsqueda
 $conditions = [];
@@ -51,9 +43,8 @@ if (!empty($busquedaGeneral)) {
 }
 
 if (!empty($conditions)) {
-    $whereClause = empty($params) ? " WHERE" : " AND";
-    $sql .= $whereClause . " " . implode(" AND ", $conditions);
-    $contarSql .= $whereClause . " " . implode(" AND ", $conditions);
+    $sql .= " WHERE " . implode(" AND ", $conditions);
+    $contarSql .= " WHERE " . implode(" AND ", $conditions);
 }
 
 // Obtener conexión PDO
@@ -156,14 +147,6 @@ try {
                     <input type="text" class="form-control" id="busqueda_general" name="busqueda_general" 
                            value="<?= htmlspecialchars($busquedaGeneral) ?>" placeholder="Ingrese nombre o apellido">
                 </div>
-                <div class="form-group">
-                    <label for="estado" class="form-label">Estado</label>
-                    <select class="form-select" id="estado" name="estado">
-                        <option value="A" <?= $filtroEstado === 'A' ? 'selected' : '' ?>>Activos</option>
-                        <option value="I" <?= $filtroEstado === 'I' ? 'selected' : '' ?>>Inactivos</option>
-                        <option value="T" <?= $filtroEstado === 'T' ? 'selected' : '' ?>>Todos</option>
-                    </select>
-                </div>
                 <div class="filtros-actions">
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-search"></i> Buscar
@@ -258,7 +241,6 @@ try {
                 <div class="d-flex justify-content-between align-items-center mt-3">
                     <div class="alert alert-info mb-0 py-2">
                         Mostrando <?= count($clientes) ?> de <?= $totalClientes ?> clientes
-                        <?= $filtroEstado !== 'T' ? '('.($filtroEstado === 'A' ? 'Activos' : 'Inactivos').')' : '' ?>
                         <?= !empty($busquedaId) ? '| ID: '.htmlspecialchars($busquedaId) : '' ?>
                         <?= !empty($busquedaCedula) ? '| Cédula: '.htmlspecialchars($busquedaCedula) : '' ?>
                         <?= !empty($busquedaGeneral) ? '| Nombre/Apellido: '.htmlspecialchars($busquedaGeneral) : '' ?>

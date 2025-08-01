@@ -176,61 +176,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Sucursal</label>
-                            <div class="form-control-plaintext bg-light p-2 rounded">
-                                Sucursal <?php echo htmlspecialchars($cuenta['acmbrn'] ?? ''); ?>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Moneda</label>
-                            <div class="form-control-plaintext bg-light p-2 rounded">
-                                <?php 
-                                $monedas = [
-                                    'BS' => 'Bolívar',
-                                    'USD' => 'Dólar',
-                                    'EUR' => 'Euro',
-                                    'COP' => 'Peso Colombiano',
-                                    'BRL' => 'Real Brasileño'
-                                ];
-                                echo htmlspecialchars($monedas[$cuenta['acmccy']] ?? $cuenta['acmccy']); 
-                                ?>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Producto Bancario</label>
-                            <div class="form-control-plaintext bg-light p-2 rounded">
-                                <?php echo htmlspecialchars($cuenta['acmprd'] ?? ''); ?>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Tipo de Cuenta</label>
-                            <div class="form-control-plaintext bg-light p-2 rounded">
-                                <?php 
-                                $tiposCuenta = [
-                                    'CA' => 'CA - Ahorros',
-                                    'CC' => 'CC - Corriente'
-                                ];
-                                echo htmlspecialchars($tiposCuenta[$cuenta['acmtyp']] ?? $cuenta['acmtyp']);
-                                ?>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Clase de Cuenta</label>
-                            <div class="form-control-plaintext bg-light p-2 rounded">
-                                <?php 
-                                $clasesCuenta = [
-                                    'N' => 'N - Normal',
-                                    'J' => 'J - Jurídica',
-                                    'V' => 'V - VIP'
-                                ];
-                                echo htmlspecialchars($clasesCuenta[$cuenta['acmcls']] ?? $cuenta['acmcls']);
-                                ?>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
                             <label for="estado" class="form-label required-field">Estado</label>
                             <select class="form-select" id="estado" name="estado" required>
                                 <option value="A" <?php echo (!isset($cuenta['acmsta']) || $cuenta['acmsta'] === 'A') ? 'selected' : ''; ?>>Activo</option>
@@ -247,12 +192,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Fecha Apertura</label>
-                            <div class="form-control-plaintext bg-light p-2 rounded">
-                                <?php echo isset($cuenta['acmopn']) ? date('d/m/Y', strtotime($cuenta['acmopn'])) : date('d/m/Y'); ?>
-                            </div>
-                        </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Última Actualización</label>
                             <div class="form-control-plaintext bg-light p-2 rounded">
