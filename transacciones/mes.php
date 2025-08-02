@@ -73,16 +73,30 @@ if (!$user) {
 $is_admin = ($user['role'] === 'admin');
 $is_client = ($user['role'] === 'cliente');
 
-// Obtener las cuentas del cliente (si es cliente) - CONSULTA MODIFICADA
-$cuentas_cliente = [];
+// Obtener las cuentas disponibles
+$cuentas_disponibles = [];
 if ($is_client) {
     $stmt_cuentas = $pdo->prepare("SELECT acmacc, acmbal, acmccy FROM acmst WHERE acmcun = :cuscun ORDER BY acmacc");
     $stmt_cuentas->execute([':cuscun' => $user['cuscun']]);
-    $cuentas_cliente = $stmt_cuentas->fetchAll(PDO::FETCH_ASSOC);
+    $cuentas_disponibles = $stmt_cuentas->fetchAll(PDO::FETCH_ASSOC);
     
     // Si no se especificó cuenta y el cliente tiene cuentas, usar la primera como predeterminada
-    if (empty($cuenta) && !empty($cuentas_cliente)) {
-        $cuenta = $cuentas_cliente[0]['acmacc'];
+    if (empty($cuenta) && !empty($cuentas_disponibles)) {
+        $cuenta = $cuentas_disponibles[0]['acmacc'];
+    }
+} elseif ($is_admin) {
+    // Para administradores, obtener todas las cuentas con información del cliente
+    $stmt_cuentas = $pdo->prepare("SELECT a.acmacc, a.acmbal, a.acmccy, 
+                                  CONCAT(c.cusna1, ' ', IFNULL(c.cusna2, ''), ' ', c.cusln1, ' ', IFNULL(c.cusln2, '')) AS nombre_cliente
+                                  FROM acmst a 
+                                  JOIN cumst c ON a.acmcun = c.cuscun 
+                                  ORDER BY a.acmacc");
+    $stmt_cuentas->execute();
+    $cuentas_disponibles = $stmt_cuentas->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Si no se especificó cuenta y hay cuentas disponibles, usar la primera como predeterminada
+    if (empty($cuenta)) {
+        $cuenta = $_GET['cuenta'] ?? ($cuentas_disponibles[0]['acmacc'] ?? null);
     }
 }
 
@@ -112,7 +126,7 @@ if (!empty($cuenta)) {
         // Verificar permisos para la cuenta solicitada
         if ($is_client) {
             $cuenta_permitida = false;
-            foreach ($cuentas_cliente as $cuenta_info) {
+            foreach ($cuentas_disponibles as $cuenta_info) {
                 if ($cuenta_info['acmacc'] == $cuenta) {
                     $cuenta_permitida = true;
                     $moneda = $cuenta_info['acmccy'] ?? 'BS';
@@ -591,30 +605,28 @@ ob_end_flush();
                         <label for="cuenta" class="filter-label">
                             <i class="fas fa-wallet"></i> Número de Cuenta
                         </label>
-                        <?php if ($is_admin): ?>
-                            <input type="text" id="cuenta" name="cuenta" 
-                                   value="<?= htmlspecialchars($cuenta) ?>" 
-                                   placeholder="Ej: 123456789"
-                                   class="filter-input">
-                        <?php else: ?>
-                            <?php if (count($cuentas_cliente) > 1): ?>
+                        <?php if ($is_admin || $is_client): ?>
+                            <?php if (count($cuentas_disponibles) > 0): ?>
                                 <select id="cuenta" name="cuenta" class="filter-input">
-                                    <?php foreach ($cuentas_cliente as $cuenta_info): ?>
+                                    <?php foreach ($cuentas_disponibles as $cuenta_info): ?>
                                         <option value="<?= htmlspecialchars($cuenta_info['acmacc']) ?>" 
                                             <?= ($cuenta_info['acmacc'] == $cuenta) ? 'selected' : '' ?>>
                                             <?= htmlspecialchars(formatAccountNumber($cuenta_info['acmacc'])) ?> 
                                             (<?= strtoupper($cuenta_info['acmccy'] ?? 'BS') ?>)
+                                            <?php if ($is_admin): ?>
+                                                - <?= htmlspecialchars($cuenta_info['nombre_cliente'] ?? '') ?>
+                                            <?php endif; ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
-                            <?php elseif (!empty($cuentas_cliente)): ?>
-                                <input type="text" id="cuenta" name="cuenta" 
-                                       value="<?= htmlspecialchars(formatAccountNumber($cuentas_cliente[0]['acmacc'])) ?>" 
-                                       class="filter-input" readonly>
-                                <input type="hidden" name="cuenta" value="<?= htmlspecialchars($cuentas_cliente[0]['acmacc']) ?>">
                             <?php else: ?>
-                                <input type="text" id="cuenta" class="filter-input" value="NO TIENE CUENTAS" readonly>
+                                <input type="text" id="cuenta" class="filter-input" value="NO HAY CUENTAS DISPONIBLES" readonly>
                             <?php endif; ?>
+                        <?php else: ?>
+                            <input type="text" id="cuenta" name="cuenta" 
+                                   value="<?= htmlspecialchars($cuenta) ?>" 
+                                   placeholder="Ej: 123456789"
+                                   class="filter-input">
                         <?php endif; ?>
                     </div>
                 </div>
