@@ -191,104 +191,106 @@ try {
             </form>
         </div>
         
-        <!-- Tabla de registros -->
-        <div class="table-container">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Cuenta</th>
-                            <th>Cliente</th>
-                            <th>Fecha/Hora</th>
-                            <th>Estado</th>
-                            <th>Razón</th>
-                            <th>Usuario</th>
-                            <th>Autorizó</th>
-                            <th>IP</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($registros)): ?>
+        <!-- Tabla de registros (oculta inicialmente) -->
+        <?php if (!empty($busquedaCuenta) || !empty($busquedaUsuario) || !empty($filtroEstado) || !empty($fechaDesde) || !empty($fechaHasta)): ?>
+            <div class="table-container">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
                             <tr>
-                                <td colspan="8" class="text-center py-4">
-                                    <i class="bi bi-exclamation-circle fs-4"></i>
-                                    <p class="mt-2">No se encontraron registros</p>
-                                </td>
+                                <th>Cuenta</th>
+                                <th>Cliente</th>
+                                <th>Fecha/Hora</th>
+                                <th>Estado</th>
+                                <th>Razón</th>
+                                <th>Usuario</th>
+                                <th>Autorizó</th>
+                                <th>IP</th>
                             </tr>
-                        <?php else: ?>
-                            <?php foreach ($registros as $registro): ?>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($registros)): ?>
                                 <tr>
-                                    <td><?= htmlspecialchars($registro['hstacc']) ?></td>
-                                    <td>
-                                        <?= !empty($registro['cusna1']) 
-                                            ? htmlspecialchars(
-                                                trim(
-                                                    ($registro['cusna1'] ?? '') . ' ' . 
-                                                    ($registro['cusna2'] ?? '') . ' ' .
-                                                    ($registro['cusln1'] ?? '') . ' ' . 
-                                                    ($registro['cusln2'] ?? '')
-                                                )
-                                            )
-                                            : 'N/A' 
-                                        ?>
+                                    <td colspan="8" class="text-center py-4">
+                                        <i class="bi bi-exclamation-circle fs-4"></i>
+                                        <p class="mt-2">No se encontraron registros</p>
                                     </td>
-                                    <td><?= date('d/m/Y H:i:s', strtotime($registro['hstdat'])) ?></td>
-                                    <td>
-                                        <span class="badge <?= $registro['hststa'] === 'A' ? 'bg-success' : 'bg-secondary' ?>">
-                                            <?= $registro['hststa'] === 'A' ? 'Activo' : 'Inactivo' ?>
-                                        </span>
-                                    </td>
-                                    <td><?= htmlspecialchars($registro['hstrsn']) ?></td>
-                                    <td><?= htmlspecialchars($registro['hstusr']) ?></td>
-                                    <td><?= !empty($registro['hstauth']) ? htmlspecialchars($registro['hstauth']) : 'N/A' ?></td>
-                                    <td><?= !empty($registro['hstip']) ? htmlspecialchars($registro['hstip']) : 'N/A' ?></td>
                                 </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- Resumen y paginación -->
-            <div class="d-flex justify-content-between align-items-center mt-3">
-                <div class="alert alert-info mb-0 py-2">
-                    Mostrando <?= count($registros) ?> de <?= $totalRegistros ?> registros
-                    <?= !empty($filtroEstado) ? '| Estado: '.($filtroEstado === 'A' ? 'Activo' : 'Inactivo') : '' ?>
-                    <?= !empty($busquedaCuenta) ? '| Cuenta: '.htmlspecialchars($busquedaCuenta) : '' ?>
-                    <?= !empty($busquedaUsuario) ? '| Búsqueda: '.htmlspecialchars($busquedaUsuario) : '' ?>
+                            <?php else: ?>
+                                <?php foreach ($registros as $registro): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($registro['hstacc']) ?></td>
+                                        <td>
+                                            <?= !empty($registro['cusna1']) 
+                                                ? htmlspecialchars(
+                                                    trim(
+                                                        ($registro['cusna1'] ?? '') . ' ' . 
+                                                        ($registro['cusna2'] ?? '') . ' ' .
+                                                        ($registro['cusln1'] ?? '') . ' ' . 
+                                                        ($registro['cusln2'] ?? '')
+                                                    )
+                                                )
+                                                : 'N/A' 
+                                            ?>
+                                        </td>
+                                        <td><?= date('d/m/Y H:i:s', strtotime($registro['hstdat'])) ?></td>
+                                        <td>
+                                            <span class="badge <?= $registro['hststa'] === 'A' ? 'bg-success' : 'bg-secondary' ?>">
+                                                <?= $registro['hststa'] === 'A' ? 'Activo' : 'Inactivo' ?>
+                                            </span>
+                                        </td>
+                                        <td><?= htmlspecialchars($registro['hstrsn']) ?></td>
+                                        <td><?= htmlspecialchars($registro['hstusr']) ?></td>
+                                        <td><?= !empty($registro['hstauth']) ? htmlspecialchars($registro['hstauth']) : 'N/A' ?></td>
+                                        <td><?= !empty($registro['hstip']) ? htmlspecialchars($registro['hstip']) : 'N/A' ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
                 
-                <?php if ($totalPaginas > 1): ?>
-                    <nav aria-label="Paginación">
-                        <ul class="pagination mb-0">
-                            <?php if ($paginaActual > 1): ?>
-                                <li class="page-item">
-                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $paginaActual - 1])) ?>">
-                                        <i class="bi bi-chevron-left"></i>
-                                    </a>
-                                </li>
-                            <?php endif; ?>
-                            
-                            <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
-                                <li class="page-item <?= $i === $paginaActual ? 'active' : '' ?>">
-                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $i])) ?>">
-                                        <?= $i ?>
-                                    </a>
-                                </li>
-                            <?php endfor; ?>
-                            
-                            <?php if ($paginaActual < $totalPaginas): ?>
-                                <li class="page-item">
-                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $paginaActual + 1])) ?>">
-                                        <i class="bi bi-chevron-right"></i>
-                                    </a>
-                                </li>
-                            <?php endif; ?>
-                        </ul>
-                    </nav>
-                <?php endif; ?>
+                <!-- Resumen y paginación -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="alert alert-info mb-0 py-2">
+                        Mostrando <?= count($registros) ?> de <?= $totalRegistros ?> registros
+                        <?= !empty($filtroEstado) ? '| Estado: '.($filtroEstado === 'A' ? 'Activo' : 'Inactivo') : '' ?>
+                        <?= !empty($busquedaCuenta) ? '| Cuenta: '.htmlspecialchars($busquedaCuenta) : '' ?>
+                        <?= !empty($busquedaUsuario) ? '| Búsqueda: '.htmlspecialchars($busquedaUsuario) : '' ?>
+                    </div>
+                    
+                    <?php if ($totalPaginas > 1): ?>
+                        <nav aria-label="Paginación">
+                            <ul class="pagination mb-0">
+                                <?php if ($paginaActual > 1): ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $paginaActual - 1])) ?>">
+                                            <i class="bi bi-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
+                                
+                                <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
+                                    <li class="page-item <?= $i === $paginaActual ? 'active' : '' ?>">
+                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $i])) ?>">
+                                            <?= $i ?>
+                                        </a>
+                                    </li>
+                                <?php endfor; ?>
+                                
+                                <?php if ($paginaActual < $totalPaginas): ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $paginaActual + 1])) ?>">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
+                            </ul>
+                        </nav>
+                    <?php endif; ?>
+                </div>
             </div>
-        </div>
+        <?php endif; ?>
     </main>
 
     <script src="<?= BASE_URL ?>assets/js/bootstrap.bundle.min.js"></script>
