@@ -13,33 +13,24 @@ $offset = ($paginaActual - 1) * $registrosPorPagina;
 
 // Parámetros de búsqueda
 $busquedaUsuario = isset($_GET['busqueda_usuario']) ? trim($_GET['busqueda_usuario']) : '';
-$filtroAccion = isset($_GET['accion']) ? $_GET['accion'] : '';
 $fechaDesde = isset($_GET['fecha_desde']) ? $_GET['fecha_desde'] : '';
 $fechaHasta = isset($_GET['fecha_hasta']) ? $_GET['fecha_hasta'] : '';
-$filtroEstado = isset($_GET['estado']) ? $_GET['estado'] : '';
+
+// Determinar si hay filtros aplicados
+$filtrosAplicados = !empty($busquedaUsuario) || !empty($fechaDesde) || !empty($fechaHasta);
 
 // Consulta base con JOINs
 $sql = "SELECT l.*, u.role as rol_usuario
         FROM access_logs l
         JOIN users u ON l.user_id = u.id";
 $params = [];
-$contarSql = "SELECT COUNT(*) as total FROM access_logs l";
+$contarSql = "SELECT COUNT(*) as total FROM access_logs l JOIN users u ON l.user_id = u.id";
 $conditions = [];
 
 // Aplicar filtros de búsqueda
 if (!empty($busquedaUsuario)) {
-    $conditions[] = "(l.username LIKE :busqueda_usuario OR u.username LIKE :busqueda_usuario)";
-    $params[':busqueda_usuario'] = "%$busquedaUsuario%";
-}
-
-if (!empty($filtroAccion)) {
-    $conditions[] = "l.action = :accion";
-    $params[':accion'] = $filtroAccion;
-}
-
-if (!empty($filtroEstado)) {
-    $conditions[] = "l.status_code = :estado";
-    $params[':estado'] = $filtroEstado;
+    $conditions[] = "u.username LIKE :busqueda_usuario";
+    $params[':busqueda_usuario'] = "%".$busquedaUsuario."%";
 }
 
 if (!empty($fechaDesde)) {
@@ -97,15 +88,6 @@ try {
     $_SESSION['error'] = "Error al obtener registros: " . $e->getMessage();
     $registros = [];
 }
-
-// Obtener lista de acciones únicas para el filtro
-$accionesUnicas = [];
-try {
-    $stmt = $pdo->query("SELECT DISTINCT action FROM access_logs ORDER BY action");
-    $accionesUnicas = $stmt->fetchAll(PDO::FETCH_COLUMN);
-} catch (PDOException $e) {
-    $_SESSION['error'] = "Error al obtener acciones: " . $e->getMessage();
-}
 ?>
 
 <!DOCTYPE html>
@@ -145,40 +127,18 @@ try {
             <?php unset($_SESSION['error']); ?>
         <?php endif; ?>
 
-        <!-- Filtros -->
+        <!-- Filtros simplificados -->
         <div class="filtros-card mb-4">
             <div class="filtros-header">
                 <h3 class="filtros-title">
                     <i class="bi bi-funnel"></i> Filtros de Búsqueda
                 </h3>
             </div>
-            <form method="get" class="filtros-grid">
+            <form method="get" class="filtros-grid" id="filtrosForm">
                 <div class="form-group">
                     <label for="busqueda_usuario" class="form-label">Buscar por usuario</label>
                     <input type="text" class="form-control" id="busqueda_usuario" name="busqueda_usuario" 
                            value="<?= htmlspecialchars($busquedaUsuario) ?>" placeholder="Nombre de usuario">
-                </div>
-                <div class="form-group">
-                    <label for="accion" class="form-label">Acción</label>
-                    <select class="form-select" id="accion" name="accion">
-                        <option value="">Todas</option>
-                        <?php foreach ($accionesUnicas as $accion): ?>
-                            <option value="<?= htmlspecialchars($accion) ?>" <?= $filtroAccion === $accion ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($accion) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="estado" class="form-label">Estado HTTP</label>
-                    <select class="form-select" id="estado" name="estado">
-                        <option value="">Todos</option>
-                        <option value="200" <?= $filtroEstado === '200' ? 'selected' : '' ?>>200 (Éxito)</option>
-                        <option value="401" <?= $filtroEstado === '401' ? 'selected' : '' ?>>401 (No autorizado)</option>
-                        <option value="403" <?= $filtroEstado === '403' ? 'selected' : '' ?>>403 (Prohibido)</option>
-                        <option value="404" <?= $filtroEstado === '404' ? 'selected' : '' ?>>404 (No encontrado)</option>
-                        <option value="500" <?= $filtroEstado === '500' ? 'selected' : '' ?>>500 (Error interno)</option>
-                    </select>
                 </div>
                 <div class="form-group">
                     <label for="fecha_desde" class="form-label">Fecha desde</label>
@@ -201,110 +161,118 @@ try {
             </form>
         </div>
         
-        <!-- Tabla de registros -->
-        <div class="table-container">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Usuario</th>
-                            <th>Rol</th>
-                            <th>Fecha/Hora</th>
-                            <th>Acción</th>
-                            <th>Estado</th>
-                            <th>Endpoint</th>
-                            <th>IP</th>
-                            <th>Dispositivo</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($registros)): ?>
+        <!-- Mensaje inicial cuando no hay filtros -->
+        <?php if (!$filtrosAplicados): ?>
+            <div class="alert alert-info text-center py-4">
+                <i class="bi bi-info-circle fs-4"></i>
+                <p class="mt-2 mb-0">Utilice los filtros de búsqueda para mostrar registros</p>
+            </div>
+        <?php else: ?>
+            <!-- Tabla de registros -->
+            <div class="table-container" id="tablaResultados">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
                             <tr>
-                                <td colspan="8" class="text-center py-4">
-                                    <i class="bi bi-exclamation-circle fs-4"></i>
-                                    <p class="mt-2">No se encontraron registros</p>
-                                </td>
+                                <th>Usuario</th>
+                                <th>Rol</th>
+                                <th>Fecha/Hora</th>
+                                <th>Acción</th>
+                                <th>Estado</th>
+                                <th>Endpoint</th>
+                                <th>IP</th>
+                                <th>Dispositivo</th>
                             </tr>
-                        <?php else: ?>
-                            <?php foreach ($registros as $registro): ?>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($registros) && $filtrosAplicados): ?>
                                 <tr>
-                                    <td><?= htmlspecialchars($registro['username']) ?></td>
-                                    <td>
-                                        <span class="badge bg-<?= 
-                                            $registro['rol_usuario'] === 'admin' ? 'danger' : 
-                                            ($registro['rol_usuario'] === 'gerente' ? 'warning' : 
-                                            ($registro['rol_usuario'] === 'cajero' ? 'info' : 'primary')) 
-                                        ?>">
-                                            <?= htmlspecialchars(ucfirst($registro['rol_usuario'])) ?>
-                                        </span>
-                                    </td>
-                                    <td><?= date('d/m/Y H:i:s', strtotime($registro['access_time'])) ?></td>
-                                    <td><?= htmlspecialchars($registro['action']) ?></td>
-                                    <td>
-                                        <span class="badge bg-<?= 
-                                            $registro['status_code'] >= 200 && $registro['status_code'] < 300 ? 'success' : 
-                                            ($registro['status_code'] >= 400 && $registro['status_code'] < 500 ? 'warning' : 
-                                            ($registro['status_code'] >= 500 ? 'danger' : 'secondary')) 
-                                        ?>">
-                                            <?= htmlspecialchars($registro['status_code'] ?? 'N/A') ?>
-                                        </span>
-                                    </td>
-                                    <td><?= htmlspecialchars($registro['endpoint'] ?? 'N/A') ?></td>
-                                    <td><?= htmlspecialchars($registro['ip_address']) ?></td>
-                                    <td>
-                                        <small><?= htmlspecialchars(
-                                            strlen($registro['user_agent']) > 30 ? 
-                                            substr($registro['user_agent'], 0, 30).'...' : 
-                                            $registro['user_agent']
-                                        ) ?></small>
+                                    <td colspan="8" class="text-center py-4">
+                                        <i class="bi bi-exclamation-circle fs-4"></i>
+                                        <p class="mt-2">No se encontraron registros con los filtros aplicados</p>
                                     </td>
                                 </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- Resumen y paginación -->
-            <div class="d-flex justify-content-between align-items-center mt-3">
-                <div class="alert alert-info mb-0 py-2">
-                    Mostrando <?= count($registros) ?> de <?= $totalRegistros ?> registros
-                    <?= !empty($filtroAccion) ? '| Acción: '.htmlspecialchars($filtroAccion) : '' ?>
-                    <?= !empty($busquedaUsuario) ? '| Usuario: '.htmlspecialchars($busquedaUsuario) : '' ?>
-                    <?= !empty($filtroEstado) ? '| Estado: '.htmlspecialchars($filtroEstado) : '' ?>
+                            <?php elseif (!empty($registros)): ?>
+                                <?php foreach ($registros as $registro): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($registro['username']) ?></td>
+                                        <td>
+                                            <span class="badge bg-<?= 
+                                                $registro['rol_usuario'] === 'admin' ? 'danger' : 
+                                                ($registro['rol_usuario'] === 'gerente' ? 'warning' : 
+                                                ($registro['rol_usuario'] === 'cajero' ? 'info' : 'primary')) 
+                                            ?>">
+                                                <?= htmlspecialchars(ucfirst($registro['rol_usuario'])) ?>
+                                            </span>
+                                        </td>
+                                        <td><?= date('d/m/Y H:i:s', strtotime($registro['access_time'])) ?></td>
+                                        <td><?= htmlspecialchars($registro['action']) ?></td>
+                                        <td>
+                                            <span class="badge bg-<?= 
+                                                $registro['status_code'] >= 200 && $registro['status_code'] < 300 ? 'success' : 
+                                                ($registro['status_code'] >= 400 && $registro['status_code'] < 500 ? 'warning' : 
+                                                ($registro['status_code'] >= 500 ? 'danger' : 'secondary')) 
+                                            ?>">
+                                                <?= htmlspecialchars($registro['status_code'] ?? 'N/A') ?>
+                                            </span>
+                                        </td>
+                                        <td><?= htmlspecialchars($registro['endpoint'] ?? 'N/A') ?></td>
+                                        <td><?= htmlspecialchars($registro['ip_address']) ?></td>
+                                        <td>
+                                            <small><?= htmlspecialchars(
+                                                strlen($registro['user_agent']) > 30 ? 
+                                                substr($registro['user_agent'], 0, 30).'...' : 
+                                                $registro['user_agent']
+                                            ) ?></small>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
                 
-                <?php if ($totalPaginas > 1): ?>
-                    <nav aria-label="Paginación">
-                        <ul class="pagination mb-0">
-                            <?php if ($paginaActual > 1): ?>
-                                <li class="page-item">
-                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $paginaActual - 1])) ?>">
-                                        <i class="bi bi-chevron-left"></i>
-                                    </a>
-                                </li>
-                            <?php endif; ?>
-                            
-                            <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
-                                <li class="page-item <?= $i === $paginaActual ? 'active' : '' ?>">
-                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $i])) ?>">
-                                        <?= $i ?>
-                                    </a>
-                                </li>
-                            <?php endfor; ?>
-                            
-                            <?php if ($paginaActual < $totalPaginas): ?>
-                                <li class="page-item">
-                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $paginaActual + 1])) ?>">
-                                        <i class="bi bi-chevron-right"></i>
-                                    </a>
-                                </li>
-                            <?php endif; ?>
-                        </ul>
-                    </nav>
-                <?php endif; ?>
+                <!-- Resumen y paginación -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="alert alert-info mb-0 py-2">
+                        Mostrando <?= count($registros) ?> de <?= $totalRegistros ?> registros
+                        <?= !empty($busquedaUsuario) ? '| Usuario: '.htmlspecialchars($busquedaUsuario) : '' ?>
+                        <?= !empty($fechaDesde) ? '| Desde: '.htmlspecialchars($fechaDesde) : '' ?>
+                        <?= !empty($fechaHasta) ? '| Hasta: '.htmlspecialchars($fechaHasta) : '' ?>
+                    </div>
+                    
+                    <?php if ($totalPaginas > 1): ?>
+                        <nav aria-label="Paginación">
+                            <ul class="pagination mb-0">
+                                <?php if ($paginaActual > 1): ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $paginaActual - 1])) ?>">
+                                            <i class="bi bi-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
+                                
+                                <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
+                                    <li class="page-item <?= $i === $paginaActual ? 'active' : '' ?>">
+                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $i])) ?>">
+                                            <?= $i ?>
+                                        </a>
+                                    </li>
+                                <?php endfor; ?>
+                                
+                                <?php if ($paginaActual < $totalPaginas): ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $paginaActual + 1])) ?>">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
+                            </ul>
+                        </nav>
+                    <?php endif; ?>
+                </div>
             </div>
-        </div>
+        <?php endif; ?>
     </main>
 
     <script src="<?= BASE_URL ?>assets/js/bootstrap.bundle.min.js"></script>
@@ -328,6 +296,14 @@ try {
                 setTimeout(() => mensaje.remove(), 300);
             }
         });
+
+        // Mostrar tabla cuando se aplican filtros
+        const filtrosForm = document.getElementById('filtrosForm');
+        if (filtrosForm) {
+            filtrosForm.addEventListener('submit', function() {
+                document.getElementById('tablaResultados').style.display = 'block';
+            });
+        }
     });
     </script>
 </body>

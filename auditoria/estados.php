@@ -190,8 +190,14 @@ try {
             </form>
         </div>
         
-        <!-- Tabla de registros -->
-        <?php if (!empty($busquedaCuenta) || !empty($busquedaCliente) || !empty($fechaDesde) || !empty($fechaHasta)): ?>
+        <!-- Mensaje inicial cuando no hay filtros -->
+        <?php if (empty($busquedaCuenta) && empty($busquedaCliente) && empty($fechaDesde) && empty($fechaHasta)): ?>
+            <div class="alert alert-info text-center py-4">
+                <i class="bi bi-info-circle fs-4"></i>
+                <p class="mt-2 mb-0">Utilice los filtros de búsqueda para mostrar registros</p>
+            </div>
+        <?php else: ?>
+            <!-- Tabla de registros -->
             <div class="table-container">
                 <div class="table-responsive">
                     <table class="table table-hover">
