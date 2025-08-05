@@ -16,35 +16,29 @@ if ($_SESSION['role'] !== 'admin') {
 }
 
 // Obtener ID del usuario a editar
-$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-
-try {
-    $pdo = getPDO();
-    
-    // Obtener datos del usuario
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = :id");
-    $stmt->execute([':id' => $id]);
-    $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if (!$usuario) {
-        throw new Exception("Usuario no encontrado");
-    }
-
-    // Obtener datos del cliente asociado (si existe)
-    $clienteAsociado = null;
-    if ($usuario['cuscun']) {
-        $stmt = $pdo->prepare("SELECT CONCAT(cusna1, ' ', cusln1) AS nombre, cusidn FROM cumst WHERE cuscun = :cuscun");
-        $stmt->execute([':cuscun' => $usuario['cuscun']]);
-        $clienteAsociado = $stmt->fetch(PDO::FETCH_ASSOC);
-    }
-
-} catch (PDOException $e) {
-    $error = "Error al obtener datos: " . $e->getMessage();
-    error_log($error);
+$userId = $_GET['id'] ?? null;
+if (!$userId) {
     header('Location: lista.php');
     exit;
-} catch (Exception $e) {
-    $error = $e->getMessage();
+}
+
+// Obtener información del usuario
+try {
+    $pdo = getPDO();
+    $stmt = $pdo->prepare("SELECT id, username, role, activo FROM users WHERE id = :id");
+    $stmt->execute([':id' => $userId]);
+    $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$usuario) {
+        $_SESSION['mensaje'] = [
+            'tipo' => 'danger',
+            'texto' => 'Usuario no encontrado'
+        ];
+        header('Location: lista.php');
+        exit;
+    }
+} catch (PDOException $e) {
+    $error = "Error al obtener usuario: " . $e->getMessage();
     error_log($error);
     header('Location: lista.php');
     exit;
@@ -57,11 +51,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->beginTransaction();
 
         // Validar y sanitizar datos
+        $activo = $_POST['activo'] === '1' ? 1 : 0;
         $password = $_POST['password'] ?? '';
         $confirmPassword = $_POST['confirm_password'] ?? '';
-        $activo = isset($_POST['activo']) ? 1 : 0;
 
-        // Validaciones
+        // Solo validar contraseña si se proporcionó una nueva
+        $updatePassword = false;
+        
         if (!empty($password)) {
             if (strlen($password) < 8) {
                 throw new Exception("La contraseña debe tener al menos 8 caracteres");
@@ -70,24 +66,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($password !== $confirmPassword) {
                 throw new Exception("Las contraseñas no coinciden");
             }
-
-            // Hash de la contraseña
-            $passwordHash = password_hash($password, PASSWORD_DEFAULT);
             
-            // Actualizar con nueva contraseña
+            $updatePassword = true;
+        }
+
+        // Actualizar usuario
+        if ($updatePassword) {
+            $passwordHash = password_hash($password, PASSWORD_DEFAULT);
             $sql = "UPDATE users 
-                    SET password = :password, 
-                        activo = :activo,
+                    SET activo = :activo, 
+                        password = :password,
                         actualizado_en = NOW()
                     WHERE id = :id";
             
             $params = [
-                ':password' => $passwordHash,
                 ':activo' => $activo,
-                ':id' => $id
+                ':password' => $passwordHash,
+                ':id' => $userId
             ];
         } else {
-            // Actualizar sin cambiar contraseña
             $sql = "UPDATE users 
                     SET activo = :activo,
                         actualizado_en = NOW()
@@ -95,10 +92,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $params = [
                 ':activo' => $activo,
-                ':id' => $id
+                ':id' => $userId
             ];
         }
-
+        
         $stmt = $pdo->prepare($sql);
         if (!$stmt->execute($params)) {
             throw new Exception("Error al actualizar el usuario: " . implode(" ", $stmt->errorInfo()));
@@ -108,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $_SESSION['mensaje'] = [
             'tipo' => 'success',
-            'texto' => "Usuario actualizado exitosamente"
+            'texto' => "Usuario {$usuario['username']} actualizado exitosamente"
         ];
         
         header('Location: lista.php');
@@ -134,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editar Usuario - Sistema Bancario</title>
+    <title>Editar usuario - Sistema Bancario</title>
     <link href="<?= BASE_URL ?>assets/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <link href="<?= BASE_URL ?>assets/css/registros.css" rel="stylesheet">
@@ -143,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php include __DIR__ . '/../includes/sidebar.php'; ?>
     
     <main class="container mt-4">
-        <h2 class="mb-4">Editar Usuario: <?= htmlspecialchars($usuario['username']) ?></h2>
+        <h2 class="mb-4">Editar usuario</h2>
         
         <?php if (!empty($error)): ?>
             <div class="alert alert-danger alert-dismissible fade show">
@@ -153,7 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
         
         <form method="post" class="form-container">
-            <!-- Sección Información del Usuario (solo lectura) -->
+            <!-- Sección Información Básica -->
             <div class="card mb-4 form-section">
                 <div class="card-header">
                     <h5 class="mb-0">Información del Usuario</h5>
@@ -162,24 +159,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Nombre de Usuario</label>
-                            <input type="text" class="form-control-plaintext" value="<?= htmlspecialchars($usuario['username']) ?>" readonly>
+                            <input type="text" class="form-control" value="<?= htmlspecialchars($usuario['username']) ?>" readonly>
                         </div>
                         
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Rol</label>
-                            <input type="text" class="form-control-plaintext" value="<?= htmlspecialchars(ucfirst($usuario['role'])) ?>" readonly>
+                            <input type="text" class="form-control" value="<?= htmlspecialchars($usuario['role']) ?>" readonly>
                         </div>
                     </div>
-                    
-                    <?php if ($clienteAsociado): ?>
-                    <div class="row">
-                        <div class="col-12 mb-3">
-                            <label class="form-label">Cliente Asociado</label>
-                            <input type="text" class="form-control-plaintext" 
-                                   value="<?= htmlspecialchars($clienteAsociado['nombre']) ?> (<?= htmlspecialchars($clienteAsociado['cusidn']) ?>)" readonly>
-                        </div>
+                </div>
+            </div>
+
+            <!-- Sección Estado -->
+            <div class="card mb-4 form-section">
+                <div class="card-header">
+                    <h5 class="mb-0">Estado del Usuario</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="activo" class="form-label">Estado</label>
+                        <select class="form-select" id="activo" name="activo" required>
+                            <option value="1" <?= $usuario['activo'] ? 'selected' : '' ?>>Activo</option>
+                            <option value="0" <?= !$usuario['activo'] ? 'selected' : '' ?>>Inactivo</option>
+                        </select>
+                        <small class="text-muted">Los usuarios inactivos no pueden iniciar sesión</small>
                     </div>
-                    <?php endif; ?>
                 </div>
             </div>
 
@@ -193,31 +197,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="col-md-6 mb-3">
                             <label for="password" class="form-label">Nueva Contraseña</label>
                             <input type="password" class="form-control" id="password" name="password">
-                            <small class="form-text text-muted">Dejar en blanco para no cambiar</small>
+                            <small class="form-text text-muted">Dejar en blanco para mantener la contraseña actual</small>
                         </div>
                         
                         <div class="col-md-6 mb-3">
-                            <label for="confirm_password" class="form-label">Confirmar Contraseña</label>
+                            <label for="confirm_password" class="form-label">Confirmar Nueva Contraseña</label>
                             <input type="password" class="form-control" id="confirm_password" name="confirm_password">
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Sección Estado -->
-            <div class="card mb-4 form-section">
-                <div class="card-header">
-                    <h5 class="mb-0">Estado del Usuario</h5>
-                </div>
-                <div class="card-body">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="activo" name="activo" 
-                               <?= $usuario['activo'] ? 'checked' : '' ?>>
-                        <label class="form-check-label" for="activo">
-                            Usuario <?= $usuario['activo'] ? 'Activo' : 'Inactivo' ?>
-                        </label>
-                    </div>
-                    <small class="form-text text-muted">Activar/desactivar el acceso del usuario al sistema</small>
                 </div>
             </div>
             
@@ -235,30 +222,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="<?= BASE_URL ?>assets/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Validar contraseñas si se ingresan
+            // Validar que las contraseñas coincidan si se proporcionan
             document.querySelector('form').addEventListener('submit', function(e) {
                 const password = document.getElementById('password').value;
                 const confirmPassword = document.getElementById('confirm_password').value;
                 
-                if (password || confirmPassword) {
-                    if (password.length < 8) {
-                        e.preventDefault();
-                        alert('La contraseña debe tener al menos 8 caracteres');
-                        return false;
-                    }
-                    
-                    if (password !== confirmPassword) {
-                        e.preventDefault();
-                        alert('Las contraseñas no coinciden');
-                        return false;
-                    }
+                if (password && password !== confirmPassword) {
+                    e.preventDefault();
+                    alert('Las contraseñas no coinciden');
+                    return false;
                 }
-            });
-
-            // Actualizar texto del estado al cambiar el switch
-            document.getElementById('activo').addEventListener('change', function() {
-                const label = document.querySelector('label[for="activo"]');
-                label.textContent = 'Usuario ' + (this.checked ? 'Activo' : 'Inactivo');
             });
 
             // Cerrar alertas automáticamente
