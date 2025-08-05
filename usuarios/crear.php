@@ -15,6 +15,15 @@ if ($_SESSION['role'] !== 'admin') {
     exit;
 }
 
+// Definir roles disponibles
+$rolesDisponibles = [
+    'admin' => 'Administrador',
+    'seguridad' => 'Seguridad',
+    'gerente' => 'Gerente',
+    'cajero' => 'Cajero',
+    'cliente' => 'Cliente'
+];
+
 // Obtener lista de clientes activos con estado de asociación
 try {
     $pdo = getPDO();
@@ -40,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $username = trim($_POST['username'] ?? '');
         $password = $_POST['password'] ?? '';
         $confirmPassword = $_POST['confirm_password'] ?? '';
-        $role = in_array($_POST['role'] ?? '', ['admin', 'gerente', 'cajero', 'cliente']) ? $_POST['role'] : 'cliente';
+        $role = $_POST['role'] ?? '';
         $clienteId = !empty($_POST['cliente_id']) ? (int)$_POST['cliente_id'] : null;
 
         // Validaciones
@@ -56,6 +65,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception("Las contraseñas no coinciden");
         }
 
+        // Validar rol
+        if (!array_key_exists($role, $rolesDisponibles)) {
+            throw new Exception("Rol seleccionado no válido");
+        }
+
         // Si es cliente, debe tener asociado un cliente
         if ($role === 'cliente' && empty($clienteId)) {
             throw new Exception("Los usuarios con rol cliente deben tener un cliente asociado");
@@ -69,8 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception("El nombre de usuario ya está registrado");
         }
 
-        // Verificar que el cliente no esté ya asociado a otro usuario
-        if ($clienteId) {
+        // Verificar que el cliente no esté ya asociado a otro usuario (solo para rol cliente)
+        if ($role === 'cliente' && $clienteId) {
             $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE cuscun = :cuscun");
             $stmt->execute([':cuscun' => $clienteId]);
             
@@ -82,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Hash de la contraseña
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
-        // Insertar usuario (sin campo email)
+        // Insertar usuario
         $sql = "INSERT INTO users 
                 (username, password, role, activo, creado_en, actualizado_en, cuscun) 
                 VALUES 
@@ -92,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':username' => $username,
             ':password' => $passwordHash,
             ':role' => $role,
-            ':cuscun' => $clienteId
+            ':cuscun' => $role === 'cliente' ? $clienteId : null
         ];
         
         $stmt = $pdo->prepare($sql);
@@ -130,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crear Nuevo Usuario - Sistema Bancario</title>
+    <title>Registrar nuevo usuario - Sistema Bancario</title>
     <link href="<?= BASE_URL ?>assets/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <link href="<?= BASE_URL ?>assets/css/registros.css" rel="stylesheet">
@@ -139,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php include __DIR__ . '/../includes/sidebar.php'; ?>
     
     <main class="container mt-4">
-        <h2 class="mb-4">Crear Nuevo Usuario</h2>
+        <h2 class="mb-4">Registrar nuevo usuario</h2>
         
         <?php if (!empty($error)): ?>
             <div class="alert alert-danger alert-dismissible fade show">
@@ -149,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
         
         <form method="post" class="form-container">
-            <!-- Sección Cliente Asociado - Versión Mejorada -->
+            <!-- Sección Cliente Asociado -->
             <div class="card mb-4 form-section">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
@@ -213,10 +227,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="col-md-6 mb-3">
                             <label for="role" class="form-label required-field">Rol</label>
                             <select class="form-select" id="role" name="role" required>
-                                <option value="admin" <?= (isset($_POST['role']) && $_POST['role'] === 'admin' ? 'selected' : '') ?>>Administrador</option>
-                                <option value="gerente" <?= (isset($_POST['role']) && $_POST['role'] === 'gerente' ? 'selected' : '') ?>>Gerente</option>
-                                <option value="cajero" <?= (isset($_POST['role']) && $_POST['role'] === 'cajero' ? 'selected' : '') ?>>Cajero</option>
-                                <option value="cliente" <?= (!isset($_POST['role']) || $_POST['role'] === 'cliente') ? 'selected' : '' ?>>Cliente</option>
+                                <?php foreach ($rolesDisponibles as $valor => $etiqueta): ?>
+                                    <option value="<?= $valor ?>" <?= (isset($_POST['role']) && $_POST['role'] === $valor) ? 'selected' : '' ?>>
+                                        <?= $etiqueta ?>
+                                    </option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                     </div>
@@ -240,18 +255,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label for="confirm_password" class="form-label required-field">Confirmar Contraseña</label>
                             <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sección Estado (solo informativa) -->
-            <div class="card mb-4 form-section">
-                <div class="card-header">
-                    <h5 class="mb-0">Estado del Usuario</h5>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-success mb-0">
-                        <i class="bi bi-check-circle-fill"></i> El usuario se creará en estado <strong>ACTIVO</strong>
                     </div>
                 </div>
             </div>

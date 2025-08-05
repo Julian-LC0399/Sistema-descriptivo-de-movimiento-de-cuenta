@@ -12,10 +12,10 @@ $paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
 $offset = ($paginaActual - 1) * $usuariosPorPagina;
 
 // Parámetros de búsqueda
+$busquedaId = isset($_GET['busqueda_id']) ? trim($_GET['busqueda_id']) : '';
 $busquedaUsuario = isset($_GET['busqueda_usuario']) ? trim($_GET['busqueda_usuario']) : '';
-$busquedaGeneral = isset($_GET['busqueda_general']) ? trim($_GET['busqueda_general']) : '';
-$filtroRol = isset($_GET['rol']) ? $_GET['rol'] : '';
-$filtroEstado = isset($_GET['estado']) ? $_GET['estado'] : '1'; // Por defecto muestra solo activos
+$busquedaNombre = isset($_GET['busqueda_nombre']) ? trim($_GET['busqueda_nombre']) : '';
+$mostrarResultados = !empty($busquedaId) || !empty($busquedaUsuario) || !empty($busquedaNombre);
 
 // Consulta base
 $sql = "SELECT u.id, u.username, u.role, u.activo, 
@@ -24,31 +24,23 @@ $sql = "SELECT u.id, u.username, u.role, u.activo,
         FROM users u
         LEFT JOIN cumst c ON u.cuscun = c.cuscun";
 $params = [];
-$contarSql = "SELECT COUNT(*) as total FROM users u";
+$contarSql = "SELECT COUNT(*) as total FROM users u LEFT JOIN cumst c ON u.cuscun = c.cuscun"; // Corrección aplicada aquí
 $conditions = [];
 
-// Aplicar filtro de estado
-if ($filtroEstado !== 'T') { // 'T' sería para mostrar Todos
-    $conditions[] = "u.activo = :estado";
-    $params[':estado'] = $filtroEstado;
-}
-
-// Aplicar filtro de rol
-if (!empty($filtroRol)) {
-    $conditions[] = "u.role = :rol";
-    $params[':rol'] = $filtroRol;
-}
-
 // Aplicar filtros de búsqueda
+if (!empty($busquedaId)) {
+    $conditions[] = "u.id = :busqueda_id";
+    $params[':busqueda_id'] = $busquedaId;
+}
+
 if (!empty($busquedaUsuario)) {
     $conditions[] = "u.username LIKE :busqueda_usuario";
     $params[':busqueda_usuario'] = "%$busquedaUsuario%";
 }
 
-if (!empty($busquedaGeneral)) {
-    $conditions[] = "(c.cusna1 LIKE :busqueda_nombre OR c.cusln1 LIKE :busqueda_apellido)";
-    $params[':busqueda_nombre'] = "%$busquedaGeneral%";
-    $params[':busqueda_apellido'] = "%$busquedaGeneral%";
+if (!empty($busquedaNombre)) {
+    $conditions[] = "CONCAT(c.cusna1, ' ', c.cusna2, ' ', c.cusln1, ' ', c.cusln2) LIKE :busqueda_nombre";
+    $params[':busqueda_nombre'] = "%$busquedaNombre%";
 }
 
 // Construir WHERE clause si hay condiciones
@@ -108,6 +100,11 @@ try {
     <link href="<?= BASE_URL ?>assets/css/registros.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        .table-container {
+            display: <?= $mostrarResultados ? 'block' : 'none' ?>;
+        }
+    </style>
 </head>
 <body>
     <?php include __DIR__ . '/../includes/sidebar.php'; ?>
@@ -144,32 +141,19 @@ try {
             </div>
             <form method="get" class="filtros-grid">
                 <div class="form-group">
+                    <label for="busqueda_id" class="form-label">Buscar por ID</label>
+                    <input type="number" class="form-control" id="busqueda_id" name="busqueda_id" 
+                           value="<?= htmlspecialchars($busquedaId) ?>" placeholder="Ingrese ID del usuario" min="1">
+                </div>
+                <div class="form-group">
                     <label for="busqueda_usuario" class="form-label">Buscar por usuario</label>
                     <input type="text" class="form-control" id="busqueda_usuario" name="busqueda_usuario" 
                            value="<?= htmlspecialchars($busquedaUsuario) ?>" placeholder="Ingrese nombre de usuario">
                 </div>
                 <div class="form-group">
-                    <label for="busqueda_general" class="form-label">Buscar por nombre o apellido</label>
-                    <input type="text" class="form-control" id="busqueda_general" name="busqueda_general" 
-                           value="<?= htmlspecialchars($busquedaGeneral) ?>" placeholder="Ingrese nombre o apellido">
-                </div>
-                <div class="form-group">
-                    <label for="rol" class="form-label">Rol</label>
-                    <select class="form-select" id="rol" name="rol">
-                        <option value="">Todos</option>
-                        <option value="admin" <?= $filtroRol === 'admin' ? 'selected' : '' ?>>Administrador</option>
-                        <option value="gerente" <?= $filtroRol === 'gerente' ? 'selected' : '' ?>>Gerente</option>
-                        <option value="cajero" <?= $filtroRol === 'cajero' ? 'selected' : '' ?>>Cajero</option>
-                        <option value="cliente" <?= $filtroRol === 'cliente' ? 'selected' : '' ?>>Cliente</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="estado" class="form-label">Estado</label>
-                    <select class="form-select" id="estado" name="estado">
-                        <option value="1" <?= $filtroEstado === '1' ? 'selected' : '' ?>>Activos</option>
-                        <option value="0" <?= $filtroEstado === '0' ? 'selected' : '' ?>>Inactivos</option>
-                        <option value="T" <?= $filtroEstado === 'T' ? 'selected' : '' ?>>Todos</option>
-                    </select>
+                    <label for="busqueda_nombre" class="form-label">Buscar por nombre o apellido</label>
+                    <input type="text" class="form-control" id="busqueda_nombre" name="busqueda_nombre" 
+                           value="<?= htmlspecialchars($busquedaNombre) ?>" placeholder="Ingrese parte del nombre">
                 </div>
                 <div class="filtros-actions">
                     <button type="submit" class="btn btn-primary">
@@ -182,6 +166,13 @@ try {
             </form>
         </div>
         
+        <?php if (!$mostrarResultados): ?>
+            <div class="alert alert-info text-center py-4">
+                <i class="bi bi-info-circle fs-4"></i>
+                <p class="mt-2 mb-0">Utilice los filtros de búsqueda para mostrar usuarios</p>
+            </div>
+        <?php endif; ?>
+        
         <!-- Tabla de usuarios -->
         <div class="table-container">
             <div class="table-responsive">
@@ -192,7 +183,6 @@ try {
                             <th>Usuario</th>
                             <th>Nombre Completo</th>
                             <th>Rol</th>
-                            <th>Cliente Asociado</th>
                             <th>Estado</th>
                             <th>Creado</th>
                             <th>Actualizado</th>
@@ -202,7 +192,7 @@ try {
                     <tbody>
                         <?php if (empty($usuarios)): ?>
                             <tr>
-                                <td colspan="9" class="text-center py-4">
+                                <td colspan="8" class="text-center py-4">
                                     <i class="bi bi-exclamation-circle fs-4"></i>
                                     <p class="mt-2">No se encontraron usuarios</p>
                                 </td>
@@ -214,18 +204,15 @@ try {
                                     <td><?= htmlspecialchars($usuario['username']) ?></td>
                                     <td>
                                         <?= htmlspecialchars(
-                                            trim(($usuario['cusna1'] ?? '') . ' ' . 
-                                            ($usuario['cusna2'] ?? '') . ' ' .
-                                            ($usuario['cusln1'] ?? '') . ' ' . 
-                                            ($usuario['cusln2'] ?? '')
-                                        ) ); ?>
+                                            trim(
+                                                ($usuario['cusna1'] ?? '') . ' ' . 
+                                                ($usuario['cusna2'] ?? '') . ' ' .
+                                                ($usuario['cusln1'] ?? '') . ' ' . 
+                                                ($usuario['cusln2'] ?? '')
+                                            )
+                                        ); ?>
                                     </td>
                                     <td><?= htmlspecialchars($usuario['role']) ?></td>
-                                    <td>
-                                        <?= !empty($usuario['cusna1']) ? 
-                                            htmlspecialchars($usuario['cusna1'] . ' ' . $usuario['cusln1']) : 
-                                            'N/A' ?>
-                                    </td>
                                     <td>
                                         <span class="badge <?= $usuario['activo'] ? 'bg-success' : 'bg-secondary' ?>">
                                             <?= $usuario['activo'] ? 'Activo' : 'Inactivo' ?>
@@ -261,45 +248,46 @@ try {
             </div>
             
             <!-- Resumen y paginación -->
-            <div class="d-flex justify-content-between align-items-center mt-3">
-                <div class="alert alert-info mb-0 py-2">
-                    Mostrando <?= count($usuarios) ?> de <?= $totalUsuarios ?> usuarios
-                    <?= $filtroEstado !== 'T' ? '('.($filtroEstado === '1' ? 'Activos' : 'Inactivos').')' : '' ?>
-                    <?= !empty($filtroRol) ? '| Rol: '.ucfirst($filtroRol) : '' ?>
-                    <?= !empty($busquedaUsuario) ? '| Usuario: '.htmlspecialchars($busquedaUsuario) : '' ?>
-                    <?= !empty($busquedaGeneral) ? '| Búsqueda: '.htmlspecialchars($busquedaGeneral) : '' ?>
+            <?php if ($mostrarResultados): ?>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="alert alert-info mb-0 py-2">
+                        Mostrando <?= count($usuarios) ?> de <?= $totalUsuarios ?> usuarios
+                        <?= !empty($busquedaId) ? '| ID: ' . htmlspecialchars($busquedaId) : '' ?>
+                        <?= !empty($busquedaUsuario) ? '| Usuario: ' . htmlspecialchars($busquedaUsuario) : '' ?>
+                        <?= !empty($busquedaNombre) ? '| Nombre: ' . htmlspecialchars($busquedaNombre) : '' ?>
+                    </div>
+                    
+                    <?php if ($totalPaginas > 1): ?>
+                        <nav aria-label="Paginación">
+                            <ul class="pagination mb-0">
+                                <?php if ($paginaActual > 1): ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $paginaActual - 1])) ?>">
+                                            <i class="bi bi-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
+                                
+                                <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
+                                    <li class="page-item <?= $i === $paginaActual ? 'active' : '' ?>">
+                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $i])) ?>">
+                                            <?= $i ?>
+                                        </a>
+                                    </li>
+                                <?php endfor; ?>
+                                
+                                <?php if ($paginaActual < $totalPaginas): ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $paginaActual + 1])) ?>">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
+                            </ul>
+                        </nav>
+                    <?php endif; ?>
                 </div>
-                
-                <?php if ($totalPaginas > 1): ?>
-                    <nav aria-label="Paginación">
-                        <ul class="pagination mb-0">
-                            <?php if ($paginaActual > 1): ?>
-                                <li class="page-item">
-                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $paginaActual - 1])) ?>">
-                                        <i class="bi bi-chevron-left"></i>
-                                    </a>
-                                </li>
-                            <?php endif; ?>
-                            
-                            <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
-                                <li class="page-item <?= $i === $paginaActual ? 'active' : '' ?>">
-                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $i])) ?>">
-                                        <?= $i ?>
-                                    </a>
-                                </li>
-                            <?php endfor; ?>
-                            
-                            <?php if ($paginaActual < $totalPaginas): ?>
-                                <li class="page-item">
-                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $paginaActual + 1])) ?>">
-                                        <i class="bi bi-chevron-right"></i>
-                                    </a>
-                                </li>
-                            <?php endif; ?>
-                        </ul>
-                    </nav>
-                <?php endif; ?>
-            </div>
+            <?php endif; ?>
         </div>
     </main>
 
