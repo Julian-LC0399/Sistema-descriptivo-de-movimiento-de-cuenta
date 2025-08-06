@@ -160,16 +160,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Número de Cuenta</label>
+                            <label class="form-label">Número de Cuenta / Código cliente</label>
                             <div class="form-control-plaintext bg-light p-2 rounded">
-                                <?php echo htmlspecialchars($cuenta['acmacc'] ?? ''); ?>
+                                <?php echo htmlspecialchars($cuenta['acmacc'] ?? ''); ?> / 
+                                <?php echo htmlspecialchars($cuenta['acmcun'] ?? ''); ?>
                             </div>
                         </div>
                         
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Cliente</label>
+                            <label class="form-label">Nombre del Cliente</label>
                             <div class="form-control-plaintext bg-light p-2 rounded">
-                                <?php echo htmlspecialchars($cliente['nombre'] ?? ''); ?> (ID: <?php echo htmlspecialchars($cuenta['acmcun'] ?? ''); ?>)
+                                <?php echo htmlspecialchars($cliente['nombre'] ?? 'No encontrado'); ?>
                             </div>
                         </div>
                     </div>
