@@ -845,9 +845,9 @@ ob_end_flush();
         <?php else: ?>
             <?php if (!$error_fechas): ?>
                 <div class="no-results">
-                    <i class="fas fa-filter"></i>
-                    Por favor, complete los campos de fecha (Desde y Hasta) y haga clic en "Buscar Transacciones" para ver los resultados
-                </div>
+                <i class="fas fa-info-circle"></i>
+                Utilice el filtro de búsqueda para mostrar las transacciones    
+            </div>
             <?php endif; ?>
         <?php endif; ?>
     </div>
