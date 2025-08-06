@@ -102,12 +102,12 @@ function formatAccountNumber($cuenta) {
     return $cuenta;
 }
 
-// Cambio aquí: Nuevos nombres para los parámetros de fecha
+// Obtener parámetros del GET
 $fecha_desde = $_GET['fecha_desde'] ?? '';
 $fecha_hasta = $_GET['fecha_hasta'] ?? '';
 $cuenta = isset($_GET['cuenta']) ? trim($_GET['cuenta']) : null;
 
-// Validación de fechas (modificado para los nuevos nombres)
+// Validación de fechas
 if (!empty($fecha_desde) && !validateDate($fecha_desde)) {
     die("Formato de fecha 'desde' inválido. Use YYYY-MM-DD.");
 }
@@ -124,8 +124,16 @@ if (!empty($cuenta) && !preg_match('/^[0-9]{9,20}$/', $cuenta)) {
     die("Número de cuenta inválido. Debe contener solo dígitos (9-20 caracteres).");
 }
 
-// Verificar si se han aplicado filtros
-$filtros_aplicados = (!empty($fecha_desde) || !empty($fecha_hasta) || !empty($cuenta));
+// Validación para requerir ambos campos de fecha si no se especifica cuenta
+$filtros_aplicados = (!empty($fecha_desde) && !empty($fecha_hasta)) || !empty($cuenta);
+$error_fechas = false;
+
+if (isset($_GET['fecha_desde']) || isset($_GET['fecha_hasta']) || isset($_GET['cuenta'])) {
+    if (empty($cuenta) && (empty($fecha_desde) || empty($fecha_hasta))) {
+        $error_fechas = true;
+        $filtros_aplicados = false;
+    }
+}
 
 if ($filtros_aplicados && !empty($cuenta)) {
     try {
@@ -197,7 +205,6 @@ if ($filtros_aplicados) {
     $sql .= " FROM actrd t JOIN acmst a ON t.trdacc = a.acmacc
             WHERE 1=1";
 
-    // Cambio aquí: Nuevas condiciones para los filtros de fecha
     if (!empty($fecha_desde)) {
         $sql .= " AND DATE(t.trddat) >= :fecha_desde";
         $params[':fecha_desde'] = $fecha_desde;
@@ -655,7 +662,7 @@ ob_end_flush();
                         </label>
                         <input type="date" id="fecha_desde" name="fecha_desde" 
                                value="<?= htmlspecialchars($fecha_desde ?? '') ?>" 
-                               class="filter-input">
+                               class="filter-input" required>
                     </div>
                     
                     <div class="filter-group">
@@ -664,7 +671,7 @@ ob_end_flush();
                         </label>
                         <input type="date" id="fecha_hasta" name="fecha_hasta" 
                                value="<?= htmlspecialchars($fecha_hasta ?? '') ?>" 
-                               class="filter-input">
+                               class="filter-input" required>
                     </div>
                     
                     <div class="filter-group">
@@ -674,6 +681,7 @@ ob_end_flush();
                         <?php if ($is_admin || $is_client): ?>
                             <?php if (count($cuentas_disponibles) > 0): ?>
                                 <select id="cuenta" name="cuenta" class="filter-input">
+                                    <option value="">-- Seleccione una cuenta --</option>
                                     <?php foreach ($cuentas_disponibles as $cuenta_info): ?>
                                         <option value="<?= htmlspecialchars($cuenta_info['acmacc']) ?>" 
                                             <?= ($cuenta_info['acmacc'] == $cuenta) ? 'selected' : '' ?>>
@@ -707,6 +715,13 @@ ob_end_flush();
                 </div>
             <?php endif; ?>
         </div>
+
+        <?php if ($error_fechas): ?>
+            <div class="no-results error">
+                <i class="fas fa-exclamation-triangle"></i>
+                Error: Debe completar ambos campos de fecha (Desde y Hasta) para realizar la consulta
+            </div>
+        <?php endif; ?>
 
         <?php if ($filtros_aplicados): ?>
             <?php if (!empty($transacciones_por_mes)): ?>
@@ -828,10 +843,12 @@ ob_end_flush();
                 </div>
             <?php endif; ?>
         <?php else: ?>
-            <div class="no-results">
-                <i class="fas fa-filter"></i>
-                Por favor, aplique los filtros y haga clic en "Buscar Transacciones" para ver los resultados
-            </div>
+            <?php if (!$error_fechas): ?>
+                <div class="no-results">
+                    <i class="fas fa-filter"></i>
+                    Por favor, complete los campos de fecha (Desde y Hasta) y haga clic en "Buscar Transacciones" para ver los resultados
+                </div>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
 
@@ -854,6 +871,12 @@ ob_end_flush();
             });
 
             document.querySelector('form').addEventListener('submit', function(e) {
+                if (!fechaDesde.value || !fechaHasta.value) {
+                    alert('Debe completar ambos campos de fecha (Desde y Hasta)');
+                    e.preventDefault();
+                    return;
+                }
+                
                 if (fechaDesde.value && fechaHasta.value && new Date(fechaDesde.value) > new Date(fechaHasta.value)) {
                     alert('La fecha "desde" no puede ser mayor que la fecha "hasta"');
                     e.preventDefault();
