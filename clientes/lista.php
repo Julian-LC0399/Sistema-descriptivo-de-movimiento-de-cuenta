@@ -133,9 +133,9 @@ try {
             </div>
             <form method="get" class="filtros-grid">
                 <div class="form-group">
-                    <label for="busqueda_id" class="form-label">Buscar por ID</label>
+                    <label for="busqueda_id" class="form-label">Buscar por Código</label>
                     <input type="text" class="form-control" id="busqueda_id" name="busqueda_id" 
-                           value="<?= htmlspecialchars($busquedaId) ?>" placeholder="Ingrese parte del ID">
+                           value="<?= htmlspecialchars($busquedaId) ?>" placeholder="Ingrese parte del código ">
                 </div>
                 <div class="form-group">
                     <label for="busqueda_cedula" class="form-label">Buscar por cédula</label>
@@ -171,7 +171,7 @@ try {
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>ID Cliente</th>
+                                <th>Código cliente</th>
                                 <th>Cédula</th>
                                 <th>Nombre Completo</th>
                                 <th>Empresa</th>

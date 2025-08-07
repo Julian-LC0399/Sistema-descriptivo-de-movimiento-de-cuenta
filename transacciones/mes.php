@@ -608,6 +608,7 @@ ob_end_flush();
                         <?php if ($is_admin || $is_client): ?>
                             <?php if (count($cuentas_disponibles) > 0): ?>
                                 <select id="cuenta" name="cuenta" class="filter-input">
+                                    <option value="">-- Seleccione una cuenta --</option>
                                     <?php foreach ($cuentas_disponibles as $cuenta_info): ?>
                                         <option value="<?= htmlspecialchars($cuenta_info['acmacc']) ?>" 
                                             <?= ($cuenta_info['acmacc'] == $cuenta) ? 'selected' : '' ?>>
@@ -713,7 +714,7 @@ ob_end_flush();
         <?php else: ?>
             <div class="no-results">
                 <i class="fas fa-info-circle"></i>
-                No se encontraron transacciones para el mes seleccionado
+                Utilice el filtro de búsqueda para mostrar las transacciones   
             </div>
         <?php endif; ?>
     </div>

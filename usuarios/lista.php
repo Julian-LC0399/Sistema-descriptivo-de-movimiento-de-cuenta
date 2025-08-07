@@ -141,9 +141,9 @@ try {
             </div>
             <form method="get" class="filtros-grid">
                 <div class="form-group">
-                    <label for="busqueda_id" class="form-label">Buscar por ID</label>
+                    <label for="busqueda_id" class="form-label">Buscar por código</label>
                     <input type="number" class="form-control" id="busqueda_id" name="busqueda_id" 
-                           value="<?= htmlspecialchars($busquedaId) ?>" placeholder="Ingrese ID del usuario" min="1">
+                           value="<?= htmlspecialchars($busquedaId) ?>" placeholder="Ingrese código del usuario" min="1">
                 </div>
                 <div class="form-group">
                     <label for="busqueda_usuario" class="form-label">Buscar por usuario</label>
@@ -179,7 +179,7 @@ try {
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>Código</th>
                             <th>Usuario</th>
                             <th>Nombre Completo</th>
                             <th>Rol</th>
