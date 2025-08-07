@@ -4,76 +4,78 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/database.php';
 requireLogin();
 
-$tituloPagina = "Editar cliente";
-
-// Obtener ID del cliente a editar
-$idCliente = $_GET['id'] ?? null;
-if (!$idCliente) {
+// Verificar si se recibió un ID de cliente
+if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     header("Location: lista.php");
     exit();
 }
 
-// Inicializar variables
-$valoresFormulario = [];
-$errores = [];
+$idCliente = (int)$_GET['id'];
+$tituloPagina = "Editar cliente";
 
 // Obtener datos actuales del cliente
-try {
-    $pdo = getPDO();
-    $stmt = $pdo->prepare("SELECT * FROM cumst WHERE cuscun = ?");
-    $stmt->execute([$idCliente]);
-    $cliente = $stmt->fetch();
+$pdo = getPDO();
+$stmt = $pdo->prepare("SELECT * FROM cumst WHERE cuscun = ?");
+$stmt->execute([$idCliente]);
+$cliente = $stmt->fetch();
 
-    if (!$cliente) {
-        $_SESSION['mensaje'] = [
-            'tipo' => 'danger',
-            'texto' => 'Cliente no encontrado'
-        ];
-        header("Location: lista.php");
-        exit();
-    }
-
-    // Mapear datos a valores del formulario
-    $valoresFormulario = [
-        'cuscun' => $cliente['cuscun'],
-        'cusidn' => $cliente['cusidn'],
-        'cusna1' => $cliente['cusna1'],
-        'cusna2' => $cliente['cusna2'],
-        'cusln1' => $cliente['cusln1'],
-        'cusln2' => $cliente['cusln2'],
-        'cusemp' => $cliente['cusemp'],
-        'cusjob' => $cliente['cusjob'],
-        'cusdir1' => $cliente['cusdir1'],
-        'cusdir2' => $cliente['cusdir2'],
-        'cusdir3' => $cliente['cusdir3'],
-        'cuscty' => $cliente['cuscty'],
-        'cuseml' => $cliente['cuseml'],
-        'cusemw' => $cliente['cusemw'],
-        'cusphn' => $cliente['cusphn'],
-        'cusphh' => $cliente['cusphh'],
-        'cusphw' => $cliente['cusphw'],
-        'cuspxt' => $cliente['cuspxt'],
-        'cusfax' => $cliente['cusfax'],
-        'cusidc' => $cliente['cusidc'],
-        'cusbds' => $cliente['cusbds'],
-        'cusgen' => $cliente['cusgen'],
-        'cusmar' => $cliente['cusmar'],
-        'cusnac' => $cliente['cusnac'],
-        'cusweb' => $cliente['cusweb'],
-        'cussts' => $cliente['cussts']
+if (!$cliente) {
+    $_SESSION['mensaje'] = [
+        'tipo' => 'danger',
+        'texto' => 'Cliente no encontrado'
     ];
-
-} catch (PDOException $e) {
-    $errores['general'] = "Error al cargar cliente: " . $e->getMessage();
+    header("Location: lista.php");
+    exit();
 }
 
-// Procesar formulario de edición
+// Inicializar variables con los valores actuales
+$valoresFormulario = [
+    'cuscun' => $cliente['cuscun'],
+    'cusidn' => $cliente['cusidn'],
+    'cusna1' => $cliente['cusna1'],
+    'cusna2' => $cliente['cusna2'],
+    'cusln1' => $cliente['cusln1'],
+    'cusln2' => $cliente['cusln2'],
+    'cusemp' => $cliente['cusemp'],
+    'cusjob' => $cliente['cusjob'],
+    'cusdir1' => $cliente['cusdir1'],
+    'cusdir2' => $cliente['cusdir2'],
+    'cusdir3' => $cliente['cusdir3'],
+    'cuscty' => $cliente['cuscty'],
+    'cuseml' => $cliente['cuseml'],
+    'cusemw' => $cliente['cusemw'],
+    'cusphn' => $cliente['cusphn'],
+    'cusphh' => $cliente['cusphh'],
+    'cusphw' => $cliente['cusphw'],
+    'cuspxt' => $cliente['cuspxt'],
+    'cusfax' => $cliente['cusfax'],
+    'cusidc' => $cliente['cusidc'],
+    'cusbds' => $cliente['cusbds'],
+    'cusgen' => $cliente['cusgen'],
+    'cusmar' => $cliente['cusmar'],
+    'cusnac' => $cliente['cusnac'],
+    'cusweb' => $cliente['cusweb'],
+    'cussts' => $cliente['cussts']
+];
+
+$errores = [];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        // Obtener y sanitizar datos del formulario
-        $valoresFormulario = [
-            'cuscun' => $idCliente,
-            'cusidn' => trim($_POST['cusidn'] ?? ''),
+        // Procesar cédula combinada (acepta puntos en el formato)
+        $cedulaCompleta = trim($_POST['cedula_completa'] ?? '');
+        $partes = explode('-', $cedulaCompleta, 2);
+        
+        if (count($partes) === 2 && in_array($partes[0], ['V', 'E', 'J', 'P', 'G']) && !empty($partes[1])) {
+            // Eliminar puntos pero mantener el formato original para mostrar
+            $valoresFormulario['cusidc'] = $partes[0];
+            $valoresFormulario['cusidn'] = str_replace('.', '', $partes[1]);
+        } else {
+            $errores['cedula_completa'] = "Formato inválido. Use: TIPO-NÚMERO (ej: V-12345678 o V-20.340.212)";
+        }
+
+        // Obtener y sanitizar el resto de datos del formulario
+        $valoresFormulario = array_merge($valoresFormulario, [
             'cusna1' => trim($_POST['cusna1'] ?? ''),
             'cusna2' => trim($_POST['cusna2'] ?? ''),
             'cusln1' => trim($_POST['cusln1'] ?? ''),
@@ -91,18 +93,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'cusphw' => trim($_POST['cusphw'] ?? ''),
             'cuspxt' => trim($_POST['cuspxt'] ?? ''),
             'cusfax' => trim($_POST['cusfax'] ?? ''),
-            'cusidc' => trim($_POST['cusidc'] ?? 'V'),
             'cusbds' => trim($_POST['cusbds'] ?? ''),
             'cusgen' => trim($_POST['cusgen'] ?? ''),
             'cusmar' => trim($_POST['cusmar'] ?? ''),
             'cusnac' => trim($_POST['cusnac'] ?? ''),
             'cusweb' => trim($_POST['cusweb'] ?? ''),
             'cussts' => trim($_POST['cussts'] ?? 'A')
-        ];
+        ]);
 
         // Validaciones
         if (empty($valoresFormulario['cusidn'])) {
-            $errores['cusidn'] = "La cédula es obligatoria";
+            $errores['cedula_completa'] = "La identificación es obligatoria";
         }
 
         if (empty($valoresFormulario['cusna1'])) {
@@ -157,6 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $params = $valoresFormulario;
             $params[':usuario'] = $_SESSION['username'] ?? 'SISTEMA';
+            $params[':cuscun'] = $idCliente;
 
             $stmt->execute($params);
 
@@ -202,46 +204,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <form method="post" class="form-container">
-            <!-- Sección Información de Identificación -->
+            <!-- Sección Información Básica -->
             <div class="card mb-4 form-section">
                 <div class="card-header">
-                    <h5 class="mb-0">Información de Identificación</h5>
+                    <h5 class="mb-0">Información Básica</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label for="cuscun" class="form-label">ID Cliente</label>
-                            <input type="text" class="form-control" id="cuscun" name="cuscun" 
-                                value="<?= htmlspecialchars($valoresFormulario['cuscun']) ?>" readonly>
-                        </div>
-
-                        <div class="col-md-4 mb-3">
-                            <label for="cusidn" class="form-label required-field">Cédula</label>
-                            <input type="text" class="form-control <?= isset($errores['cusidn']) ? 'is-invalid' : '' ?>"
-                                id="cusidn" name="cusidn" value="<?= htmlspecialchars($valoresFormulario['cusidn']) ?>"
-                                required>
-                            <?php if (isset($errores['cusidn'])): ?>
-                                <div class="invalid-feedback"><?= htmlspecialchars($errores['cusidn']) ?></div>
-                            <?php endif; ?>
-                        </div>
-
-                        <div class="col-md-4 mb-3">
-                            <label for="cusidc" class="form-label">Tipo de Identificación</label>
-                            <select class="form-select" id="cusidc" name="cusidc">
-                                <option value="V" <?= $valoresFormulario['cusidc'] === 'V' ? 'selected' : '' ?>>V - Venezolano</option>
-                                <option value="E" <?= $valoresFormulario['cusidc'] === 'E' ? 'selected' : '' ?>>E - Extranjero</option>
-                                <option value="J" <?= $valoresFormulario['cusidc'] === 'J' ? 'selected' : '' ?>>J - Jurídico</option>
-                                <option value="P" <?= $valoresFormulario['cusidc'] === 'P' ? 'selected' : '' ?>>P - Pasaporte</option>
-                                <option value="G" <?= $valoresFormulario['cusidc'] === 'G' ? 'selected' : '' ?>>G - Gobierno</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="cusnac" class="form-label">Nacionalidad</label>
-                            <input type="text" class="form-control" id="cusnac" name="cusnac"
-                                value="<?= htmlspecialchars($valoresFormulario['cusnac']) ?>">
+                            <label class="form-label">Código cliente</label>
+                            <input type="text" class="form-control" value="<?= htmlspecialchars($valoresFormulario['cuscun']) ?>" readonly>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="cedula_completa" class="form-label required-field">Identificación</label>
+                            <input type="text" class="form-control <?= isset($errores['cedula_completa']) ? 'is-invalid' : '' ?>" 
+                                   id="cedula_completa" name="cedula_completa" 
+                                   placeholder="Ej: V-12345678, V-20.340.212" 
+                                   value="<?= htmlspecialchars(($valoresFormulario['cusidc'] ?? '') . '-' . ($valoresFormulario['cusidn'] ?? '')) ?>" 
+                                   required>
+                            <?php if (isset($errores['cedula_completa'])): ?>
+                                <div class="invalid-feedback"><?= htmlspecialchars($errores['cedula_completa']) ?></div>
+                            <?php endif; ?>
+                            <small class="text-muted">Formato: TIPO-NÚMERO (ej: V-12345678 o V-20.340.212)</small>
                         </div>
                     </div>
                 </div>
@@ -320,7 +305,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                     <div class="row">
-                        <div class="col-md-12 mb-3">
+                        <div class="col-md-6 mb-3">
+                            <label for="cusnac" class="form-label">Nacionalidad</label>
+                            <input type="text" class="form-control" id="cusnac" name="cusnac"
+                                value="<?= htmlspecialchars($valoresFormulario['cusnac']) ?>">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
                             <label for="cusweb" class="form-label">Sitio Web</label>
                             <input type="url" class="form-control" id="cusweb" name="cusweb"
                                 value="<?= htmlspecialchars($valoresFormulario['cusweb']) ?>">
@@ -455,24 +446,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
 
-            <!-- Sección Estado (ahora editable) -->
-            <div class="card mb-4 form-section">
-                <div class="card-header">
-                    <h5 class="mb-0">Estado del Cliente</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="cussts" class="form-label">Estado</label>
-                            <select class="form-select" id="cussts" name="cussts">
-                                <option value="A" <?= $valoresFormulario['cussts'] === 'A' ? 'selected' : '' ?>>Activo</option>
-                                <option value="I" <?= $valoresFormulario['cussts'] === 'I' ? 'selected' : '' ?>>Inactivo</option>
-                                <option value="S" <?= $valoresFormulario['cussts'] === 'S' ? 'selected' : '' ?>>Suspendido</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- Campo hidden para el estado -->
+            <input type="hidden" name="cussts" value="<?= htmlspecialchars($valoresFormulario['cussts']) ?>">
 
             <div class="form-actions">
                 <a href="lista.php" class="btn btn-outline-secondary">
@@ -494,6 +469,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             });
         });
 
+        // Validar cédula combinada (permite puntos)
+        document.getElementById('cedula_completa').addEventListener('input', function() {
+            const regex = /^[VEJPG]-[\d\.]+$/;
+            if (!regex.test(this.value) && this.value !== '') {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+            }
+        });
+
         // Cerrar alertas automáticamente
         setTimeout(() => {
             const alerts = document.querySelectorAll('.alert');
@@ -501,23 +486,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 new bootstrap.Alert(alert).close();
             });
         }, 5000);
-
-        // Manejar el tipo de identificación
-        document.getElementById('cusidc').addEventListener('change', function () {
-            const cusidn = document.getElementById('cusidn');
-            if (this.value === 'V') {
-                cusidn.placeholder = 'Ej: V12345678';
-            } else if (this.value === 'E') {
-                cusidn.placeholder = 'Ej: E12345678';
-            } else if (this.value === 'J') {
-                cusidn.placeholder = 'Ej: J-12345678-9';
-            } else if (this.value === 'P') {
-                cusidn.placeholder = 'Número de pasaporte';
-            } else if (this.value === 'G') {
-                cusidn.placeholder = 'Identificación gubernamental';
-            }
-        });
     </script>
 </body>
-
 </html>

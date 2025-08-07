@@ -39,9 +39,20 @@ $errores = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        // Obtener y sanitizar datos del formulario
-        $valoresFormulario = [
-            'cusidn' => trim($_POST['cusidn'] ?? ''),
+        // Procesar cédula combinada (acepta puntos en el formato)
+        $cedulaCompleta = trim($_POST['cedula_completa'] ?? '');
+        $partes = explode('-', $cedulaCompleta, 2);
+        
+        if (count($partes) === 2 && in_array($partes[0], ['V', 'E', 'J', 'P', 'G']) && !empty($partes[1])) {
+            // Eliminar puntos pero mantener el formato original para mostrar
+            $valoresFormulario['cusidc'] = $partes[0];
+            $valoresFormulario['cusidn'] = str_replace('.', '', $partes[1]);
+        } else {
+            $errores['cedula_completa'] = "Formato inválido. Use: TIPO-NÚMERO (ej: V-12345678 o V-20.340.212)";
+        }
+
+        // Obtener y sanitizar el resto de datos del formulario
+        $valoresFormulario = array_merge($valoresFormulario, [
             'cusna1' => trim($_POST['cusna1'] ?? ''),
             'cusna2' => trim($_POST['cusna2'] ?? ''),
             'cusln1' => trim($_POST['cusln1'] ?? ''),
@@ -59,18 +70,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'cusphw' => trim($_POST['cusphw'] ?? ''),
             'cuspxt' => trim($_POST['cuspxt'] ?? ''),
             'cusfax' => trim($_POST['cusfax'] ?? ''),
-            'cusidc' => trim($_POST['cusidc'] ?? 'V'),
             'cusbds' => trim($_POST['cusbds'] ?? ''),
             'cusgen' => trim($_POST['cusgen'] ?? ''),
             'cusmar' => trim($_POST['cusmar'] ?? ''),
             'cusnac' => trim($_POST['cusnac'] ?? ''),
             'cusweb' => trim($_POST['cusweb'] ?? ''),
             'cussts' => 'A'
-        ];
+        ]);
 
-        // Validaciones (puedes agregar las que necesites)
+        // Validaciones
         if (empty($valoresFormulario['cusidn'])) {
-            $errores['cusidn'] = "La cédula es obligatoria";
+            $errores['cedula_completa'] = "La identificación es obligatoria";
         }
 
         if (empty($valoresFormulario['cusna1'])) {
@@ -93,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($errores)) {
             $pdo = getPDO();
 
-            // Generar ID automáticamente (siempre)
+            // Generar ID automáticamente
             $stmt = $pdo->query("SELECT MAX(cuscun) as max_id FROM cumst");
             $maxId = (int) $stmt->fetch()['max_id'];
             $valoresFormulario['cuscun'] = $maxId + 1;
@@ -170,33 +180,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="cusidn" class="form-label required-field">Cédula</label>
-                            <input type="text" class="form-control <?= isset($errores['cusidn']) ? 'is-invalid' : '' ?>"
-                                id="cusidn" name="cusidn" value="<?= htmlspecialchars($valoresFormulario['cusidn']) ?>"
-                                required>
-                            <?php if (isset($errores['cusidn'])): ?>
-                                <div class="invalid-feedback"><?= htmlspecialchars($errores['cusidn']) ?></div>
+                            <label for="cedula_completa" class="form-label required-field">Identificación</label>
+                            <input type="text" class="form-control <?= isset($errores['cedula_completa']) ? 'is-invalid' : '' ?>" 
+                                   id="cedula_completa" name="cedula_completa" 
+                                   placeholder="Ej: V-12345678, V-20.340.212" 
+                                   value="<?= htmlspecialchars(($valoresFormulario['cusidc'] ?? '') . '-' . ($valoresFormulario['cusidn'] ?? '')) ?>" 
+                                   required>
+                            <?php if (isset($errores['cedula_completa'])): ?>
+                                <div class="invalid-feedback"><?= htmlspecialchars($errores['cedula_completa']) ?></div>
                             <?php endif; ?>
+                            <small class="text-muted">Formato: TIPO-NÚMERO (ej: V-12345678 o V-20.340.212)</small>
                         </div>
 
-                        <div class="col-md-6 mb-3">
-                            <label for="cusidc" class="form-label">Tipo de Identificación</label>
-                            <select class="form-select" id="cusidc" name="cusidc">
-                                <option value="V" <?= $valoresFormulario['cusidc'] === 'V' ? 'selected' : '' ?>>V -
-                                    Venezolano</option>
-                                <option value="E" <?= $valoresFormulario['cusidc'] === 'E' ? 'selected' : '' ?>>E -
-                                    Extranjero</option>
-                                <option value="J" <?= $valoresFormulario['cusidc'] === 'J' ? 'selected' : '' ?>>J -
-                                    Jurídico</option>
-                                <option value="P" <?= $valoresFormulario['cusidc'] === 'P' ? 'selected' : '' ?>>P -
-                                    Pasaporte</option>
-                                <option value="G" <?= $valoresFormulario['cusidc'] === 'G' ? 'selected' : '' ?>>G -
-                                    Gobierno</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="cusnac" class="form-label">Nacionalidad</label>
                             <input type="text" class="form-control" id="cusnac" name="cusnac"
@@ -259,12 +254,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label for="cusgen" class="form-label">Género</label>
                             <select class="form-select" id="cusgen" name="cusgen">
                                 <option value="">Seleccione...</option>
-                                <option value="M" <?= $valoresFormulario['cusgen'] === 'M' ? 'selected' : '' ?>>Masculino
-                                </option>
-                                <option value="F" <?= $valoresFormulario['cusgen'] === 'F' ? 'selected' : '' ?>>Femenino
-                                </option>
-                                <option value="O" <?= $valoresFormulario['cusgen'] === 'O' ? 'selected' : '' ?>>Otro
-                                </option>
+                                <option value="M" <?= $valoresFormulario['cusgen'] === 'M' ? 'selected' : '' ?>>Masculino</option>
+                                <option value="F" <?= $valoresFormulario['cusgen'] === 'F' ? 'selected' : '' ?>>Femenino</option>
+                                <option value="O" <?= $valoresFormulario['cusgen'] === 'O' ? 'selected' : '' ?>>Otro</option>
                             </select>
                         </div>
 
@@ -272,16 +264,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label for="cusmar" class="form-label">Estado Civil</label>
                             <select class="form-select" id="cusmar" name="cusmar">
                                 <option value="">Seleccione...</option>
-                                <option value="S" <?= $valoresFormulario['cusmar'] === 'S' ? 'selected' : '' ?>>Soltero/a
-                                </option>
-                                <option value="C" <?= $valoresFormulario['cusmar'] === 'C' ? 'selected' : '' ?>>Casado/a
-                                </option>
-                                <option value="D" <?= $valoresFormulario['cusmar'] === 'D' ? 'selected' : '' ?>>
-                                    Divorciado/a</option>
-                                <option value="V" <?= $valoresFormulario['cusmar'] === 'V' ? 'selected' : '' ?>>Viudo/a
-                                </option>
-                                <option value="U" <?= $valoresFormulario['cusmar'] === 'U' ? 'selected' : '' ?>>Unión Libre
-                                </option>
+                                <option value="S" <?= $valoresFormulario['cusmar'] === 'S' ? 'selected' : '' ?>>Soltero/a</option>
+                                <option value="C" <?= $valoresFormulario['cusmar'] === 'C' ? 'selected' : '' ?>>Casado/a</option>
+                                <option value="D" <?= $valoresFormulario['cusmar'] === 'D' ? 'selected' : '' ?>>Divorciado/a</option>
+                                <option value="V" <?= $valoresFormulario['cusmar'] === 'V' ? 'selected' : '' ?>>Viudo/a</option>
+                                <option value="U" <?= $valoresFormulario['cusmar'] === 'U' ? 'selected' : '' ?>>Unión Libre</option>
                             </select>
                         </div>
                     </div>
@@ -319,8 +306,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="cusemw" class="form-label">Email Corporativo</label>
-                            <input type="email"
-                                class="form-control <?= isset($errores['cusemw']) ? 'is-invalid' : '' ?>" id="cusemw"
+                            <input type="email" class="form-control <?= isset($errores['cusemw']) ? 'is-invalid' : '' ?>" id="cusemw"
                                 name="cusemw" value="<?= htmlspecialchars($valoresFormulario['cusemw']) ?>">
                             <?php if (isset($errores['cusemw'])): ?>
                                 <div class="invalid-feedback"><?= htmlspecialchars($errores['cusemw']) ?></div>
@@ -390,7 +376,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
 
-            <!-- Sección Contacto (simplificada) -->
+            <!-- Sección Contacto -->
             <div class="card mb-4 form-section">
                 <div class="card-header">
                     <h5 class="mb-0">Información de Contacto</h5>
@@ -399,8 +385,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="cuseml" class="form-label">Email Personal</label>
-                            <input type="email"
-                                class="form-control <?= isset($errores['cuseml']) ? 'is-invalid' : '' ?>" id="cuseml"
+                            <input type="email" class="form-control <?= isset($errores['cuseml']) ? 'is-invalid' : '' ?>" id="cuseml"
                                 name="cuseml" value="<?= htmlspecialchars($valoresFormulario['cuseml']) ?>">
                             <?php if (isset($errores['cuseml'])): ?>
                                 <div class="invalid-feedback"><?= htmlspecialchars($errores['cuseml']) ?></div>
@@ -447,6 +432,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             });
         });
 
+        // Validar cédula combinada (permite puntos)
+        document.getElementById('cedula_completa').addEventListener('input', function() {
+            const regex = /^[VEJPG]-[\d\.]+$/;
+            if (!regex.test(this.value) && this.value !== '') {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+            }
+        });
+
         // Cerrar alertas automáticamente
         setTimeout(() => {
             const alerts = document.querySelectorAll('.alert');
@@ -454,23 +449,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 new bootstrap.Alert(alert).close();
             });
         }, 5000);
-
-        // Manejar el tipo de identificación
-        document.getElementById('cusidc').addEventListener('change', function () {
-            const cusidn = document.getElementById('cusidn');
-            if (this.value === 'V') {
-                cusidn.placeholder = 'Ej: V12345678';
-            } else if (this.value === 'E') {
-                cusidn.placeholder = 'Ej: E12345678';
-            } else if (this.value === 'J') {
-                cusidn.placeholder = 'Ej: J-12345678-9';
-            } else if (this.value === 'P') {
-                cusidn.placeholder = 'Número de pasaporte';
-            } else if (this.value === 'G') {
-                cusidn.placeholder = 'Identificación gubernamental';
-            }
-        });
     </script>
 </body>
-
 </html>
