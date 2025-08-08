@@ -87,13 +87,13 @@ $isCliente = $userRole === 'cliente';
                     <li class="submenu-item">
                         <a href="<?= BASE_URL ?>usuarios/lista.php">
                             <i class="fas fa-list"></i>
-                            <span>Lista de Usuarios</span>
+                            <span>Lista de usuarios</span>
                         </a>
                     </li>
                     <li class="submenu-item">
                         <a href="<?= BASE_URL ?>usuarios/crear.php">
                             <i class="fas fa-user-plus"></i>
-                            <span>Crear Usuario</span>
+                            <span>Crear usuario</span>
                         </a>
                     </li>
                 </ul>
@@ -112,13 +112,13 @@ $isCliente = $userRole === 'cliente';
                     <li class="submenu-item">
                         <a href="<?= BASE_URL ?>auditoria/estados.php">
                             <i class="fas fa-history"></i>
-                            <span>Histórico de Estados</span>
+                            <span>Histórico de estados</span>
                         </a>
                     </li>
                     <li class="submenu-item">
                         <a href="<?= BASE_URL ?>auditoria/logs.php">
                             <i class="fas fa-user-shield"></i>
-                            <span>Logs de Acceso</span>
+                            <span>Logs de acceso</span>
                         </a>
                     </li>
                 </ul>

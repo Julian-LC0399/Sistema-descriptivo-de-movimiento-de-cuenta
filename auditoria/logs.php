@@ -4,7 +4,7 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/database.php';
 requireLogin();
 
-$tituloPagina = "Registro de Accesos al Sistema";
+$tituloPagina = "Registros de acceso";
 
 // Configuración de paginación
 $registrosPorPagina = 10;
