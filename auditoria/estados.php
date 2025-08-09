@@ -4,7 +4,7 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/database.php';
 requireLogin();
 
-$tituloPagina = "Histórico de Estados de Cuentas";
+$tituloPagina = "Histórico de estados de cuenta";
 
 // Configuración de paginación
 $registrosPorPagina = 10;
