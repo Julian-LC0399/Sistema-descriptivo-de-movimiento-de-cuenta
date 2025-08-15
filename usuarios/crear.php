@@ -174,7 +174,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="mb-3">
                         <label for="cliente_id" class="form-label">
                             Seleccionar Cliente
-                            <small class="text-muted">(Obligatorio para rol Cliente)</small>
                         </label>
                         
                         <div class="selector-clientes border rounded p-2 mb-2">
