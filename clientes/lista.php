@@ -178,8 +178,6 @@ try {
                                 <th>Cargo</th>
                                 <th>Ciudad</th>
                                 <th>Email</th>
-                                <th>Teléfono Móvil</th>
-                                <th>Teléfono Habitación</th>
                                 <th>Estado</th>
                                 <th>Acciones</th>
                             </tr>
@@ -187,7 +185,7 @@ try {
                         <tbody>
                             <?php if (empty($clientes)): ?>
                                 <tr>
-                                    <td colspan="11" class="text-center py-4">
+                                    <td colspan="9" class="text-center py-4">
                                         <i class="bi bi-exclamation-circle fs-4"></i>
                                         <p class="mt-2">No se encontraron clientes con los filtros aplicados</p>
                                     </td>
@@ -209,8 +207,6 @@ try {
                                         <td><?= htmlspecialchars($cliente['cusjob'] ?? 'N/A') ?></td>
                                         <td><?= htmlspecialchars($cliente['cuscty']) ?></td>
                                         <td><?= htmlspecialchars($cliente['cuseml']) ?></td>
-                                        <td><?= htmlspecialchars($cliente['cusphn']) ?></td>
-                                        <td><?= htmlspecialchars($cliente['cusphh'] ?? 'N/A') ?></td>
                                         <td>
                                             <span class="badge <?= $cliente['cussts'] == 'A' ? 'bg-success' : 'bg-secondary' ?>">
                                                 <?= $cliente['cussts'] == 'A' ? 'Activo' : 'Inactivo' ?>
